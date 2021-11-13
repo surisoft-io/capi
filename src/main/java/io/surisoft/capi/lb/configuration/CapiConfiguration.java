@@ -212,6 +212,7 @@ import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
 import io.micrometer.core.instrument.util.HierarchicalNameMapper;
 import io.micrometer.jmx.JmxMeterRegistry;
 import io.surisoft.capi.lb.cache.CacheConfiguration;
+import io.surisoft.capi.lb.processor.ConsulNodeDiscovery;
 import io.surisoft.capi.lb.utils.Constants;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.camel.component.micrometer.CamelJmxConfig;

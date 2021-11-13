@@ -311,6 +311,12 @@
       <artifactId>camel-management</artifactId>
       <version>${org.apache.camel.springboot-version}</version>
     </dependency>
+    <dependency>
+      <groupId>org.apache.camel.springboot</groupId>
+      <artifactId>camel-consul-starter</artifactId>
+      <version>${org.apache.camel.springboot-version}</version>
+    </dependency>
+
 
     <dependency>
       <groupId>io.hawt</groupId>
