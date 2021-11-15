@@ -41,4 +41,8 @@ public class ConsulDiscoveryCacheManager {
         }
         log.info("Consul Worker Node ID: {}", consulWorkerNode.getMember());
     }
+
+    public void removeMeFromMaster() {
+        getConsulWorkerNodeFromCache().remove(CacheConstants.CONSUL_WORKER_NODE_ID);
+    }
 }

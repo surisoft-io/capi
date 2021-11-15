@@ -263,7 +263,7 @@ public class ApiManager {
             List<Mapping> apiCallMappingList = api.getMappingList();
             List<Mapping> newMappingList = new ArrayList<>();
             for(Mapping mapping : apiCallMappingList) {
-                if(isMappingNew(existingApi.get(), mapping)) {
+                if(apiUtils.isMappingNew(existingApi.get(), mapping)) {
                     newMappingList.add(mapping);
                 }
             }
@@ -353,18 +353,6 @@ public class ApiManager {
         } else {
             return true;
         }
-    }
-
-    private boolean isMappingNew(Api existingApi, Mapping mapping) {
-        for(Mapping existingMapping : existingApi.getMappingList()) {
-            if(!existingMapping.getHostname().equals(mapping.getHostname())) {
-               return true;
-            }
-            if(!(existingMapping.getPort() == mapping.getPort())) {
-                return true;
-            }
-        }
-        return false;
     }
 
     private void setMappingApi(Api api) {

@@ -207,6 +207,7 @@ package io.surisoft.capi.lb.utils;
 
 import io.surisoft.capi.lb.schema.Api;
 import io.surisoft.capi.lb.schema.HttpMethod;
+import io.surisoft.capi.lb.schema.Mapping;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.camel.util.json.JsonObject;
 import org.springframework.stereotype.Component;
@@ -228,5 +229,17 @@ public class ApiUtils {
             jsonObject.put("httpMethod", api.getHttpMethod().getMethod());
         }
         return new String(Base64.getEncoder().encode(jsonObject.toJson().getBytes()));
+    }
+
+    public boolean isMappingNew(Api existingApi, Mapping mapping) {
+        for(Mapping existingMapping : existingApi.getMappingList()) {
+            if(!existingMapping.getHostname().equals(mapping.getHostname())) {
+                return true;
+            }
+            if(!(existingMapping.getPort() == mapping.getPort())) {
+                return true;
+            }
+        }
+        return false;
     }
 }
