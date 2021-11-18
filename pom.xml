@@ -371,16 +371,6 @@
       <artifactId>hazelcast-spring</artifactId>
     </dependency>
 
-    <dependency>
-      <groupId>org.apache.camel.springboot</groupId>
-      <artifactId>camel-metrics-starter</artifactId>
-      <version>${org.apache.camel.springboot-version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.camel</groupId>
-      <artifactId>camel-management</artifactId>
-      <version>${org.apache.camel.springboot-version}</version>
-    </dependency>
     <!-- Metrics-->
     <dependency>
       <groupId>io.micrometer</groupId>
@@ -402,100 +392,82 @@
         <artifactId>nimbus-jose-jwt</artifactId>
         <version>8.2</version>
     </dependency>
-    <!-- Testing only-->
-    <!--dependency>
-      <groupId>io.surisoft.capi.lb</groupId>
-      <artifactId>capi-discovery-spring-boot-starter</artifactId>
-      <version>0.0.1</version>
-    </dependency-->
-  </dependencies>
-  <build>
-    <plugins>
-      <plugin>
-        <artifactId>maven-compiler-plugin</artifactId>
-        <version>3.8.1</version>
+</dependencies>
+<build>
+<plugins>
+  <plugin>
+    <artifactId>maven-compiler-plugin</artifactId>
+    <version>3.8.1</version>
+    <configuration>
+      <source>14</source>
+      <target>14</target>
+      <forceJavacCompilerUse>true</forceJavacCompilerUse>
+    </configuration>
+  </plugin>
+  <plugin>
+    <groupId>com.google.cloud.tools</groupId>
+    <artifactId>jib-maven-plugin</artifactId>
+    <version>${com.google.cloud.tools-version}</version>
+    <configuration>
+      <from>
+        <image>openjdk:14</image>
+      </from>
+      <to>
+        <image>${docker.image.prefix}/${project.artifactId}:${project.version}</image>
+      </to>
+      <container>
+        <creationTime>USE_CURRENT_TIMESTAMP</creationTime>
+      </container>
+    </configuration>
+  </plugin>
+  <plugin>
+    <groupId>org.apache.maven.plugins</groupId>
+    <artifactId>maven-dependency-plugin</artifactId>
+    <executions>
+      <execution>
+        <id>unpack</id>
+        <phase>package</phase>
+        <goals>
+          <goal>unpack</goal>
+        </goals>
         <configuration>
-          <source>14</source>
-          <target>14</target>
-          <compilerArgs>
-            <arg>--add-modules</arg>
-            <arg>java.se</arg>
-            <arg>--add-exports</arg>
-            <arg>java.base/jdk.internal.ref=ALL-UNNAMED</arg>
-            <arg>--add-opens</arg>
-            <arg>java.base/java.lang=ALL-UNNAMED</arg>
-            <arg>--add-opens</arg>
-            <arg>java.base/java.nio=ALL-UNNAMED</arg>
-            <arg>--add-opens</arg>
-            <arg>java.base/sun.nio.ch=ALL-UNNAMED</arg>
-            <arg>--add-opens</arg>
-            <arg>java.management/sun.management=ALL-UNNAMED</arg>
-            <arg>--add-opens</arg>
-            <arg>jdk.management/com.sun.management.internal=ALL-UNNAMED</arg>
-          </compilerArgs>
-          <forceJavacCompilerUse>true</forceJavacCompilerUse>
+          <artifactItems>
+            <artifactItem>
+              <groupId>${project.groupId}</groupId>
+              <artifactId>${project.artifactId}</artifactId>
+              <version>${project.version}</version>
+            </artifactItem>
+          </artifactItems>
         </configuration>
-      </plugin>
-      <plugin>
-        <groupId>com.google.cloud.tools</groupId>
-        <artifactId>jib-maven-plugin</artifactId>
-        <version>${com.google.cloud.tools-version}</version>
+      </execution>
+    </executions>
+  </plugin>
+  <plugin>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-maven-plugin</artifactId>
+    <executions>
+      <execution>
         <configuration>
-          <from>
-            <image>openjdk:14</image>
-          </from>
-          <to>
-            <image>${docker.image.prefix}/${project.artifactId}:${project.version}</image>
-          </to>
-          <container>
-            <creationTime>USE_CURRENT_TIMESTAMP</creationTime>
-          </container>
+          <mainClass>io.surisoft.capi.lb.CapiLoadBalancer</mainClass>
         </configuration>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-dependency-plugin</artifactId>
-        <executions>
-          <execution>
-            <id>unpack</id>
-            <phase>package</phase>
-            <goals>
-              <goal>unpack</goal>
-            </goals>
-            <configuration>
-              <artifactItems>
-                <artifactItem>
-                  <groupId>${project.groupId}</groupId>
-                  <artifactId>${project.artifactId}</artifactId>
-                  <version>${project.version}</version>
-                </artifactItem>
-              </artifactItems>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
-      <plugin>
-        <groupId>org.springframework.boot</groupId>
-        <artifactId>spring-boot-maven-plugin</artifactId>
-        <executions>
-          <execution>
-            <configuration>
-              <mainClass>io.surisoft.capi.lb.CapiLoadBalancer</mainClass>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
-    </plugins>
-  </build>
-  <repositories>
-    
-  </repositories>
-  <pluginRepositories>
-    
-  </pluginRepositories>
-  <dependencyManagement>
-    <dependencies>
+      </execution>
+    </executions>
+  </plugin>
+  <plugin>
+    <artifactId>maven-surefire-plugin</artifactId>
+    <version>2.22.2</version>
+  </plugin>
+</plugins>
+</build>
+<repositories>
 
-    </dependencies>
-  </dependencyManagement>
+</repositories>
+<pluginRepositories>
+
+</pluginRepositories>
+<dependencyManagement>
+<dependencies>
+
+</dependencies>
+</dependencyManagement>
 </project>

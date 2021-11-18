@@ -205,10 +205,7 @@
 
 package io.surisoft.capi.lb.cache;
 
-import com.hazelcast.config.Config;
-import com.hazelcast.config.EvictionPolicy;
-import com.hazelcast.config.MapConfig;
-import com.hazelcast.config.MaxSizePolicy;
+import com.hazelcast.config.*;
 import io.surisoft.capi.lb.utils.Constants;
 import lombok.extern.slf4j.Slf4j;
 
@@ -217,7 +214,7 @@ public class CacheConfiguration extends Config {
 
     public CacheConfiguration() {
         super();
-        getNetworkConfig().getJoin().getAutoDetectionConfig().setEnabled(true);
+        getCPSubsystemConfig().setCPMemberCount(3);
         MapConfig mapConfig = new MapConfig()
                 .setName("running-api-configuration")
                 .setTimeToLiveSeconds(-1);
@@ -226,6 +223,7 @@ public class CacheConfiguration extends Config {
                 .setSize(20000)
                 .setEvictionPolicy(EvictionPolicy.LRU);
         setInstanceName("running-api-instance")
+
                 .setClusterName(Constants.APPLICATION_NAME)
                 .addMapConfig(mapConfig);
     }
