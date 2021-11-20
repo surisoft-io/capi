@@ -206,6 +206,7 @@
 package io.surisoft.capi.lb.utils;
 
 import io.surisoft.capi.lb.schema.Api;
+import io.surisoft.capi.lb.schema.ConsulObject;
 import io.surisoft.capi.lb.schema.HttpMethod;
 import io.surisoft.capi.lb.schema.Mapping;
 import lombok.extern.slf4j.Slf4j;
@@ -231,6 +232,14 @@ public class ApiUtils {
         return new String(Base64.getEncoder().encode(jsonObject.toJson().getBytes()));
     }
 
+    public String getApiId(String apiName) {
+        JsonObject jsonObject = new JsonObject();
+        jsonObject.put("apiName", apiName);
+        jsonObject.put("apiContext", apiName);
+        jsonObject.put("httpMethod", HttpMethod.ALL);
+        return new String(Base64.getEncoder().encode(jsonObject.toJson().getBytes()));
+    }
+
     public boolean isMappingNew(Api existingApi, Mapping mapping) {
         for(Mapping existingMapping : existingApi.getMappingList()) {
             if(!existingMapping.getHostname().equals(mapping.getHostname())) {
@@ -241,5 +250,15 @@ public class ApiUtils {
             }
         }
         return false;
+    }
+
+    public Mapping consulObjectToMapping(ConsulObject consulObject) {
+        String host = consulObject.getServiceAddress();
+        int port = consulObject.getServicePort();
+        Mapping mapping = new Mapping();
+        mapping.setHostname(host);
+        mapping.setPort(port);
+        mapping.setRootContext("/" + consulObject.getServiceName());
+        return mapping;
     }
 }

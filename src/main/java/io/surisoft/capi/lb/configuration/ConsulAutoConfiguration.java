@@ -2,6 +2,7 @@ package io.surisoft.capi.lb.configuration;
 
 import io.surisoft.capi.lb.cache.ConsulDiscoveryCacheManager;
 import io.surisoft.capi.lb.processor.ConsulNodeDiscovery;
+import io.surisoft.capi.lb.utils.ApiUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.camel.builder.RouteBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,9 +26,12 @@ public class ConsulAutoConfiguration {
     @Autowired
     private ConsulDiscoveryCacheManager consulDiscoveryCacheManager;
 
+    @Autowired
+    private ApiUtils apiUtils;
+
     @Bean(name = "consulNodeDiscovery")
     public ConsulNodeDiscovery consulNodeDiscovery() {
-        return new ConsulNodeDiscovery(capiConsulHost);
+        return new ConsulNodeDiscovery(capiConsulHost, apiUtils);
     }
 
     @Bean
