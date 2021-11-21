@@ -269,16 +269,18 @@ public class ApiUtils {
     public void updateExistingApi(Api existingApi, Api newApiConfiguration, ApiRepository apiRepository, RouteUtils routeUtils, RunningApiManager runningApiManager) {
         log.trace("Updating existng Api: {}", existingApi.getId());
         List<Mapping> apiCallMappingList = newApiConfiguration.getMappingList();
-        List<Mapping> newMappingList = new ArrayList<>();
-        for(Mapping mapping : apiCallMappingList) {
-            if(isMappingNew(existingApi, mapping)) {
-                newMappingList.add(mapping);
+
+        if(apiCallMappingList.size() == 1) {
+            if(isMappingNew(existingApi, apiCallMappingList.get(0))) {
+                existingApi.getMappingList().add(apiCallMappingList.get(0));
+                apiRepository.save(existingApi);
             }
+        } else {
+            existingApi.getMappingList().clear();
+            existingApi.setMappingList(apiCallMappingList);
+            apiRepository.save(existingApi);
         }
-        for(Mapping mapping : newMappingList) {
-            existingApi.getMappingList().add(mapping);
-        }
-        apiRepository.save(existingApi);
+
         if(newApiConfiguration.getHttpMethod().equals(HttpMethod.ALL)) {
             //update all
             List<String> routeIdList = routeUtils.getAllRouteIdForAGivenApi(newApiConfiguration);

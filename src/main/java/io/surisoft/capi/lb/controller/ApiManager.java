@@ -259,27 +259,6 @@ public class ApiManager {
         String apiId = apiUtils.getApiId(api);
         Optional<Api> existingApi = apiRepository.findById(apiId);
         if(existingApi.isPresent()) {
-            /*log.trace("Updating existng Api: {}", existingApi.get().getId());
-            List<Mapping> apiCallMappingList = api.getMappingList();
-            List<Mapping> newMappingList = new ArrayList<>();
-            for(Mapping mapping : apiCallMappingList) {
-                if(apiUtils.isMappingNew(existingApi.get(), mapping)) {
-                    newMappingList.add(mapping);
-                }
-            }
-            for(Mapping mapping : newMappingList) {
-                existingApi.get().getMappingList().add(mapping);
-            }
-            apiRepository.save(existingApi.get());
-            if(api.getHttpMethod().equals(HttpMethod.ALL)) {
-                //update all
-                List<String> routeIdList = routeUtils.getAllRouteIdForAGivenApi(api);
-                for(String routeId : routeIdList) {
-                    runningApiManager.updateRunningApi(routeId);
-                }
-            } else {
-                runningApiManager.updateRunningApi(routeUtils.getRouteId(api, api.getHttpMethod().getMethod()));
-            }*/
             apiUtils.updateExistingApi(existingApi.get(), api, apiRepository, routeUtils, runningApiManager);
             return new ResponseEntity<>(api, HttpStatus.OK);
         }
