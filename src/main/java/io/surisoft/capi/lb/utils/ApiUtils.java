@@ -290,6 +290,29 @@ public class ApiUtils {
         }
     }
 
+    public void updateAllMappings(Api existingApi, Api newApiConfiguration, ApiRepository apiRepository, RouteUtils routeUtils, RunningApiManager runningApiManager) {
+        log.trace("Updating All mappings for existng Api: {}", existingApi.getId());
+
+        if(refreshMapping(existingApi.getMappingList(), newApiConfiguration.getMappingList())) {
+            log.trace("Different configuration detected clearing mappings and recreating");
+            existingApi.getMappingList().clear();
+            existingApi.setMappingList(newApiConfiguration.getMappingList());
+            apiRepository.save(existingApi);
+
+            if(newApiConfiguration.getHttpMethod().equals(HttpMethod.ALL)) {
+                //update all
+                List<String> routeIdList = routeUtils.getAllRouteIdForAGivenApi(newApiConfiguration);
+                for(String routeId : routeIdList) {
+                    runningApiManager.updateRunningApi(routeId);
+                }
+            } else {
+                runningApiManager.updateRunningApi(routeUtils.getRouteId(newApiConfiguration, newApiConfiguration.getHttpMethod().getMethod()));
+            }
+        } else {
+            log.trace("No changes detected for Api: {}", existingApi.getId());
+        }
+    }
+
     public void applyApiDefaults(Api api) {
         //By default CAPI LB will match any request to your backend
         api.setMatchOnUriPrefix(true);
@@ -299,5 +322,19 @@ public class ApiUtils {
         //Round robin is enabled by default
         api.setRoundRobinEnabled(true);
         api.setSwaggerEndpoint(null);
+    }
+
+    private boolean refreshMapping(List<Mapping> existingList, List<Mapping> incomingList) {
+        if(existingList.size() == incomingList.size()) {
+            //same size check if different content
+            for(Mapping mapping : existingList) {
+                if(!incomingList.contains(mapping)) {
+                    return true;
+                }
+            }
+        } else {
+            return true;
+        }
+        return false;
     }
 }

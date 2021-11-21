@@ -71,7 +71,6 @@ public class ConsulNodeDiscovery {
                 ObjectMapper objectMapper = new ObjectMapper();
                 ConsulObject[] consulResponse = objectMapper.readValue(response.body().string(), ConsulObject[].class);
                 String apiId = apiUtils.getApiId(serviceName);
-                log.info(apiId);
                 Api api = new Api();
                 api.setId(apiId);
                 api.setName(serviceName);
@@ -87,7 +86,7 @@ public class ConsulNodeDiscovery {
 
                 Optional<Api> existingApi = apiRepository.findById(apiId);
                 if(existingApi.isPresent()) {
-                    apiUtils.updateExistingApi(existingApi.get(), api, apiRepository, routeUtils, runningApiManager);
+                    apiUtils.updateAllMappings(existingApi.get(), api, apiRepository, routeUtils, runningApiManager);
                 } else  {
                     apiUtils.applyApiDefaults(api);
                     apiRepository.save(api);
