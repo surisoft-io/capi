@@ -245,15 +245,13 @@ public class ApiUtils {
     }
 
     public boolean isMappingNew(Api existingApi, Mapping mapping) {
+        boolean isNew = false;
         for(Mapping existingMapping : existingApi.getMappingList()) {
-            if(!existingMapping.getHostname().equals(mapping.getHostname())) {
-                return true;
-            }
-            if(!(existingMapping.getPort() == mapping.getPort())) {
-                return true;
+            if(!existingMapping.getHostname().equals(mapping.getHostname()) || !(existingMapping.getPort() == mapping.getPort())) {
+                isNew = true;
             }
         }
-        return false;
+        return isNew;
     }
 
     public Mapping consulObjectToMapping(ConsulObject consulObject) {

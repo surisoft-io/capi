@@ -207,6 +207,7 @@ package io.surisoft.capi.lb.controller;
 
 import io.surisoft.capi.lb.cache.RunningApiManager;
 import io.surisoft.capi.lb.repository.ApiRepository;
+import io.surisoft.capi.lb.repository.MappingRepository;
 import io.surisoft.capi.lb.schema.Api;
 import io.surisoft.capi.lb.schema.HttpMethod;
 import io.surisoft.capi.lb.schema.Mapping;
@@ -230,6 +231,9 @@ public class ApiManager {
 
     @Autowired
     private ApiRepository apiRepository;
+
+    @Autowired
+    private MappingRepository mappingRepository;
 
     @Autowired
     private RouteUtils routeUtils;
@@ -292,7 +296,7 @@ public class ApiManager {
         return new ResponseEntity<>(api, HttpStatus.OK);
     }
 
-    @DeleteMapping(path="/register/node")
+    @PostMapping(path="/unregister/node")
     public ResponseEntity<Api> deleteMapping(@RequestBody Api api) {
         if(!isNodeInfoValid(api)) {
             return new  ResponseEntity<>(HttpStatus.BAD_REQUEST);
@@ -305,6 +309,7 @@ public class ApiManager {
         }
 
         if(api.isRemoveMe()) {
+            Mapping mapping = api.getMappingList().get(0);
             existingApi.get().getMappingList().remove(api.getMappingList().get(0));
             if(existingApi.get().getMappingList().isEmpty()) {
                 if(existingApi.get().getHttpMethod().equals(HttpMethod.ALL)) {
@@ -317,8 +322,10 @@ public class ApiManager {
                     runningApiManager.deleteRunningApi(routeUtils.getRouteId(api, api.getHttpMethod().getMethod()));
                 }
                 apiRepository.delete(existingApi.get());
+                mappingRepository.delete(mapping);
             } else {
                 apiRepository.save(existingApi.get());
+                mappingRepository.delete(mapping);
                 if(existingApi.get().getHttpMethod().equals(HttpMethod.ALL)) {
                     //update all
                     List<String> routeIdList = routeUtils.getAllRouteIdForAGivenApi(api);
