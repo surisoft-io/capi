@@ -298,15 +298,9 @@ public class ApiUtils {
             existingApi.getMappingList().clear();
             existingApi.setMappingList(newApiConfiguration.getMappingList());
             apiRepository.save(existingApi);
-
-            if(newApiConfiguration.getHttpMethod().equals(HttpMethod.ALL)) {
-                //update all
-                List<String> routeIdList = routeUtils.getAllRouteIdForAGivenApi(newApiConfiguration);
-                for(String routeId : routeIdList) {
-                    runningApiManager.updateRunningApi(routeId);
-                }
-            } else {
-                runningApiManager.updateRunningApi(routeUtils.getRouteId(newApiConfiguration, newApiConfiguration.getHttpMethod().getMethod()));
+            List<String> routeIdList = routeUtils.getAllRouteIdForAGivenApi(newApiConfiguration);
+            for(String routeId : routeIdList) {
+                runningApiManager.updateRunningApi(routeId);
             }
         } else {
             log.trace("No changes detected for Api: {}", existingApi.getId());

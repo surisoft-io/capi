@@ -76,6 +76,7 @@ public class ConsulNodeDiscovery {
                 api.setName(serviceName);
                 api.setContext("/" + serviceName);
                 api.setHttpMethod(HttpMethod.ALL);
+                api.setPublished(true);
 
                 for(ConsulObject consulObject : consulResponse) {
                     Mapping mapping = apiUtils.consulObjectToMapping(consulObject);
@@ -90,13 +91,7 @@ public class ConsulNodeDiscovery {
                 } else  {
                     apiUtils.applyApiDefaults(api);
                     apiRepository.save(api);
-                    if(api.getHttpMethod().equals(HttpMethod.ALL)) {
-                        runningApiManager.runApi(routeUtils.getAllRouteIdForAGivenApi(api), api, routeUtils);
-                    } else {
-                        runningApiManager.runApi(routeUtils.getRouteId(api, api.getHttpMethod().getMethod()), api);
-                    }
-                    //We need to populate the defaults
-                    //Create a new api db and running
+                    runningApiManager.runApi(routeUtils.getAllRouteIdForAGivenApi(api), api, routeUtils);
                 }
             }
 
