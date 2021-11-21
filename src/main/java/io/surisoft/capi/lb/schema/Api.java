@@ -207,10 +207,7 @@ package io.surisoft.capi.lb.schema;
 
 import lombok.Data;
 
-import javax.persistence.CascadeType;
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.OneToMany;
+import javax.persistence.*;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
@@ -224,7 +221,7 @@ public class Api implements Serializable {
     private String name;
     private String context;
 
-    @OneToMany(targetEntity = Mapping.class, cascade = CascadeType.ALL)
+    @OneToMany(targetEntity = Mapping.class, cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     private List<Mapping> mappingList = new ArrayList<>();
 
     private boolean roundRobinEnabled;
@@ -240,4 +237,5 @@ public class Api implements Serializable {
     private String stickySessionParam;
     private boolean stickySessionParamInCookie;
     private boolean removeMe;
+    private boolean published;
 }

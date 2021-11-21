@@ -241,7 +241,7 @@ public class StartupRouteProcessor {
 
     @PostConstruct
     public void getPersistedRoutes() {
-        List<Api> apiList = apiRepository.findAll();
+        List<Api> apiList = apiRepository.findByPublished(true);
         for(Api api : apiList) {
             if(api.getHttpMethod().equals(HttpMethod.ALL)) {
                 List<String> routeIdList = routeUtils.getAllRouteIdForAGivenApi(api);

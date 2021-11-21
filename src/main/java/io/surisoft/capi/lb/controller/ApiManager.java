@@ -259,7 +259,7 @@ public class ApiManager {
         String apiId = apiUtils.getApiId(api);
         Optional<Api> existingApi = apiRepository.findById(apiId);
         if(existingApi.isPresent()) {
-            log.trace("Updating existng Api: {}", existingApi.get().getId());
+            /*log.trace("Updating existng Api: {}", existingApi.get().getId());
             List<Mapping> apiCallMappingList = api.getMappingList();
             List<Mapping> newMappingList = new ArrayList<>();
             for(Mapping mapping : apiCallMappingList) {
@@ -279,18 +279,37 @@ public class ApiManager {
                 }
             } else {
                 runningApiManager.updateRunningApi(routeUtils.getRouteId(api, api.getHttpMethod().getMethod()));
-            }
+            }*/
+            apiUtils.updateExistingApi(existingApi.get(), api, apiRepository, routeUtils, runningApiManager);
             return new ResponseEntity<>(api, HttpStatus.OK);
         }
 
         api.setId(apiId);
-        //setMappingApi(api);
+        api.setPublished(true);
+        apiUtils.applyApiDefaults(api);
         apiRepository.save(api);
         if(api.getHttpMethod().equals(HttpMethod.ALL)) {
             runningApiManager.runApi(routeUtils.getAllRouteIdForAGivenApi(api), api, routeUtils);
         } else {
             runningApiManager.runApi(routeUtils.getRouteId(api, api.getHttpMethod().getMethod()), api);
         }
+        return new ResponseEntity<>(api, HttpStatus.OK);
+    }
+
+    @PostMapping(path="/register/definition")
+    public ResponseEntity<Api> newApiDefinition(@RequestBody Api api) {
+        if(!isDefinitionValid(api)) {
+            return new  ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
+
+        String apiId = apiUtils.getApiId(api);
+        Optional<Api> existingApi = apiRepository.findById(apiId);
+        if(existingApi.isPresent()) {
+            return new ResponseEntity<>(api, HttpStatus.CONFLICT);
+        }
+        apiUtils.applyApiDefaults(api);
+        api.setId(apiId);
+        apiRepository.save(api);
         return new ResponseEntity<>(api, HttpStatus.OK);
     }
 
@@ -349,6 +368,14 @@ public class ApiManager {
 
     private boolean isNodeInfoValid(Api api) {
         if(api == null || api.getContext() == null || api.getName() == null || api.getMappingList() == null || api.getMappingList().isEmpty()) {
+            return false;
+        } else {
+            return true;
+        }
+    }
+
+    private boolean isDefinitionValid(Api api) {
+        if(api == null || api.getContext() == null || api.getName() == null) {
             return false;
         } else {
             return true;

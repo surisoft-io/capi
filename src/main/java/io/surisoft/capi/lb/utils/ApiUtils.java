@@ -205,6 +205,8 @@
 
 package io.surisoft.capi.lb.utils;
 
+import io.surisoft.capi.lb.cache.RunningApiManager;
+import io.surisoft.capi.lb.repository.ApiRepository;
 import io.surisoft.capi.lb.schema.Api;
 import io.surisoft.capi.lb.schema.ConsulObject;
 import io.surisoft.capi.lb.schema.HttpMethod;
@@ -213,7 +215,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.camel.util.json.JsonObject;
 import org.springframework.stereotype.Component;
 
+import java.util.ArrayList;
 import java.util.Base64;
+import java.util.List;
 
 @Component
 @Slf4j
@@ -260,5 +264,40 @@ public class ApiUtils {
         mapping.setPort(port);
         mapping.setRootContext("/" + consulObject.getServiceName());
         return mapping;
+    }
+
+    public void updateExistingApi(Api existingApi, Api newApiConfiguration, ApiRepository apiRepository, RouteUtils routeUtils, RunningApiManager runningApiManager) {
+        log.trace("Updating existng Api: {}", existingApi.getId());
+        List<Mapping> apiCallMappingList = newApiConfiguration.getMappingList();
+        List<Mapping> newMappingList = new ArrayList<>();
+        for(Mapping mapping : apiCallMappingList) {
+            if(isMappingNew(existingApi, mapping)) {
+                newMappingList.add(mapping);
+            }
+        }
+        for(Mapping mapping : newMappingList) {
+            existingApi.getMappingList().add(mapping);
+        }
+        apiRepository.save(existingApi);
+        if(newApiConfiguration.getHttpMethod().equals(HttpMethod.ALL)) {
+            //update all
+            List<String> routeIdList = routeUtils.getAllRouteIdForAGivenApi(newApiConfiguration);
+            for(String routeId : routeIdList) {
+                runningApiManager.updateRunningApi(routeId);
+            }
+        } else {
+            runningApiManager.updateRunningApi(routeUtils.getRouteId(newApiConfiguration, newApiConfiguration.getHttpMethod().getMethod()));
+        }
+    }
+
+    public void applyApiDefaults(Api api) {
+        //By default CAPI LB will match any request to your backend
+        api.setMatchOnUriPrefix(true);
+        //Failover is enabled by default
+        api.setFailoverEnabled(true);
+        api.setMaximumFailoverAttempts(1);
+        //Round robin is enabled by default
+        api.setRoundRobinEnabled(true);
+        api.setSwaggerEndpoint(null);
     }
 }

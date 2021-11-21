@@ -210,12 +210,17 @@ import com.hazelcast.map.listener.EntryAddedListener;
 import com.hazelcast.map.listener.EntryEvictedListener;
 import com.hazelcast.map.listener.EntryRemovedListener;
 import com.hazelcast.map.listener.EntryUpdatedListener;
+import io.surisoft.capi.lb.configuration.SingleRouteProcessor;
+import io.surisoft.capi.lb.repository.ApiRepository;
+import io.surisoft.capi.lb.schema.Api;
 import io.surisoft.capi.lb.schema.RunningApi;
 import io.surisoft.capi.lb.utils.RouteUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.camel.CamelContext;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+
+import java.util.Optional;
 
 @Component
 @Slf4j
@@ -227,6 +232,12 @@ public class RunningApiListener implements EntryEvictedListener<String, RunningA
     @Autowired
     private RouteUtils routeUtils;
 
+    @Autowired
+    private ApiRepository apiRepository;
+
+    @Autowired
+    private StickySessionCacheManager stickySessionCacheManager;
+
 
     @Override
     public void entryUpdated(EntryEvent<String, RunningApi> event) {
@@ -234,9 +245,9 @@ public class RunningApiListener implements EntryEvictedListener<String, RunningA
             RunningApi runningApi = event.getValue();
             log.info("Removing route: {} for updating", runningApi.getRouteId());
             try {
-                //Api api = (Api) redisTemplate.opsForHash().get(Api.CLIENT_KEY, runningApi.getApiId());
-                //camelContext.removeRoute(runningApi.getRouteId());
-                //camelContext.addRoutes(new SingleRouteProcessor(camelContext, api, routeUtils, runningApi, redisTemplate));
+                Optional<Api> api = apiRepository.findById(runningApi.getApiId());
+                camelContext.removeRoute(runningApi.getRouteId());
+                camelContext.addRoutes(new SingleRouteProcessor(camelContext, api.get(), routeUtils, runningApi, apiRepository, stickySessionCacheManager));
             } catch (Exception e) {
                 log.error(e.getMessage(), e);
             }
@@ -249,8 +260,8 @@ public class RunningApiListener implements EntryEvictedListener<String, RunningA
         //if(!entryEvent.getMember().localMember()) {
             log.trace("Api with id: {} detected, deploying the route.", runningApi.getApiId());
             try {
-                //Api api = (Api) redisTemplate.opsForHash().get(Api.CLIENT_KEY, runningApi.getApiId());
-                //camelContext.addRoutes(new SingleRouteProcessor(camelContext, api, routeUtils, runningApi, redisTemplate));
+                Optional<Api> api = apiRepository.findById(runningApi.getApiId());
+                camelContext.addRoutes(new SingleRouteProcessor(camelContext, api.get(), routeUtils, runningApi, apiRepository, stickySessionCacheManager));
             } catch (Exception e) {
                log.error(e.getMessage(), e);
             }

@@ -1,8 +1,11 @@
 package io.surisoft.capi.lb.configuration;
 
 import io.surisoft.capi.lb.cache.ConsulDiscoveryCacheManager;
+import io.surisoft.capi.lb.cache.RunningApiManager;
 import io.surisoft.capi.lb.processor.ConsulNodeDiscovery;
+import io.surisoft.capi.lb.repository.ApiRepository;
 import io.surisoft.capi.lb.utils.ApiUtils;
+import io.surisoft.capi.lb.utils.RouteUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.camel.builder.RouteBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,9 +32,18 @@ public class ConsulAutoConfiguration {
     @Autowired
     private ApiUtils apiUtils;
 
+    @Autowired
+    private ApiRepository apiRepository;
+
+    @Autowired
+    private RouteUtils routeUtils;
+
+    @Autowired
+    private RunningApiManager runningApiManager;
+
     @Bean(name = "consulNodeDiscovery")
     public ConsulNodeDiscovery consulNodeDiscovery() {
-        return new ConsulNodeDiscovery(capiConsulHost, apiUtils);
+        return new ConsulNodeDiscovery(capiConsulHost, apiUtils, apiRepository, routeUtils, runningApiManager);
     }
 
     @Bean
@@ -42,7 +54,8 @@ public class ConsulAutoConfiguration {
                 @Override
                 public void configure() throws Exception {
                    from("timer:consul-inspect?period=" + consulTimerInterval + "s")
-                                .to("bean:consulNodeDiscovery?method=processInfo");
+                                .to("bean:consulNodeDiscovery?method=processInfo")
+                                .routeId("consul-discovery-service");
                 }
             };
         } else {
