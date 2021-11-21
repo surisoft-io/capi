@@ -6,6 +6,7 @@ import io.surisoft.capi.lb.repository.ApiRepository;
 import io.surisoft.capi.lb.schema.Api;
 import io.surisoft.capi.lb.schema.ConsulObject;
 import io.surisoft.capi.lb.schema.HttpMethod;
+import io.surisoft.capi.lb.schema.Mapping;
 import io.surisoft.capi.lb.utils.ApiUtils;
 import io.surisoft.capi.lb.utils.RouteUtils;
 import lombok.extern.slf4j.Slf4j;
@@ -74,16 +75,27 @@ public class ConsulNodeDiscovery {
                 Api api = new Api();
                 api.setId(apiId);
                 api.setName(serviceName);
+                api.setContext("/" + serviceName);
                 api.setHttpMethod(HttpMethod.ALL);
 
                 for(ConsulObject consulObject : consulResponse) {
-                    api.getMappingList().add(apiUtils.consulObjectToMapping(consulObject));
+                    Mapping mapping = apiUtils.consulObjectToMapping(consulObject);
+                    if(!api.getMappingList().contains(mapping)) {
+                        api.getMappingList().add(mapping);
+                    }
                 }
 
                 Optional<Api> existingApi = apiRepository.findById(apiId);
                 if(existingApi.isPresent()) {
                     apiUtils.updateExistingApi(existingApi.get(), api, apiRepository, routeUtils, runningApiManager);
                 } else  {
+                    apiUtils.applyApiDefaults(api);
+                    apiRepository.save(api);
+                    if(api.getHttpMethod().equals(HttpMethod.ALL)) {
+                        runningApiManager.runApi(routeUtils.getAllRouteIdForAGivenApi(api), api, routeUtils);
+                    } else {
+                        runningApiManager.runApi(routeUtils.getRouteId(api, api.getHttpMethod().getMethod()), api);
+                    }
                     //We need to populate the defaults
                     //Create a new api db and running
                 }

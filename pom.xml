@@ -214,7 +214,7 @@
   <packaging>jar</packaging>
   <version>0.0.1</version>
 
-  <name>Test API</name>
+  <name>CAPI Load Balancer</name>
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
