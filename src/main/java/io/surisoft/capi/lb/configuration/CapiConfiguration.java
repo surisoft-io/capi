@@ -217,9 +217,11 @@ import io.surisoft.capi.lb.utils.Constants;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.camel.component.micrometer.CamelJmxConfig;
 import org.apache.camel.component.micrometer.DistributionStatisticConfigFilter;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import java.io.File;
 import java.time.Duration;
 
 import static org.apache.camel.component.micrometer.MicrometerConstants.DISTRIBUTION_SUMMARIES;
@@ -229,6 +231,12 @@ import static org.apache.camel.component.micrometer.routepolicy.MicrometerRouteP
 @Configuration
 @Slf4j
 public class CapiConfiguration {
+
+    @Value("${capi.trust.store.path}")
+    private String capiTrustStorePath;
+
+    @Value("${capi.trust.store.password}")
+    private String capiTrustStorePassword;
 
     @Bean
     public Config hazelCastConfig() {
@@ -261,5 +269,19 @@ public class CapiConfiguration {
                 Clock.SYSTEM,
                 HierarchicalNameMapper.DEFAULT));
         return compositeMeterRegistry;
+    }
+
+    @Bean
+    public void setTrustStore() {
+        if(!capiTrustStorePath.isEmpty() && !capiTrustStorePassword.isEmpty()) {
+            log.info("Custom trust store found, this will be the default trust store.");
+            File filePath = new File(capiTrustStorePath);
+            String absolutePath = filePath.getAbsolutePath();
+            System.setProperty("javax.net.ssl.trustStore", absolutePath);
+            System.setProperty("javax.net.ssl.trustStorePassword", capiTrustStorePassword);
+            System.setProperty("javax.net.ssl.keyStoreType", "JKS");
+        } else {
+            log.info("No trust store provided, the default Java will be used...");
+        }
     }
 }
