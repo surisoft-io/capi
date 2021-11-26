@@ -214,6 +214,9 @@ import io.surisoft.capi.lb.schema.Mapping;
 import io.surisoft.capi.lb.schema.RunningApi;
 import io.surisoft.capi.lb.utils.ApiUtils;
 import io.surisoft.capi.lb.utils.RouteUtils;
+import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiResponse;
+import io.swagger.annotations.ApiResponses;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -227,6 +230,7 @@ import java.util.Optional;
 @RestController
 @RequestMapping("/manager/api")
 @Slf4j
+@io.swagger.annotations.Api(value = "API's Management", tags = {"API's Management"})
 public class ApiManager {
 
     @Autowired
@@ -254,6 +258,11 @@ public class ApiManager {
         return new ResponseEntity<>(runningApiManager.getRunningApi(), HttpStatus.OK);
     }
 
+    @ApiOperation(value = "Register a node")
+    @ApiResponses(value = {
+            @ApiResponse(code = 201, message = "Node added"),
+            @ApiResponse(code = 400, message = "Bad request")
+    })
     @PostMapping(path="/register/node")
     public ResponseEntity<Api> newNodeMapping(@RequestBody Api api) {
         if(!isNodeInfoValid(api)) {
@@ -279,6 +288,12 @@ public class ApiManager {
         return new ResponseEntity<>(api, HttpStatus.OK);
     }
 
+    @ApiOperation(value = "Register an API Definition (not published)")
+    @ApiResponses(value = {
+            @ApiResponse(code = 201, message = "Definition Created"),
+            @ApiResponse(code = 400, message = "Bad request"),
+            @ApiResponse(code = 409, message = "Already exists")
+    })
     @PostMapping(path="/register/definition")
     public ResponseEntity<Api> newApiDefinition(@RequestBody Api api) {
         if(!isDefinitionValid(api)) {
@@ -296,6 +311,11 @@ public class ApiManager {
         return new ResponseEntity<>(api, HttpStatus.OK);
     }
 
+    @ApiOperation(value = "Unregister a node, with the option of removing the entire API.")
+    @ApiResponses(value = {
+            @ApiResponse(code = 200, message = "Node/API removed"),
+            @ApiResponse(code = 400, message = "Bad request")
+    })
     @PostMapping(path="/unregister/node")
     public ResponseEntity<Api> deleteMapping(@RequestBody Api api) {
         if(!isNodeInfoValid(api)) {
