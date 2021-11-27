@@ -16,6 +16,7 @@ package io.surisoft.capi.lb.controller;
  */
 
 import io.surisoft.capi.lb.schema.AliasInfo;
+import io.surisoft.capi.lb.schema.CertificateRequest;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
@@ -27,8 +28,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import javax.net.ssl.HttpsURLConnection;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.net.URL;
 import java.security.KeyStore;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateFactory;
@@ -158,5 +161,70 @@ public class CertificateController {
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
         return new ResponseEntity<>(aliasInfo, HttpStatus.OK);
+    }
+
+    @ApiOperation(value = "Extract certificate from URL.")
+    @ApiResponses(value = {
+            @ApiResponse(code = 200, message = "Certificate removed"),
+            @ApiResponse(code = 400, message = "Custom Trust store not detected")
+    })
+    @PostMapping(path = "/url")
+    public ResponseEntity<AliasInfo> getCertificateFromUrl(@RequestBody CertificateRequest certificateRequest) {
+        AliasInfo aliasInfo = new AliasInfo();
+
+        if(!certificateRequest.getUrl().startsWith("https://")) {
+            certificateRequest.setUrl("https://" + certificateRequest.getUrl());
+        }
+        if(!certificateRequest.getUrl().contains(":")) {
+            certificateRequest.setUrl(certificateRequest.getUrl() + ":443");
+        }
+        try {
+            URL destinationURL = new URL(certificateRequest.getUrl());
+            HttpsURLConnection conn = (HttpsURLConnection) destinationURL.openConnection();
+            conn.connect();
+            Certificate[] certs = conn.getServerCertificates();
+            log.info("nb = " + certs.length);
+            int i = 1;
+            for (Certificate cert : certs) {
+                log.info("Certificate is: " + cert);
+                if(cert instanceof X509Certificate) {
+                    log.info("Certificate is active for current date");
+                    aliasInfo = saveCertificateToTrustStore(cert, certificateRequest.getAlias());
+                } else {
+                    log.info("Unknown certificate type: " + cert);
+                    aliasInfo.setAdditionalInfo("Unknown certificate type: " + cert);
+                }
+            }
+
+        } catch (Exception e) {
+            log.error(e.getMessage(), e);
+
+        }
+        return new ResponseEntity<>(aliasInfo, HttpStatus.OK);
+    }
+
+    private AliasInfo saveCertificateToTrustStore(Certificate newTrusted, String alias) {
+        AliasInfo aliasInfo = new AliasInfo();
+        try {
+            FileInputStream is = new FileInputStream(capiTrustStorePath);
+            KeyStore keystore = KeyStore.getInstance(KeyStore.getDefaultType());
+            keystore.load(is, capiTrustStorePassword.toCharArray());
+
+            X509Certificate x509Object = (X509Certificate) newTrusted;
+            aliasInfo.setSubjectDN(x509Object.getSubjectDN().getName());
+            aliasInfo.setIssuerDN(x509Object.getIssuerDN().getName());
+
+            keystore.setCertificateEntry(alias, newTrusted);
+
+            FileOutputStream storeOutputStream = new FileOutputStream(capiTrustStorePath);
+            keystore.store(storeOutputStream, capiTrustStorePassword.toCharArray());
+
+            aliasInfo.setAlias(alias);
+
+        } catch (Exception e) {
+            log.debug(e.getMessage(), e);
+            aliasInfo.setAdditionalInfo(e.getMessage());
+        }
+        return aliasInfo;
     }
 }

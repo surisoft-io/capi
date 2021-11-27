@@ -20,6 +20,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.JwtException;
@@ -45,6 +46,11 @@ public class ManagerSecurityConfig extends WebSecurityConfigurerAdapter {
         log.debug("Configuring security");
         if(capiManagerSecurityEnabled) {
             http
+                    .csrf()
+                    .disable()
+                    .sessionManagement()
+                    .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                    .and()
                     .authorizeRequests()
                     .antMatchers(Constants.CAPI_WHITELISTED_PATHS)
                     .permitAll()
@@ -53,7 +59,13 @@ public class ManagerSecurityConfig extends WebSecurityConfigurerAdapter {
                             .anyRequest().authenticated())
                     .oauth2ResourceServer(oauth2 -> oauth2.jwt().decoder(new CapiJWTDecoder()));
         } else {
-            http.authorizeRequests().anyRequest().permitAll();
+            http
+                    .csrf()
+                    .disable()
+                    .sessionManagement()
+                    .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                    .and()
+                    .authorizeRequests().anyRequest().permitAll();
         }
 
     }
