@@ -72,12 +72,53 @@ If security (OpenID Connect/oauth2) is enabled CAPI needs the endpoint of your i
 * Get all configured API's
 * Get all running API's
 * Add/Remove a node to an API
+
+Certificate management is disabled by default, to enable it you need to provide a valid path to a truststore. 
+CAPI will not change JVM default certificate.
+To enable start CAPI with the following attributes:
+```
+    -Dcapi.trust.store.path=/your/path/cacerts \ 
+    -Dcapi.trust.store.password=changeit \
+```
+With the Certificate Management enabled you can:
 * Get all the certificates in the trust store
 * Add a certificate to the trust store providing the certificate
 * Add a certificate to the trust store providing the HTTPS endpoint.
 * Remove a certificate from the trust store.
 
-## AWS EKS Installation
+### Install CAPI fat jar on a VM
+* You need a valid MySQL running instance, with CAPI db created.
+* You need Open JDK 14
+```
+$ mkdir logs
+$ git clone this repo
+$ mvn clean package
+$ java \
+     -XX:InitialHeapSize=2g \
+     -XX:MaxHeapSize=2g \
+     -XX:+HeapDumpOnOutOfMemoryError \
+     -XX:HeapDumpPath="$PWD/logs/heap-dump.hprof" \
+     -Dhazelcast.diagnostics.enabled=true \
+     -Dhazelcast.diagnostics.directory="$CAPI_HOME/logs" \
+     --add-modules java.se --add-exports java.base/jdk.internal.ref=ALL-UNNAMED \
+     --add-opens java.base/java.lang=ALL-UNNAMED \
+     --add-opens java.base/java.nio=ALL-UNNAMED \
+     --add-opens java.base/sun.nio.ch=ALL-UNNAMED \
+     --add-opens java.management/sun.management=ALL-UNNAMED \
+     --add-opens jdk.management/com.sun.management.internal=ALL-UNNAMED \
+     -Dspring.datasource.url=jdbc:mysql://localhost:3306/capi \
+     -Dspring.datasource.username=root \
+     -Dspring.datasource.password=root \
+     -Dcapi.trust.store.path=/your/path/cacerts \ 
+     -Dcapi.trust.store.password=changeit \
+     -Dcapi.manager.security.enabled=true \ 
+     -Dcapi.manager.security.issuer=https://localhost:8443/auth/realms/master/protocol/openid-connect/certs \
+     -jar <CAPI_JAR> > $PWD/logs/capi.log 2>&1 & echo $! > capi.pid
+
+```
+In the example above CAPI will be available with CAPI Manager secured and certificate management enabled.
+
+### Install CAPI on AWS EKS
 Create the cluster
 ```
 $ eksctl create cluster -f capi-eks-cluster.yaml 
