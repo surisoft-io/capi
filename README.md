@@ -63,8 +63,10 @@
 ### CAPI Manager API
 CAPI Manager is available on http://localhost:8380/swagger-ui/
 Security to this API is disabled by default, if you need to enable security you need to provide the following properties at run time:
-```-Dcapi.manager.security.enabled=true ```
-```-Dcapi.manager.security.issuer=https://localhost:8443/auth/realms/master/protocol/openid-connect/certs```
+```
+    -Dcapi.manager.security.enabled=true \ 
+    -Dcapi.manager.security.issuer=https://localhost:8443/auth/realms/master/protocol/openid-connect/certs \
+```
 If security (OpenID Connect/oauth2) is enabled CAPI needs the endpoint of your identity provider JWK.
 ###### With the API you can:
 * Get all configured API's
