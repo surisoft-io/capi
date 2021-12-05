@@ -214,23 +214,23 @@ import io.surisoft.capi.lb.schema.Mapping;
 import io.surisoft.capi.lb.schema.RunningApi;
 import io.surisoft.capi.lb.utils.ApiUtils;
 import io.surisoft.capi.lb.utils.RouteUtils;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiResponse;
-import io.swagger.annotations.ApiResponses;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
 @RestController
 @RequestMapping("/manager/api")
 @Slf4j
-@io.swagger.annotations.Api(value = "API's Management", tags = {"API's Management"})
+@Tag(name="API Manager", description = "Node and API management endpoint")
 public class ApiManager {
 
     @Autowired
@@ -248,20 +248,22 @@ public class ApiManager {
     @Autowired
     private ApiUtils apiUtils;
 
+    @Operation(summary = "Get all configured APIs")
     @GetMapping(path = "/configured")
     public ResponseEntity<Iterable<Api>> getAllApi() {
         return new ResponseEntity<>(apiRepository.findAll(), HttpStatus.OK);
     }
 
+    @Operation(summary = "Get all running APIs")
     @GetMapping(path = "/running")
     public ResponseEntity<Iterable<RunningApi>> getAllRunningApi() {
         return new ResponseEntity<>(runningApiManager.getRunningApi(), HttpStatus.OK);
     }
 
-    @ApiOperation(value = "Register a node")
+    @Operation(summary = "Register a node")
     @ApiResponses(value = {
-            @ApiResponse(code = 201, message = "Node added"),
-            @ApiResponse(code = 400, message = "Bad request")
+            @ApiResponse(responseCode = "201", description = "Node added"),
+            @ApiResponse(responseCode = "400", description = "Bad request")
     })
     @PostMapping(path="/register/node")
     public ResponseEntity<Api> newNodeMapping(@RequestBody Api api) {
@@ -288,11 +290,11 @@ public class ApiManager {
         return new ResponseEntity<>(api, HttpStatus.OK);
     }
 
-    @ApiOperation(value = "Register an API Definition (not published)")
+    @Operation(summary = "Register an API Definition (not published)")
     @ApiResponses(value = {
-            @ApiResponse(code = 201, message = "Definition Created"),
-            @ApiResponse(code = 400, message = "Bad request"),
-            @ApiResponse(code = 409, message = "Already exists")
+            @ApiResponse(responseCode = "201", description = "Node added"),
+            @ApiResponse(responseCode = "400", description = "Bad request"),
+            @ApiResponse(responseCode = "409", description = "Already exists")
     })
     @PostMapping(path="/register/definition")
     public ResponseEntity<Api> newApiDefinition(@RequestBody Api api) {
@@ -311,10 +313,10 @@ public class ApiManager {
         return new ResponseEntity<>(api, HttpStatus.OK);
     }
 
-    @ApiOperation(value = "Unregister a node, with the option of removing the entire API.")
+    @Operation(summary = "Unregister a node, with the option of removing the entire API.")
     @ApiResponses(value = {
-            @ApiResponse(code = 200, message = "Node/API removed"),
-            @ApiResponse(code = 400, message = "Bad request")
+            @ApiResponse(responseCode = "200", description = "Node/API removed"),
+            @ApiResponse(responseCode = "400", description = "Bad request")
     })
     @PostMapping(path="/unregister/node")
     public ResponseEntity<Api> deleteMapping(@RequestBody Api api) {

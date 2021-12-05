@@ -17,10 +17,10 @@ package io.surisoft.capi.lb.controller;
 
 import io.surisoft.capi.lb.schema.AliasInfo;
 import io.surisoft.capi.lb.schema.CertificateRequest;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiResponse;
-import io.swagger.annotations.ApiResponses;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
@@ -42,7 +42,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/manager/certificate")
-@Api(value = "Certificate Management", tags = {"Certificate Management"})
+@Tag(name="Certificate Management")
 @Slf4j
 public class CertificateController {
 
@@ -55,9 +55,9 @@ public class CertificateController {
     @Value("${capi.trust.store.enabled}")
     private boolean capiTrustStoreEnabled;
 
-    @ApiOperation(value = "Get all certificates")
+    @Operation(summary = "Get all certificates")
     @ApiResponses(value = {
-            @ApiResponse(code = 200, message = "All certificates trusted by CAPI")
+            @ApiResponse(responseCode = "200", description = "All certificates trusted by CAPI")
     })
     @GetMapping
     public ResponseEntity<List<AliasInfo>> getAll() {
@@ -92,10 +92,10 @@ public class CertificateController {
         return new ResponseEntity<>(aliasList, HttpStatus.OK);
     }
 
-    @ApiOperation(value = "Add a certificate to CAPI Gateway trusted store.")
+    @Operation(summary = "Add a certificate to CAPI Gateway trusted store.")
     @ApiResponses(value = {
-            @ApiResponse(code = 200, message = "Certificate trusted"),
-            @ApiResponse(code = 400, message = "Custom Trust store not detected")
+            @ApiResponse(responseCode = "200", description = "Certificate trusted"),
+            @ApiResponse(responseCode = "400", description = "Custom Trust store not detected")
     })
     @PostMapping(path = "/{alias}")
     public ResponseEntity<AliasInfo> certificateUpload(@PathVariable String alias, @RequestParam("file") MultipartFile file) {
@@ -133,10 +133,10 @@ public class CertificateController {
         return new ResponseEntity<>(aliasInfo, HttpStatus.OK);
     }
 
-    @ApiOperation(value = "Remove a certificate from CAPI Gateway trusted store.")
+    @Operation(summary = "Remove a certificate from CAPI Gateway trusted store.")
     @ApiResponses(value = {
-            @ApiResponse(code = 200, message = "Certificate removed"),
-            @ApiResponse(code = 400, message = "Custom Trust store not detected")
+            @ApiResponse(responseCode = "200", description = "Certificate removed"),
+            @ApiResponse(responseCode = "400", description = "Custom Trust store not detected")
     })
     @DeleteMapping(path = "/{alias}")
     public ResponseEntity<AliasInfo> removeFromTrust(@PathVariable String alias) {
@@ -166,10 +166,10 @@ public class CertificateController {
         return new ResponseEntity<>(aliasInfo, HttpStatus.OK);
     }
 
-    @ApiOperation(value = "Extract certificate from URL.")
+    @Operation(summary = "Extract certificate from URL.")
     @ApiResponses(value = {
-            @ApiResponse(code = 200, message = "Certificate removed"),
-            @ApiResponse(code = 400, message = "Custom Trust store not detected")
+            @ApiResponse(responseCode = "200", description = "Certificate removed"),
+            @ApiResponse(responseCode = "400", description = "Custom Trust store not detected")
     })
     @PostMapping(path = "/url")
     public ResponseEntity<AliasInfo> getCertificateFromUrl(@RequestBody CertificateRequest certificateRequest) {

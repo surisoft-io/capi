@@ -19,7 +19,7 @@ jobs:
       run: |
           echo "RELEASE_VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)" >> $GITHUB_ENV
     - name: Build with Maven
-      run: mvn package --file pom.xml #compile -DskipTests jib:build -Djib.to.auth.username=surisoft -Djib.to.auth.password=${{ secrets.DOCKER_HUB_PWD }} --file pom.xml
+      run: mvn package --file pom.xml
     - name: docker login
       run: |
           docker login -u surisoft -p ${{ secrets.DOCKER_HUB_PWD }}

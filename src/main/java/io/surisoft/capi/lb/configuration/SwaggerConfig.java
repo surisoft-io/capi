@@ -1,26 +1,18 @@
 package io.surisoft.capi.lb.configuration;
 
+import io.swagger.v3.oas.models.Components;
+import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.info.Info;
+import io.swagger.v3.oas.models.info.License;
+import io.swagger.v3.oas.models.security.SecurityRequirement;
+import io.swagger.v3.oas.models.security.SecurityScheme;
 import lombok.extern.slf4j.Slf4j;
+import org.springdoc.core.GroupedOpenApi;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import springfox.documentation.builders.ApiInfoBuilder;
-import springfox.documentation.builders.RequestHandlerSelectors;
-import springfox.documentation.service.*;
-import springfox.documentation.spi.DocumentationType;
-import springfox.documentation.spi.service.contexts.SecurityContext;
-import springfox.documentation.spring.web.plugins.Docket;
-import springfox.documentation.swagger2.annotations.EnableSwagger2;
-
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
-
-import static springfox.documentation.builders.PathSelectors.regex;
-
 
 @Configuration
-@EnableSwagger2
 @Slf4j
 public class SwaggerConfig {
 
@@ -28,45 +20,36 @@ public class SwaggerConfig {
     private boolean capiManagerSecurityEnabled;
 
     @Bean
-    public Docket labelApi() {
-        log.debug("Creating Swagger 2 Docket");
-        Docket docket = new Docket(DocumentationType.OAS_30)
-                .apiInfo(apiInfo())
-                .produces(new HashSet<>(Arrays.asList("application/json")))
-                .consumes(new HashSet<>(Arrays.asList("application/json")))
-                .select()
-                .apis(RequestHandlerSelectors.basePackage("io.surisoft.capi.lb.controller"))
-                .paths(regex("/manager/.*"))
+    public GroupedOpenApi publicApi() {
+        return GroupedOpenApi.builder()
+                .group("manager-endpoint")
+                .packagesToScan("io.surisoft.capi.lb.controller")
+                .pathsToMatch("/manager/**")
                 .build();
+    }
+
+    @Bean
+    public OpenAPI springShopOpenAPI() {
+        final String securitySchemeName = "bearerAuth";
+        OpenAPI openAPI = new OpenAPI();
         if(capiManagerSecurityEnabled) {
-            docket.securityContexts(Arrays.asList(securityContext())).securitySchemes(Arrays.asList(apiKey()));
+            openAPI
+                .addSecurityItem(new SecurityRequirement().addList(securitySchemeName))
+                .components(
+                    new Components()
+                        .addSecuritySchemes(securitySchemeName,
+                            new SecurityScheme()
+                                    .name(securitySchemeName)
+                                    .type(SecurityScheme.Type.HTTP)
+                                    .scheme("bearer")
+                                    .bearerFormat("JWT")
+                        )
+                );
         }
-        return docket;
-    }
-
-    private ApiInfo apiInfo() {
-        return new ApiInfoBuilder()
-                .title("CAPI Load Balancer")
-                .description("Management Endpoint")
-                .version("0.0.1").contact(new Contact("Surisoft","","info@surisoft.io"))
-                .build();
-    }
-
-    private ApiKey apiKey() {
-        return new ApiKey("Authorization", "Authorization", "header");
-    }
-
-    private SecurityContext securityContext() {
-        return SecurityContext.builder()
-                .securityReferences(defaultAuth())
-                //.forPaths(PathSelectors.regex("/.*"))
-                .build();
-    }
-
-    List<SecurityReference> defaultAuth() {
-        AuthorizationScope authorizationScope = new AuthorizationScope("global", "accessEverything");
-        AuthorizationScope[] authorizationScopes = new AuthorizationScope[1];
-        authorizationScopes[0] = authorizationScope;
-        return Arrays.asList(new SecurityReference("Authorization", authorizationScopes));
+        openAPI.info(new Info().title("CAPI Load Balancer")
+                .description("Management endpoint")
+                .version("v0.0.1")
+                .license(new License().name("Apache 2.0")));
+        return openAPI;
     }
 }
