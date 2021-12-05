@@ -238,6 +238,9 @@ public class CapiConfiguration {
     @Value("${capi.trust.store.password}")
     private String capiTrustStorePassword;
 
+    @Value("${capi.trust.store.enabled}")
+    private boolean capiTrustStoreEnabled;
+
     @Bean
     public Config hazelCastConfig() {
         return new CacheConfiguration();
@@ -273,7 +276,7 @@ public class CapiConfiguration {
 
     @Bean
     public void setTrustStore() {
-        if(!capiTrustStorePath.isEmpty() && !capiTrustStorePassword.isEmpty()) {
+        if(capiTrustStoreEnabled) {
             log.info("Custom trust store found, this will be the default trust store.");
             File filePath = new File(capiTrustStorePath);
             String absolutePath = filePath.getAbsolutePath();

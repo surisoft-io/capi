@@ -52,6 +52,9 @@ public class CertificateController {
     @Value("${capi.trust.store.password}")
     private String capiTrustStorePassword;
 
+    @Value("${capi.trust.store.enabled}")
+    private boolean capiTrustStoreEnabled;
+
     @ApiOperation(value = "Get all certificates")
     @ApiResponses(value = {
             @ApiResponse(code = 200, message = "All certificates trusted by CAPI")
@@ -60,7 +63,7 @@ public class CertificateController {
     public ResponseEntity<List<AliasInfo>> getAll() {
         List<AliasInfo> aliasList = new ArrayList<>();
 
-        if(capiTrustStorePath.isEmpty() && capiTrustStorePassword.isEmpty()) {
+        if(!capiTrustStoreEnabled) {
             AliasInfo aliasInfo = new AliasInfo();
             aliasInfo.setAdditionalInfo("No custom trust store was provided, to enable this feature, add a custom trust store.");
             aliasList.add(aliasInfo);
@@ -98,7 +101,7 @@ public class CertificateController {
     public ResponseEntity<AliasInfo> certificateUpload(@PathVariable String alias, @RequestParam("file") MultipartFile file) {
         AliasInfo aliasInfo = new AliasInfo();
 
-        if(capiTrustStorePath.isEmpty() && capiTrustStorePassword.isEmpty()) {
+        if(!capiTrustStoreEnabled) {
             aliasInfo = new AliasInfo();
             aliasInfo.setAdditionalInfo("No custom trust store was provided, to enable this feature, add a custom trust store.");
             return new ResponseEntity<>(aliasInfo, HttpStatus.BAD_REQUEST);
@@ -139,7 +142,7 @@ public class CertificateController {
     public ResponseEntity<AliasInfo> removeFromTrust(@PathVariable String alias) {
         AliasInfo aliasInfo = new AliasInfo();
 
-        if(capiTrustStorePath.isEmpty() && capiTrustStorePassword.isEmpty()) {
+        if(!capiTrustStoreEnabled) {
             aliasInfo = new AliasInfo();
             aliasInfo.setAdditionalInfo("No custom trust store was provided, to enable this feature, add a custom trust store.");
             return new ResponseEntity<>(aliasInfo, HttpStatus.BAD_REQUEST);
@@ -172,6 +175,12 @@ public class CertificateController {
     public ResponseEntity<AliasInfo> getCertificateFromUrl(@RequestBody CertificateRequest certificateRequest) {
         AliasInfo aliasInfo = new AliasInfo();
 
+        if(!capiTrustStoreEnabled) {
+            aliasInfo = new AliasInfo();
+            aliasInfo.setAdditionalInfo("No custom trust store was provided, to enable this feature, add a custom trust store.");
+            return new ResponseEntity<>(aliasInfo, HttpStatus.BAD_REQUEST);
+        }
+
         if(!certificateRequest.getUrl().startsWith("https://")) {
             certificateRequest.setUrl("https://" + certificateRequest.getUrl());
         }
@@ -183,7 +192,6 @@ public class CertificateController {
             HttpsURLConnection conn = (HttpsURLConnection) destinationURL.openConnection();
             conn.connect();
             Certificate[] certs = conn.getServerCertificates();
-            log.info("nb = " + certs.length);
             int i = 1;
             for (Certificate cert : certs) {
                 log.info("Certificate is: " + cert);
