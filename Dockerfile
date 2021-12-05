@@ -1,9 +1,10 @@
-FROM openjdk:15-jdk 
+FROM openjdk:15-jdk
+ARG CAPI_VERSION=0
 
 RUN mkdir /capi
 RUN mkdir /capi/logs
 
-ARG JAR_FILE=capi-lb-0.0.1.jar
+ARG JAR_FILE=capi-lb-${CAPI_VERSION}.jar
 COPY ${JAR_FILE} /capi/app.jar
 
 ENTRYPOINT  exec java -XX:InitialHeapSize=2g \
