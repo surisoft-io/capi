@@ -20,5 +20,5 @@ jobs:
           echo "RELEASE_VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)" >> $GITHUB_ENV
     - name: Build with Maven
       run: mvn package --file pom.xml #compile -DskipTests jib:build -Djib.to.auth.username=surisoft -Djib.to.auth.password=${{ secrets.DOCKER_HUB_PWD }} --file pom.xml
-    - name: Build the Docker image
+    - name: Build Docker image
       run: docker build . --build-arg "CAPI_VERSION=${{ env.RELEASE_VERSION }}" --file Dockerfile --tag surisoft/capi-lb:${{ env.RELEASE_VERSION }}
