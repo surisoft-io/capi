@@ -4,7 +4,7 @@ ARG CAPI_VERSION=0
 RUN mkdir /capi
 RUN mkdir /capi/logs
 
-ARG JAR_FILE=capi-lb-${CAPI_VERSION}.jar
+ARG JAR_FILE=target/capi-lb-${CAPI_VERSION}.jar
 COPY ${JAR_FILE} /capi/app.jar
 
 ENTRYPOINT  exec java -XX:InitialHeapSize=2g \
