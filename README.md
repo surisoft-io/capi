@@ -61,7 +61,7 @@
 * ```removeMe``` (default true) - If false, CAPI will not only remove the node requesting to be removed, but the entire API. (Example: Node 1 joins the _API-X_, Node 2 joins _API-X_, with ```removeMe=false```, if Node 2 exits _API-X_, the entire _API-X_ will be deleted)
 
 ### CAPI Manager API
-CAPI Manager is available on http://localhost:8380/swagger-ui/
+CAPI Manager is available on http://localhost:8380/swagger-ui.html
 Security to this API is disabled by default, if you need to enable security you need to provide the following properties at run time:
 ```
     -Dcapi.manager.security.enabled=true \ 
@@ -77,6 +77,7 @@ Certificate management is disabled by default, to enable it you need to provide 
 CAPI will not change JVM default certificate.
 To enable start CAPI with the following attributes:
 ```
+    -Dcapi.trust.store.enabled=true
     -Dcapi.trust.store.path=/your/path/cacerts \ 
     -Dcapi.trust.store.password=changeit \
 ```
@@ -117,7 +118,49 @@ $ java \
 
 ```
 In the example above CAPI will be available with CAPI Manager secured and certificate management enabled.
-
+### Install CAPI on Docker (with docker-compose)
+Create an _init.sql_ file, for CAPI database to be created on start, with the following script:
+```
+CREATE DATABASE IF NOT EXISTS capi;
+```
+You will see this file mapped in the docker-compose.yml below.
+```
+version: "3"
+services:
+  capi:
+    container_name: capi
+    image: surisoft/capi-lb:0.0.1
+    ports:
+      - "8380:8380"
+    environment:
+      - hazelcast.diagnostics.enabled=true
+      - hazelcast.diagnostics.directory=/capi/logs
+      - spring.datasource.url=jdbc:mysql://capi-db:3306/capi
+      - spring.datasource.username=root
+      - spring.datasource.password=secret
+      - capi.manager.security.enabled=false
+    volumes:
+      - ./logs:/capi/logs
+    depends_on:
+      - capi-db
+    networks:
+      capi-network:
+  capi-db:
+    container_name: capi-db
+    image: mysql:latest
+    ports:
+      - "3306:3306"
+    command: --init-file /data/application/init.sql
+    volumes:
+      - ./init.sql:/data/application/init.sql
+    environment:
+      - MYSQL_ROOT_USER=root
+      - MYSQL_ROOT_PASSWORD=secret
+    networks:
+      capi-network:
+networks:
+  capi-network:
+```
 ### Install CAPI on AWS EKS
 Create the cluster
 ```
