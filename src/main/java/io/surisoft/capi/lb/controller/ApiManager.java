@@ -326,7 +326,7 @@ public class ApiManager {
 
         String apiId = apiUtils.getApiId(api);
         Optional<Api> existingApi = apiRepository.findById(apiId);
-        if(existingApi.isEmpty()) {
+        if(!existingApi.isPresent()) {
             return new  ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
 
@@ -375,24 +375,10 @@ public class ApiManager {
     }
 
     private boolean isNodeInfoValid(Api api) {
-        if(api == null || api.getContext() == null || api.getName() == null || api.getMappingList() == null || api.getMappingList().isEmpty()) {
-            return false;
-        } else {
-            return true;
-        }
+        return api != null && api.getContext() != null && api.getName() != null && api.getMappingList() != null && !api.getMappingList().isEmpty();
     }
 
     private boolean isDefinitionValid(Api api) {
-        if(api == null || api.getContext() == null || api.getName() == null) {
-            return false;
-        } else {
-            return true;
-        }
-    }
-
-    private void setMappingApi(Api api) {
-        for(Mapping mapping : api.getMappingList()) {
-            //mapping.setApi(api);
-        }
+        return api != null && api.getContext() != null && api.getName() != null;
     }
 }

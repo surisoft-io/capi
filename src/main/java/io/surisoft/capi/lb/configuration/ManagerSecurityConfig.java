@@ -1,6 +1,7 @@
 package io.surisoft.capi.lb.configuration;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.JWSAlgorithm;
@@ -29,7 +30,6 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.text.ParseException;
 import java.util.HashMap;
-import java.util.Map;
 
 @Configuration
 @Slf4j
@@ -76,7 +76,8 @@ public class ManagerSecurityConfig extends WebSecurityConfigurerAdapter {
         public Jwt decode(String token) throws JwtException {
             try {
                 SignedJWT decodedToken = SignedJWT.parse(token);
-                Map<String,Object> headerMap = new ObjectMapper().readValue(decodedToken.getHeader().toString(), HashMap.class);
+                TypeReference<HashMap<String, Object>> typeReference = new TypeReference<HashMap<String, Object>>() {};
+                HashMap<String, Object> headerMap = new ObjectMapper().readValue(decodedToken.getHeader().toString(), typeReference);
 
                 ConfigurableJWTProcessor<SecurityContext> jwtProcessor = new DefaultJWTProcessor<>();
                 JWKSource<SecurityContext> keySource = new RemoteJWKSet<>(new URL(capiManagerSecurityIssuer));

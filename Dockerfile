@@ -1,4 +1,4 @@
-FROM openjdk:15-jdk
+FROM openjdk:17-jdk
 ARG CAPI_VERSION=0
 
 RUN mkdir /capi

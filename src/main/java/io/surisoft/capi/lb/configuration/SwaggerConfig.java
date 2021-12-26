@@ -19,6 +19,12 @@ public class SwaggerConfig {
     @Value("${capi.manager.security.enabled}")
     private boolean capiManagerSecurityEnabled;
 
+    @Value("${build.version}")
+    private String capiVersion;
+
+    @Value("${capi.name}")
+    private String capiName;
+
     @Bean
     public GroupedOpenApi publicApi() {
         return GroupedOpenApi.builder()
@@ -46,9 +52,9 @@ public class SwaggerConfig {
                         )
                 );
         }
-        openAPI.info(new Info().title("CAPI Load Balancer")
+        openAPI.info(new Info().title(capiName)
                 .description("Management endpoint")
-                .version("v0.0.1")
+                .version(capiVersion)
                 .license(new License().name("Apache 2.0")));
         return openAPI;
     }

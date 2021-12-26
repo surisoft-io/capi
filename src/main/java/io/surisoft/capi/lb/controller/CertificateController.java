@@ -81,8 +81,8 @@ public class CertificateController {
                 AliasInfo aliasInfo = new AliasInfo();
                 aliasInfo.setAlias(alias);
                 X509Certificate certificate = (X509Certificate) keystore.getCertificate(alias);
-                aliasInfo.setIssuerDN(certificate.getIssuerDN().getName());
-                aliasInfo.setSubjectDN(certificate.getSubjectDN().getName());
+                aliasInfo.setIssuerDN(certificate.getIssuerX500Principal().getName());
+                aliasInfo.setSubjectDN(certificate.getSubjectX500Principal().getName());
                 aliasList.add(aliasInfo);
             }
         } catch(Exception e) {
@@ -116,8 +116,8 @@ public class CertificateController {
             Certificate newTrusted = certificateFactory.generateCertificate(file.getInputStream());
 
             X509Certificate x509Object = (X509Certificate) newTrusted;
-            aliasInfo.setSubjectDN(x509Object.getSubjectDN().getName());
-            aliasInfo.setIssuerDN(x509Object.getIssuerDN().getName());
+            aliasInfo.setSubjectDN(x509Object.getSubjectX500Principal().getName());
+            aliasInfo.setIssuerDN(x509Object.getIssuerX500Principal().getName());
 
             keystore.setCertificateEntry(alias, newTrusted);
 
@@ -192,7 +192,6 @@ public class CertificateController {
             HttpsURLConnection conn = (HttpsURLConnection) destinationURL.openConnection();
             conn.connect();
             Certificate[] certs = conn.getServerCertificates();
-            int i = 1;
             for (Certificate cert : certs) {
                 log.info("Certificate is: " + cert);
                 if(cert instanceof X509Certificate) {
@@ -219,8 +218,8 @@ public class CertificateController {
             keystore.load(is, capiTrustStorePassword.toCharArray());
 
             X509Certificate x509Object = (X509Certificate) newTrusted;
-            aliasInfo.setSubjectDN(x509Object.getSubjectDN().getName());
-            aliasInfo.setIssuerDN(x509Object.getIssuerDN().getName());
+            aliasInfo.setSubjectDN(x509Object.getSubjectX500Principal().getName());
+            aliasInfo.setIssuerDN(x509Object.getIssuerX500Principal().getName());
 
             keystore.setCertificateEntry(alias, newTrusted);
 
