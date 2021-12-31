@@ -182,11 +182,9 @@ public class CertificateController {
         }
 
         if(!certificateRequest.getUrl().startsWith("https://")) {
-            certificateRequest.setUrl("https://" + certificateRequest.getUrl());
+            certificateRequest.setUrl("https://" + certificateRequest.getUrl()  + ":" + certificateRequest.getPort());
         }
-        if(!certificateRequest.getUrl().contains(":")) {
-            certificateRequest.setUrl(certificateRequest.getUrl() + ":443");
-        }
+        
         try {
             URL destinationURL = new URL(certificateRequest.getUrl());
             HttpsURLConnection conn = (HttpsURLConnection) destinationURL.openConnection();
