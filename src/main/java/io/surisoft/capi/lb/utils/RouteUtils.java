@@ -280,6 +280,9 @@ public class RouteUtils {
             if(api.getSocketTimeout() > -1) {
                 endpoint = httpUtils.setHttpSocketTimeout(endpoint, api.getSocketTimeout());
             }
+            if(mapping.isIngress()) {
+                endpoint = httpUtils.setIngressEndpoint(endpoint, mapping.getHostname());
+            }
             transformedEndpointList.add(endpoint);
         }
         return transformedEndpointList.stream().toArray(n -> new String[n]);

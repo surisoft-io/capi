@@ -227,6 +227,7 @@ public class Constants {
     public static final String CAPI_INTERNAL_ERROR_CLASS_NAME = "capi-internal-error-class-name";
     public static final String HTTP_CONNECT_TIMEOUT = "connectTimeout=";
     public static final String HTTP_SOCKET_TIMEOUT = "socketTimeout=";
+    public static final String CUSTOM_HOST_HEADER = "customHostHeader=";
     public static final String ERROR_API_SHOW_TRACE_ID = "show-trace-id";
     public static final String ERROR_API_SHOW_INTERNAL_ERROR_MESSAGE = "show-internal-error-message";
     public static final String ERROR_API_SHOW_INTERNAL_ERROR_CLASS = "show-internal-error-class";

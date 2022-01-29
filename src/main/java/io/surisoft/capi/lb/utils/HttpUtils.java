@@ -224,4 +224,11 @@ public class HttpUtils {
         }
         return endpoint + Constants.HTTP_SOCKET_TIMEOUT + timeout;
     }
+
+    public String setIngressEndpoint(String endpoint, String hostName) {
+        if (!endpoint.endsWith("&")) {
+            endpoint = endpoint + "&";
+        }
+        return endpoint + Constants.CUSTOM_HOST_HEADER + hostName;
+    }
 }
