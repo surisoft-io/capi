@@ -28,13 +28,13 @@
     		    "hostname": "your.app.node1",
     		    "port": 8080,
     		    "rootContext": "your-app-context",
-                "ingress": false
+                        "ingress": false
     		},
     		{
     		    "hostname": "your.app.node2",
     		    "port": 8080,
     		    "rootContext": "your-app-context",
-                "ingress": true
+                        "ingress": true
     		}
     	],
     	"roundRobinEnabled": true,
