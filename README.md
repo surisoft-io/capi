@@ -121,18 +121,15 @@ $ java \
      -jar <CAPI_JAR> > $PWD/logs/capi.log 2>&1 & echo $! > capi.pid
 
 ```
-In the example above CAPI will be available with CAPI Manager secured and certificate management enabled.
 
+In the example above CAPI will be available with CAPI Manager secured and certificate management enabled.
 
 ### Install CAPI on Docker (with docker-compose)
 Create an _init.sql_ file, for CAPI database to be created on start, with the following script:
-
 ```
 CREATE DATABASE IF NOT EXISTS capi;
 ```
-
 You will see this file mapped in the docker-compose.yml below.
-
 ```
 version: "3"
 services:
