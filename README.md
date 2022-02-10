@@ -118,9 +118,8 @@ $ java \
      -Dcapi.trust.store.password=changeit \
      -Dcapi.manager.security.enabled=true \ 
      -Dcapi.manager.security.issuer=https://localhost:8443/auth/realms/master/protocol/openid-connect/certs \
-     -jar <CAPI_JAR> 
-
-```
+     -jar <CAPI_JAR> > $PWD/logs/capi.log 2>&1 & echo $! > capi.pid
+   ```
 
 In the example above CAPI will be available with CAPI Manager secured and certificate management enabled.
 
