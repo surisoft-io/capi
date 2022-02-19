@@ -21,9 +21,6 @@ import java.util.Properties;
 @Slf4j
 public class PersistenceConfiguration {
 
-    @Value("${capi.persistence.enabled}")
-    private boolean capiPersistenceEnabled;
-
     @Value("${spring.datasource.url}")
     private String datasourceUrl;
 
@@ -45,51 +42,39 @@ public class PersistenceConfiguration {
     @Bean
     @ConditionalOnProperty(prefix = "capi.persistence", name = "enabled", havingValue = "true")
     public LocalContainerEntityManagerFactoryBean entityManagerFactory() {
-        if(capiPersistenceEnabled) {
-            LocalContainerEntityManagerFactoryBean localContainerEntityManagerFactoryBean = new LocalContainerEntityManagerFactoryBean();
-            localContainerEntityManagerFactoryBean.setDataSource(dataSource());
-            localContainerEntityManagerFactoryBean.setPackagesToScan(new String[] {Constants.SCHEMA_PACKAGES_TO_SCAN });
+        LocalContainerEntityManagerFactoryBean localContainerEntityManagerFactoryBean = new LocalContainerEntityManagerFactoryBean();
+        localContainerEntityManagerFactoryBean.setDataSource(dataSource());
+        localContainerEntityManagerFactoryBean.setPackagesToScan(new String[] {Constants.SCHEMA_PACKAGES_TO_SCAN });
 
-            JpaVendorAdapter vendorAdapter = new HibernateJpaVendorAdapter();
-            localContainerEntityManagerFactoryBean.setJpaVendorAdapter(vendorAdapter);
-            localContainerEntityManagerFactoryBean.setJpaProperties(additionalProperties());
-            return localContainerEntityManagerFactoryBean;
-        }
-        return null;
+        JpaVendorAdapter vendorAdapter = new HibernateJpaVendorAdapter();
+        localContainerEntityManagerFactoryBean.setJpaVendorAdapter(vendorAdapter);
+        localContainerEntityManagerFactoryBean.setJpaProperties(additionalProperties());
+        return localContainerEntityManagerFactoryBean;
     }
 
     @Bean
     @ConditionalOnProperty(prefix = "capi.persistence", name = "enabled", havingValue = "true")
     public DataSource dataSource() {
-        if(capiPersistenceEnabled) {
-            DriverManagerDataSource dataSource = new DriverManagerDataSource();
-            dataSource.setDriverClassName(driverName);
-            dataSource.setUsername(datasourceUsername);
-            dataSource.setPassword(datasourcePassword);
-            dataSource.setUrl(datasourceUrl);
-            return dataSource;
-        }
-        return null;
+        DriverManagerDataSource dataSource = new DriverManagerDataSource();
+        dataSource.setDriverClassName(driverName);
+        dataSource.setUsername(datasourceUsername);
+        dataSource.setPassword(datasourcePassword);
+        dataSource.setUrl(datasourceUrl);
+        return dataSource;
     }
 
     @Bean
     @ConditionalOnProperty(prefix = "capi.persistence", name = "enabled", havingValue = "true")
     public PlatformTransactionManager transactionManager() {
-        if(capiPersistenceEnabled) {
-            JpaTransactionManager transactionManager = new JpaTransactionManager();
-            transactionManager.setEntityManagerFactory(entityManagerFactory().getObject());
-            return transactionManager;
-        }
-        return null;
+        JpaTransactionManager transactionManager = new JpaTransactionManager();
+        transactionManager.setEntityManagerFactory(entityManagerFactory().getObject());
+        return transactionManager;
     }
 
     @Bean
     @ConditionalOnProperty(prefix = "capi.persistence", name = "enabled", havingValue = "true")
     public PersistenceExceptionTranslationPostProcessor exceptionTranslation(){
-        if(capiPersistenceEnabled) {
-            return new PersistenceExceptionTranslationPostProcessor();
-        }
-        return null;
+       return new PersistenceExceptionTranslationPostProcessor();
     }
 
     private Properties additionalProperties() {
