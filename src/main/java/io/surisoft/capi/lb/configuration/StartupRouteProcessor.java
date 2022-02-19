@@ -214,6 +214,7 @@ import io.surisoft.capi.lb.utils.RouteUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.camel.CamelContext;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
@@ -239,14 +240,30 @@ public class StartupRouteProcessor {
     @Autowired
     private StickySessionCacheManager stickySessionCacheManager;
 
+    @Value("${capi.persistence.enabled}")
+    private boolean capiPersistenceEnabled;
 
     @PostConstruct
     public void getPersistedRoutes() {
-        Collection<Api> apiList = apiRepository.findByPublished(true);
-        for(Api api : apiList) {
-            if(api.getHttpMethod().equals(HttpMethod.ALL)) {
-                List<String> routeIdList = routeUtils.getAllRouteIdForAGivenApi(api);
-                for(String routeId : routeIdList) {
+        if(capiPersistenceEnabled) {
+            Collection<Api> apiList = apiRepository.findByPublished(true);
+            for(Api api : apiList) {
+                if(api.getHttpMethod().equals(HttpMethod.ALL)) {
+                    List<String> routeIdList = routeUtils.getAllRouteIdForAGivenApi(api);
+                    for(String routeId : routeIdList) {
+                        if(runningApiManager.getRunningApiByRouteId(routeId) != null) {
+                            try {
+                                log.trace("Running API with route ID: {}, already cached, deploying the route.", routeId);
+                                camelContext.addRoutes(new SingleRouteProcessor(camelContext, api, routeUtils, runningApiManager.getRunningApiByRouteId(routeId), apiRepository, stickySessionCacheManager));
+                            } catch (Exception e) {
+                                log.error(e.getMessage());
+                            }
+                        } else {
+                            runningApiManager.runApi(routeId, api, routeUtils.getMethodFromRouteId(routeId));
+                        }
+                    }
+                } else {
+                    String routeId = routeUtils.getRouteId(api, api.getHttpMethod().getMethod());
                     if(runningApiManager.getRunningApiByRouteId(routeId) != null) {
                         try {
                             log.trace("Running API with route ID: {}, already cached, deploying the route.", routeId);
@@ -254,22 +271,10 @@ public class StartupRouteProcessor {
                         } catch (Exception e) {
                             log.error(e.getMessage());
                         }
-                    } else {
-                        runningApiManager.runApi(routeId, api, routeUtils.getMethodFromRouteId(routeId));
-                    }
-                }
-            } else {
-                String routeId = routeUtils.getRouteId(api, api.getHttpMethod().getMethod());
-                if(runningApiManager.getRunningApiByRouteId(routeId) != null) {
-                    try {
-                        log.trace("Running API with route ID: {}, already cached, deploying the route.", routeId);
-                        camelContext.addRoutes(new SingleRouteProcessor(camelContext, api, routeUtils, runningApiManager.getRunningApiByRouteId(routeId), apiRepository, stickySessionCacheManager));
-                    } catch (Exception e) {
-                        log.error(e.getMessage());
-                    }
 
-                } else {
-                    runningApiManager.runApi(routeUtils.getRouteId(api, api.getHttpMethod().getMethod()), api);
+                    } else {
+                        runningApiManager.runApi(routeUtils.getRouteId(api, api.getHttpMethod().getMethod()), api);
+                    }
                 }
             }
         }
