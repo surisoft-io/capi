@@ -213,6 +213,7 @@ public class CacheConstants {
     public static final String STICKY_SESSION_IMAP_NAME = "stickySession";
     public static final String CONSUL_WORKER_NODE_IMAP_NAME = "consulWorkerNode";
     public static final String API_IMAP_NAME = "api";
+    public static final String CONSUL_API_IMAP_NAME = "consul_api";
     public static final String THROTTLING_POLICIES_IMAP_NAME = "throttlingPolicies";
     public static final String CONSUL_WORKER_NODE_ID = "consulWorkerNodeID";
 }

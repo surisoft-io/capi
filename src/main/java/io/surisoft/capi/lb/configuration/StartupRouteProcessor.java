@@ -217,13 +217,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
+import java.util.Collection;
 import java.util.List;
 
 @Component
 @Slf4j
 public class StartupRouteProcessor {
 
-    //@Autowired
+    @Autowired
     private ApiRepository apiRepository;
 
     @Autowired
@@ -239,9 +240,9 @@ public class StartupRouteProcessor {
     private StickySessionCacheManager stickySessionCacheManager;
 
 
-    //@PostConstruct
+    @PostConstruct
     public void getPersistedRoutes() {
-        List<Api> apiList = apiRepository.findByPublished(true);
+        Collection<Api> apiList = apiRepository.findByPublished(true);
         for(Api api : apiList) {
             if(api.getHttpMethod().equals(HttpMethod.ALL)) {
                 List<String> routeIdList = routeUtils.getAllRouteIdForAGivenApi(api);

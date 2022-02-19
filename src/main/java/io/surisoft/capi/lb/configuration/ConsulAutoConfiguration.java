@@ -1,12 +1,15 @@
 package io.surisoft.capi.lb.configuration;
 
+import io.surisoft.capi.lb.cache.ConsulCacheManager;
 import io.surisoft.capi.lb.cache.ConsulDiscoveryCacheManager;
 import io.surisoft.capi.lb.cache.RunningApiManager;
+import io.surisoft.capi.lb.cache.StickySessionCacheManager;
 import io.surisoft.capi.lb.processor.ConsulNodeDiscovery;
 import io.surisoft.capi.lb.repository.ApiRepository;
 import io.surisoft.capi.lb.utils.ApiUtils;
 import io.surisoft.capi.lb.utils.RouteUtils;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.camel.CamelContext;
 import org.apache.camel.builder.RouteBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -32,18 +35,21 @@ public class ConsulAutoConfiguration {
     @Autowired
     private ApiUtils apiUtils;
 
-    //@Autowired
-    private ApiRepository apiRepository;
-
     @Autowired
     private RouteUtils routeUtils;
 
     @Autowired
-    private RunningApiManager runningApiManager;
+    private StickySessionCacheManager stickySessionCacheManager;
+
+    @Autowired
+    private CamelContext camelContext;
+
+    @Autowired
+    private ConsulCacheManager consulCacheManager;
 
     @Bean(name = "consulNodeDiscovery")
     public ConsulNodeDiscovery consulNodeDiscovery() {
-        return new ConsulNodeDiscovery(capiConsulHost, apiUtils, apiRepository, routeUtils, runningApiManager);
+        return new ConsulNodeDiscovery(camelContext, capiConsulHost, apiUtils, routeUtils, stickySessionCacheManager, consulCacheManager);
     }
 
     @Bean
@@ -53,9 +59,9 @@ public class ConsulAutoConfiguration {
             return new RouteBuilder() {
                 @Override
                 public void configure() throws Exception {
-                   from("timer:consul-inspect?period=" + consulTimerInterval + "s")
-                                .to("bean:consulNodeDiscovery?method=processInfo")
-                                .routeId("consul-discovery-service");
+                    from("timer:consul-inspect?period=" + consulTimerInterval + "s")
+                            .to("bean:consulNodeDiscovery?method=processInfo")
+                            .routeId("consul-discovery-service");
                 }
             };
         } else {

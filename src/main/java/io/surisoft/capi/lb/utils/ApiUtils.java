@@ -205,19 +205,21 @@
 
 package io.surisoft.capi.lb.utils;
 
+import io.surisoft.capi.lb.cache.ConsulCacheManager;
 import io.surisoft.capi.lb.cache.RunningApiManager;
+import io.surisoft.capi.lb.cache.StickySessionCacheManager;
+import io.surisoft.capi.lb.configuration.ConsulRouteProcessor;
 import io.surisoft.capi.lb.repository.ApiRepository;
 import io.surisoft.capi.lb.schema.Api;
 import io.surisoft.capi.lb.schema.ConsulObject;
 import io.surisoft.capi.lb.schema.HttpMethod;
 import io.surisoft.capi.lb.schema.Mapping;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.camel.CamelContext;
 import org.apache.camel.util.json.JsonObject;
 import org.springframework.stereotype.Component;
 
-import java.util.ArrayList;
-import java.util.Base64;
-import java.util.List;
+import java.util.*;
 
 @Component
 @Slf4j
@@ -266,7 +268,20 @@ public class ApiUtils {
     }
 
     public void updateExistingApi(Api existingApi, Api incomingApi, ApiRepository apiRepository, RouteUtils routeUtils, RunningApiManager runningApiManager) {
-        if(isMappingChanged(existingApi.getMappingList(), incomingApi.getMappingList())) {
+        if(incomingApi.getMappingList().size() == 1) {
+            if(!existingApi.getMappingList().contains(incomingApi.getMappingList().get(0))) {
+                existingApi.getMappingList().add(incomingApi.getMappingList().get(0));
+                apiRepository.update(existingApi);
+            }
+            try {
+                List<String> apiRouteIdList = routeUtils.getAllRouteIdForAGivenApi(existingApi);
+                for(String routeId : apiRouteIdList) {
+                    runningApiManager.updateRunningApi(routeId);
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        } else if(isMappingChanged(existingApi.getMappingList(), incomingApi.getMappingList())) {
             log.trace("Changes detected for API: {}, redeploying routes.", existingApi.getId());
             existingApi.setMappingList(incomingApi.getMappingList());
             apiRepository.update(existingApi);
@@ -284,20 +299,27 @@ public class ApiUtils {
         }
     }
 
-    public void updateAllMappings(Api existingApi, Api newApiConfiguration, ApiRepository apiRepository, RouteUtils routeUtils, RunningApiManager runningApiManager) {
-        log.trace("Updating All mappings for existng Api: {}", existingApi.getId());
+    public void updateConsulExistingApi(Api existingApi, Api incomingApi, ConsulCacheManager apiCacheManager, RouteUtils routeUtils, CamelContext camelContext, StickySessionCacheManager stickySessionCacheManager) {
 
-        if(refreshMapping(existingApi.getMappingList(), newApiConfiguration.getMappingList())) {
-            log.trace("Different configuration detected clearing mappings and recreating");
-            existingApi.getMappingList().clear();
-            existingApi.setMappingList(newApiConfiguration.getMappingList());
-            //apiRepository.save(existingApi);
-            List<String> routeIdList = routeUtils.getAllRouteIdForAGivenApi(newApiConfiguration);
-            for(String routeId : routeIdList) {
-                runningApiManager.updateRunningApi(routeId);
+        if(isMappingChanged(existingApi.getMappingList(), incomingApi.getMappingList())) {
+            log.trace("Changes detected for API: {}, redeploying routes.", existingApi.getId());
+            existingApi.setMappingList(incomingApi.getMappingList());
+            apiCacheManager.getCachedApi().put(existingApi.getId(), existingApi);
+
+            try {
+                List<String> apiRouteIdList = routeUtils.getAllRouteIdForAGivenApi(existingApi);
+                for(String routeId : apiRouteIdList) {
+                    camelContext.getRouteController().stopRoute(routeId);
+                    camelContext.removeRoute(routeId);
+                    camelContext.addRoutes(new ConsulRouteProcessor(camelContext, incomingApi, routeUtils, routeId, stickySessionCacheManager));
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
             }
+
+
         } else {
-            log.trace("No changes detected for Api: {}", existingApi.getId());
+            log.trace("No changes detected for API: {}.", existingApi.getId());
         }
     }
 
@@ -336,5 +358,35 @@ public class ApiUtils {
             }
         }
         return false;
+    }
+
+    public void removeConsulUnusedApi(CamelContext camelContext, RouteUtils routeUtils, ConsulCacheManager consulCacheManager, List<String> serviceNameList) throws Exception {
+        for(Map.Entry<String, Api> api : consulCacheManager.getCachedApi().entrySet()) {
+            if(!serviceNameList.contains(api.getValue().getName())) {
+                consulCacheManager.getCachedApi().remove(api.getValue().getId());
+                List<String> apiRouteIdList = routeUtils.getAllRouteIdForAGivenApi(api.getValue());
+                for(String routeId : apiRouteIdList) {
+                    camelContext.getRouteController().stopRoute(routeId);
+                    camelContext.removeRoute(routeId);
+                }
+            }
+        }
+    }
+
+    public void removeConsulUnusedApi(CamelContext camelContext, RouteUtils routeUtils, ConsulCacheManager consulCacheManager, Map<String, List<Mapping>> servicesStructure, String serviceName) throws Exception {
+        Set<String> apiNameList = new HashSet<>();
+        for (var entry : servicesStructure.keySet()) {
+            apiNameList.add(serviceName + ":" + entry);
+        }
+        for(Map.Entry<String, Api> api : consulCacheManager.getCachedApi().entrySet()) {
+            if(!apiNameList.contains(api.getKey())) {
+                consulCacheManager.getCachedApi().remove(api.getValue().getId());
+                List<String> apiRouteIdList = routeUtils.getAllRouteIdForAGivenApi(api.getValue());
+                for(String routeId : apiRouteIdList) {
+                    camelContext.getRouteController().stopRoute(routeId);
+                    camelContext.removeRoute(routeId);
+                }
+            }
+        }
     }
 }

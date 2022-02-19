@@ -214,7 +214,6 @@ public class CacheConfiguration extends Config {
 
     public CacheConfiguration() {
         super();
-        getCPSubsystemConfig().setCPMemberCount(3);
         MapConfig mapConfig = new MapConfig()
                 .setName("running-api-configuration")
                 .setTimeToLiveSeconds(-1);

@@ -8,6 +8,7 @@ import org.springframework.stereotype.Repository;
 
 import javax.persistence.EntityManager;
 import javax.persistence.Query;
+import javax.persistence.TypedQuery;
 import javax.swing.text.html.parser.Entity;
 import javax.transaction.Transactional;
 import java.util.Collection;
@@ -16,7 +17,7 @@ import java.util.Optional;
 
 @Component
 @Transactional
-public class ApiRepository { //extends JpaRepository<Api, String> {
+public class ApiRepository {
 
     @Autowired(required = false)
     private EntityManager entityManager;
@@ -38,7 +39,13 @@ public class ApiRepository { //extends JpaRepository<Api, String> {
         entityManager.merge(api);
     }
 
-    public List<Api> findByPublished(boolean published) {
-        return null;
+    public Collection<Api> findByPublished(boolean published) {
+        TypedQuery<Api> query = entityManager.createQuery("SELECT a FROM Api a WHERE a.published = :published" , Api.class);
+        return query.setParameter("published", published).getResultList();
+    }
+
+    public void delete(Api api) {
+        Api managed = entityManager.merge(api);
+        entityManager.remove(managed);
     }
 }

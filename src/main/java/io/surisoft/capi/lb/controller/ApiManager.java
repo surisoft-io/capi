@@ -210,6 +210,7 @@ import io.surisoft.capi.lb.repository.ApiRepository;
 import io.surisoft.capi.lb.repository.MappingRepository;
 import io.surisoft.capi.lb.schema.Api;
 import io.surisoft.capi.lb.schema.HttpMethod;
+import io.surisoft.capi.lb.schema.Mapping;
 import io.surisoft.capi.lb.schema.RunningApi;
 import io.surisoft.capi.lb.utils.ApiUtils;
 import io.surisoft.capi.lb.utils.RouteUtils;
@@ -224,6 +225,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+
+import java.util.List;
 import java.util.Optional;
 
 @RestController
@@ -235,7 +238,7 @@ public class ApiManager {
     @Autowired
     private ApiRepository apiRepository;
 
-    //@Autowired
+    @Autowired
     private MappingRepository mappingRepository;
 
     @Autowired
@@ -321,7 +324,7 @@ public class ApiManager {
         api.setId(apiId);
         apiRepository.save(api);
         return new ResponseEntity<>(api, HttpStatus.OK);
-    }
+    }*/
 
     @Operation(summary = "Unregister a node, with the option of removing the entire API.")
     @ApiResponses(value = {
@@ -330,6 +333,10 @@ public class ApiManager {
     })
     @PostMapping(path="/unregister/node")
     public ResponseEntity<Api> deleteMapping(@RequestBody Api api) {
+        if(!capiPersistenceEnabled) {
+            return new  ResponseEntity<>(HttpStatus.NOT_IMPLEMENTED);
+        }
+
         if(!isNodeInfoValid(api)) {
             return new  ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
@@ -356,7 +363,7 @@ public class ApiManager {
                 apiRepository.delete(existingApi.get());
                 mappingRepository.delete(mapping);
             } else {
-                apiRepository.save(existingApi.get());
+                apiRepository.update(existingApi.get());
                 mappingRepository.delete(mapping);
                 if(existingApi.get().getHttpMethod().equals(HttpMethod.ALL)) {
                     //update all
@@ -382,7 +389,7 @@ public class ApiManager {
             apiRepository.delete(existingApi.get());
         }
         return new ResponseEntity<>(HttpStatus.OK);
-    }*/
+    }
 
     private boolean isNodeInfoValid(Api api) {
         return api != null && api.getContext() != null && api.getName() != null && api.getMappingList() != null && !api.getMappingList().isEmpty();
