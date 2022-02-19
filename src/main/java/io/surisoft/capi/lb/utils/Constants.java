@@ -211,6 +211,7 @@ public class Constants {
     }
 
     public static final String APPLICATION_NAME = "CAPI";
+    public static final String SCHEMA_PACKAGES_TO_SCAN = "io.surisoft.capi.lb.schema";
     public static final String FAIL_REST_ENDPOINT_OBJECT = "http:%s?throwExceptionOnFailure=false&connectTimeout=1000&bridgeEndpoint=true&copyHeaders=true&connectionClose=true";
     public static final String AUTHORIZATION_HEADER = "Authorization";
     public static final String BLOCK_IF_IN_ERROR_HEADER = "block-if-in-error";

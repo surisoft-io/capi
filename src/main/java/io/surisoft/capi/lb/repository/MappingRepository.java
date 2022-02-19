@@ -6,7 +6,7 @@ import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
 
-@Repository
-public interface MappingRepository extends JpaRepository<Mapping, String> {
+//@Repository
+public interface MappingRepository { //extends JpaRepository<Mapping, String> {
     Optional<Mapping> findByRootContextAndHostnameAndPort(String rootContext, String hostname, int port);
 }

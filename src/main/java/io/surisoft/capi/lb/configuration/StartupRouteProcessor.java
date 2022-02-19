@@ -223,7 +223,7 @@ import java.util.List;
 @Slf4j
 public class StartupRouteProcessor {
 
-    @Autowired
+    //@Autowired
     private ApiRepository apiRepository;
 
     @Autowired
@@ -239,7 +239,7 @@ public class StartupRouteProcessor {
     private StickySessionCacheManager stickySessionCacheManager;
 
 
-    @PostConstruct
+    //@PostConstruct
     public void getPersistedRoutes() {
         List<Api> apiList = apiRepository.findByPublished(true);
         for(Api api : apiList) {

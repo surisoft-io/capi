@@ -37,7 +37,7 @@ public class ConsulNodeDiscovery {
         this.runningApiManager = runningApiManager;
     }
 
-    public void processInfo() {
+    /*public void processInfo() {
         getAllServices();
     }
 
@@ -100,5 +100,5 @@ public class ConsulNodeDiscovery {
                 log.info(e.getMessage());
             }
         });
-    }
+    }*/
 }

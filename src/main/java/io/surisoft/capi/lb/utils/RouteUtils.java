@@ -310,11 +310,12 @@ public class RouteUtils {
     }
 
     public String getRouteId(Api api, String httpMethod) {
-        JsonObject jsonObject = new JsonObject();
+        return api.getName() + ":" + api.getContext() + ":" + httpMethod;
+        /*JsonObject jsonObject = new JsonObject();
         jsonObject.put("apiName", api.getName());
         jsonObject.put("apiContext", api.getContext());
         jsonObject.put("httpMethod", httpMethod);
-        return new String(Base64.getEncoder().encode(jsonObject.toJson().getBytes()));
+        return new String(Base64.getEncoder().encode(jsonObject.toJson().getBytes()));*/
     }
 
     public List<String> getAllRouteIdForAGivenApi(Api api) {
@@ -327,9 +328,10 @@ public class RouteUtils {
     }
 
     public String getMethodFromRouteId(String routeId) {
-        String decodedRouteId = new String(Base64.getDecoder().decode(routeId.getBytes()));
+        return routeId.split(":")[2];
+        /*String decodedRouteId = new String(Base64.getDecoder().decode(routeId.getBytes()));
         JsonObject routeIdObject = Jsoner.deserialize(decodedRouteId, new JsonObject());
-        return routeIdObject.getString("httpMethod");
+        return routeIdObject.getString("httpMethod");*/
     }
 
     public Api setApiDefaults(Api api) {

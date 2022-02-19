@@ -224,7 +224,8 @@ import java.util.List;
 public class ApiUtils {
 
     public String getApiId(Api api) {
-        JsonObject jsonObject = new JsonObject();
+        return api.getName() + ":" + api.getContext();
+        /*JsonObject jsonObject = new JsonObject();
         jsonObject.put("apiName", api.getName());
         jsonObject.put("apiContext", api.getContext());
         if(api.getHttpMethod() == null || api.getHttpMethod().equals(HttpMethod.ALL)) {
@@ -233,16 +234,16 @@ public class ApiUtils {
         } else {
             jsonObject.put("httpMethod", api.getHttpMethod().getMethod());
         }
-        return new String(Base64.getEncoder().encode(jsonObject.toJson().getBytes()));
+        return new String(Base64.getEncoder().encode(jsonObject.toJson().getBytes()));*/
     }
 
-    public String getApiId(String apiName) {
+    /*public String getApiId(String apiName) {
         JsonObject jsonObject = new JsonObject();
         jsonObject.put("apiName", apiName);
         jsonObject.put("apiContext", apiName);
         jsonObject.put("httpMethod", HttpMethod.ALL);
         return new String(Base64.getEncoder().encode(jsonObject.toJson().getBytes()));
-    }
+    }*/
 
     public boolean isMappingNew(Api existingApi, Mapping mapping) {
         boolean isNew = false;
@@ -264,29 +265,22 @@ public class ApiUtils {
         return mapping;
     }
 
-    public void updateExistingApi(Api existingApi, Api newApiConfiguration, ApiRepository apiRepository, RouteUtils routeUtils, RunningApiManager runningApiManager) {
-        log.trace("Updating existng Api: {}", existingApi.getId());
-        List<Mapping> apiCallMappingList = newApiConfiguration.getMappingList();
+    public void updateExistingApi(Api existingApi, Api incomingApi, ApiRepository apiRepository, RouteUtils routeUtils, RunningApiManager runningApiManager) {
+        if(isMappingChanged(existingApi.getMappingList(), incomingApi.getMappingList())) {
+            log.trace("Changes detected for API: {}, redeploying routes.", existingApi.getId());
+            existingApi.setMappingList(incomingApi.getMappingList());
+            apiRepository.update(existingApi);
 
-        if(apiCallMappingList.size() == 1) {
-            if(isMappingNew(existingApi, apiCallMappingList.get(0))) {
-                existingApi.getMappingList().add(apiCallMappingList.get(0));
-                apiRepository.save(existingApi);
+            try {
+                List<String> apiRouteIdList = routeUtils.getAllRouteIdForAGivenApi(existingApi);
+                for(String routeId : apiRouteIdList) {
+                    runningApiManager.updateRunningApi(routeId);
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
             }
         } else {
-            existingApi.getMappingList().clear();
-            existingApi.setMappingList(apiCallMappingList);
-            apiRepository.save(existingApi);
-        }
-
-        if(newApiConfiguration.getHttpMethod().equals(HttpMethod.ALL)) {
-            //update all
-            List<String> routeIdList = routeUtils.getAllRouteIdForAGivenApi(newApiConfiguration);
-            for(String routeId : routeIdList) {
-                runningApiManager.updateRunningApi(routeId);
-            }
-        } else {
-            runningApiManager.updateRunningApi(routeUtils.getRouteId(newApiConfiguration, newApiConfiguration.getHttpMethod().getMethod()));
+            log.trace("No changes detected for API: {}.", existingApi.getId());
         }
     }
 
@@ -297,7 +291,7 @@ public class ApiUtils {
             log.trace("Different configuration detected clearing mappings and recreating");
             existingApi.getMappingList().clear();
             existingApi.setMappingList(newApiConfiguration.getMappingList());
-            apiRepository.save(existingApi);
+            //apiRepository.save(existingApi);
             List<String> routeIdList = routeUtils.getAllRouteIdForAGivenApi(newApiConfiguration);
             for(String routeId : routeIdList) {
                 runningApiManager.updateRunningApi(routeId);
@@ -328,6 +322,18 @@ public class ApiUtils {
             }
         } else {
             return true;
+        }
+        return false;
+    }
+
+    public boolean isMappingChanged(List<Mapping> existingMappingList, List<Mapping> incomingMappingList) {
+        if(existingMappingList.size() != incomingMappingList.size()) {
+            return true;
+        }
+        for(Mapping incomingMapping : incomingMappingList) {
+            if(!existingMappingList.contains(incomingMapping)) {
+                return true;
+            }
         }
         return false;
     }

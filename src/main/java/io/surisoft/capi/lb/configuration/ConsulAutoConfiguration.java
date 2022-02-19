@@ -32,7 +32,7 @@ public class ConsulAutoConfiguration {
     @Autowired
     private ApiUtils apiUtils;
 
-    @Autowired
+    //@Autowired
     private ApiRepository apiRepository;
 
     @Autowired

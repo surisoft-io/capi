@@ -52,8 +52,8 @@
     }
 ### Field Description
 
-* ```context``` (Mandatory) The context wehre users will access your api. (Example: https://domain.com/capi/your-api-context).
-* ```mappingList``` (1-N Array) - If you specify more than one mapping then: If failover and round robin are enabled, CAPI will round robin between all healthy endpoints. If only failover is enabled, then one node will be used only as backup.
+* ```context``` (Mandatory) The context where users will access your api. (Example: https://domain.com/capi/your-api-context).
+* ```mappingList``` (1-N Array) - If you specify more than one mapping then: If fail-over and round-robin are enabled, CAPI will round-robin between all healthy endpoints. If only fail-over is enabled, then one node will be used only as backup.
 * ```httpProtocol``` (Mandatory) (HTTP, HTTPS) - If you are exposing on HTTPS it is important to add your certificate to CAPI trust store. CAPI Manager exposes an API for managing your certificates.
 * ```httpMethod``` (Default ALL) - If no http method is specified, CAPI will expose all standard methods for your API (GET,POST,PUT,DELETE). If you specify POST, only post calls to your API will be load balanced.
 * ```matchOnUriPrefix``` (Default true), if true, you don't need to specify a definition (Swagger) for your API. CAPI will allow all paths. (Example: /your-api-context/clients /your-api-context/customer/foo/bar?action=example).

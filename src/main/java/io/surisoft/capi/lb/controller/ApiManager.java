@@ -210,7 +210,6 @@ import io.surisoft.capi.lb.repository.ApiRepository;
 import io.surisoft.capi.lb.repository.MappingRepository;
 import io.surisoft.capi.lb.schema.Api;
 import io.surisoft.capi.lb.schema.HttpMethod;
-import io.surisoft.capi.lb.schema.Mapping;
 import io.surisoft.capi.lb.schema.RunningApi;
 import io.surisoft.capi.lb.utils.ApiUtils;
 import io.surisoft.capi.lb.utils.RouteUtils;
@@ -220,11 +219,11 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 import java.util.Optional;
 
 @RestController
@@ -236,7 +235,7 @@ public class ApiManager {
     @Autowired
     private ApiRepository apiRepository;
 
-    @Autowired
+    //@Autowired
     private MappingRepository mappingRepository;
 
     @Autowired
@@ -248,10 +247,17 @@ public class ApiManager {
     @Autowired
     private ApiUtils apiUtils;
 
+    @Value("${capi.persistence.enabled}")
+    private boolean capiPersistenceEnabled;
+
     @Operation(summary = "Get all configured APIs")
     @GetMapping(path = "/configured")
     public ResponseEntity<Iterable<Api>> getAllApi() {
-        return new ResponseEntity<>(apiRepository.findAll(), HttpStatus.OK);
+        if(capiPersistenceEnabled) {
+            return new ResponseEntity<>(apiRepository.findAll(), HttpStatus.OK);
+        } else {
+            return new ResponseEntity<>(null, HttpStatus.NOT_IMPLEMENTED);
+        }
     }
 
     @Operation(summary = "Get all running APIs")
@@ -267,6 +273,10 @@ public class ApiManager {
     })
     @PostMapping(path="/register/node")
     public ResponseEntity<Api> newNodeMapping(@RequestBody Api api) {
+        if(!capiPersistenceEnabled) {
+            return new  ResponseEntity<>(HttpStatus.NOT_IMPLEMENTED);
+        }
+
         if(!isNodeInfoValid(api)) {
            return new  ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
@@ -290,7 +300,7 @@ public class ApiManager {
         return new ResponseEntity<>(api, HttpStatus.OK);
     }
 
-    @Operation(summary = "Register an API Definition (not published)")
+    /*@Operation(summary = "Register an API Definition (not published)")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "201", description = "Node added"),
             @ApiResponse(responseCode = "400", description = "Bad request"),
@@ -372,7 +382,7 @@ public class ApiManager {
             apiRepository.delete(existingApi.get());
         }
         return new ResponseEntity<>(HttpStatus.OK);
-    }
+    }*/
 
     private boolean isNodeInfoValid(Api api) {
         return api != null && api.getContext() != null && api.getName() != null && api.getMappingList() != null && !api.getMappingList().isEmpty();
