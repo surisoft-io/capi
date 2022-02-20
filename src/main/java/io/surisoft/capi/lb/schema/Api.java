@@ -205,6 +205,7 @@
 
 package io.surisoft.capi.lb.schema;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 import javax.persistence.*;
@@ -214,6 +215,7 @@ import java.util.List;
 
 @Data
 @Entity
+@Schema(hidden = true)
 public class Api implements Serializable {
     @Id
     private String id;

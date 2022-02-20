@@ -205,6 +205,7 @@
 
 package io.surisoft.capi.lb.schema;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 import javax.persistence.Entity;
@@ -215,6 +216,7 @@ import java.io.Serializable;
 @Data
 @Entity
 @IdClass(MappingId.class)
+@Schema(hidden = true)
 public class Mapping implements Serializable {
 
     @Id

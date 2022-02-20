@@ -246,12 +246,13 @@ public class Constants {
             "/configuration/ui",
             "/configuration/security",
             "/swagger-ui.html",
-            "/webjars/**",
+            "/META-INF/webjars/**",
             //Swagger UI v3 (OpenAPI)
             "/v3/api-docs/**",
             "/swagger-ui/**",
             // Capi Specific
             "/capi/**",
-            "/analytics/**"
+            "/analytics/**",
+            "/swagger/**"
     };
 }
