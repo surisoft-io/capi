@@ -8,7 +8,6 @@
 
 ## Supports:
 * Light API Gateway / Load Balancer powered by Apache Camel dynamics routes.
-* Deployments supported: Spring Boot Microservices auto discovery, CAPI Manager Endpoints and Hashicorp Consul
 * Optional Spring Security OIDC protected CAPI Manager API.
 * Distributed tracing system (Zipkin)
 * Metrics (Prometheus)
@@ -18,6 +17,21 @@
 * Stick Session (Cookies and Headers)
 * Certificate Manager (using the CAPI Manager API)
 
+## CAPI support two deployment strategies
+If you enable persistence, you will need to provide a MySQL database instance.
+To enable persistence run CAPI with the following property:
+```
+capi.persistence.enabled=true
+```
+With persistence enabled you will be able to deploy new apis using:
+* CAPI Manager endpoint.
+* Spring Boot Capi Starter (injected on your API)
+If you scale up CAPI, new instances will read the deployments from the database.
+
+If you choose not to enable persistence you will need to provide a Consul instance, CAPI will then read Consul catalog and deploy the available services. 
+If you scale up CAPI, new instances will read all the deployments from Consul catalog.
+
+*Keep in mind that you can have both Persistence and Consul strategies enabled.*
 ## Example of an API definition
 
     {
