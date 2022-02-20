@@ -215,13 +215,13 @@ public class CacheConfiguration extends Config {
     public CacheConfiguration() {
         super();
         MapConfig mapConfig = new MapConfig()
-                .setName("running-api-configuration")
+                .setName("capi-cache-config")
                 .setTimeToLiveSeconds(-1);
         mapConfig.getEvictionConfig()
                 .setMaxSizePolicy(MaxSizePolicy.FREE_HEAP_SIZE)
                 .setSize(20000)
                 .setEvictionPolicy(EvictionPolicy.LRU);
-        setInstanceName("running-api-instance")
+        setInstanceName("capi-cache-instance")
 
                 .setClusterName(Constants.APPLICATION_NAME)
                 .addMapConfig(mapConfig);

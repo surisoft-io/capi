@@ -27,8 +27,4 @@ public class ConsulCacheManager {
     public Api getApiById(String apiId) {
         return getCachedApi().get(apiId);
     }
-
-    public void deleteApi(Api api) {
-        getCachedApi().remove(api.getId());
-    }
 }
