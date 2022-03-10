@@ -214,6 +214,7 @@ public class CacheConfiguration extends Config {
 
     public CacheConfiguration(String springProfile) {
         super();
+        setClusterName("capi-cache-instance-" + springProfile);
         MapConfig mapConfig = new MapConfig()
                 .setName("capi-cache-config")
                 .setTimeToLiveSeconds(-1);
@@ -221,7 +222,7 @@ public class CacheConfiguration extends Config {
                 .setMaxSizePolicy(MaxSizePolicy.FREE_HEAP_SIZE)
                 .setSize(20000)
                 .setEvictionPolicy(EvictionPolicy.LRU);
-        setInstanceName("capi-cache-instance-" + springProfile)
+        setInstanceName("capi-cache-instance")
                 .setClusterName(Constants.APPLICATION_NAME)
                 .addMapConfig(mapConfig);
     }
