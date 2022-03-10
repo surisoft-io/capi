@@ -320,10 +320,10 @@ public class RouteUtils {
 
     public List<String> getAllRouteIdForAGivenApi(Api api) {
         List<String> routeIdList = new ArrayList<>();
-        routeIdList.add(getRouteId(api, HttpMethod.DELETE.getMethod()));
-        routeIdList.add(getRouteId(api, HttpMethod.PUT.getMethod()));
-        routeIdList.add(getRouteId(api, HttpMethod.POST.getMethod()));
-        routeIdList.add(getRouteId(api, HttpMethod.GET.getMethod()));
+        routeIdList.add(api.getId() + ":" + HttpMethod.DELETE.getMethod());
+        routeIdList.add(api.getId() + ":" + HttpMethod.PUT.getMethod());
+        routeIdList.add(api.getId() + ":" + HttpMethod.POST.getMethod());
+        routeIdList.add(api.getId() + ":" + HttpMethod.GET.getMethod());
         return routeIdList;
     }
 

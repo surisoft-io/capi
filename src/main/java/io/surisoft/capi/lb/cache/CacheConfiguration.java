@@ -212,7 +212,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class CacheConfiguration extends Config {
 
-    public CacheConfiguration() {
+    public CacheConfiguration(String springProfile) {
         super();
         MapConfig mapConfig = new MapConfig()
                 .setName("capi-cache-config")
@@ -221,8 +221,7 @@ public class CacheConfiguration extends Config {
                 .setMaxSizePolicy(MaxSizePolicy.FREE_HEAP_SIZE)
                 .setSize(20000)
                 .setEvictionPolicy(EvictionPolicy.LRU);
-        setInstanceName("capi-cache-instance")
-
+        setInstanceName("capi-cache-instance-" + springProfile)
                 .setClusterName(Constants.APPLICATION_NAME)
                 .addMapConfig(mapConfig);
     }

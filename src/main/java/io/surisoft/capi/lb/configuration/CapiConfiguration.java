@@ -258,9 +258,12 @@ public class CapiConfiguration {
     @Value("${capi.trust.store.enabled}")
     private boolean capiTrustStoreEnabled;
 
+    @Value("${spring.profiles.active}")
+    private String springProfileActive;
+
     @Bean
     public Config hazelCastConfig() {
-        return new CacheConfiguration();
+        return new CacheConfiguration(springProfileActive);
     }
 
     @Bean
