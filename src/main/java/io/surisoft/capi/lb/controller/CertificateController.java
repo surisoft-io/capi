@@ -24,6 +24,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -97,8 +98,8 @@ public class CertificateController {
             @ApiResponse(responseCode = "200", description = "Certificate trusted"),
             @ApiResponse(responseCode = "400", description = "Custom Trust store not detected")
     })
-    @PostMapping(path = "/{alias}")
-    public ResponseEntity<AliasInfo> certificateUpload(@PathVariable String alias, @RequestParam("file") MultipartFile file) {
+    @PostMapping(path = "/{alias}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<AliasInfo> certificateUpload(@PathVariable String alias, @RequestPart("file") MultipartFile file) {
         AliasInfo aliasInfo = new AliasInfo();
 
         if(!capiTrustStoreEnabled) {
@@ -118,6 +119,7 @@ public class CertificateController {
             X509Certificate x509Object = (X509Certificate) newTrusted;
             aliasInfo.setSubjectDN(x509Object.getSubjectX500Principal().getName());
             aliasInfo.setIssuerDN(x509Object.getIssuerX500Principal().getName());
+            aliasInfo.setAlias(alias);
 
             keystore.setCertificateEntry(alias, newTrusted);
 
@@ -143,10 +145,11 @@ public class CertificateController {
         AliasInfo aliasInfo = new AliasInfo();
 
         if(!capiTrustStoreEnabled) {
-            aliasInfo = new AliasInfo();
             aliasInfo.setAdditionalInfo("No custom trust store was provided, to enable this feature, add a custom trust store.");
             return new ResponseEntity<>(aliasInfo, HttpStatus.BAD_REQUEST);
         }
+
+        aliasInfo.setAlias(alias);
 
         try {
             FileInputStream is = new FileInputStream(capiTrustStorePath);

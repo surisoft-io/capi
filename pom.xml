@@ -212,7 +212,7 @@
   <groupId>io.surisoft.capi</groupId>
   <artifactId>capi-lb</artifactId>
   <packaging>jar</packaging>
-  <version>1.2.1</version>
+  <version>1.2.3</version>
 
   <name>CAPI Load Balancer</name>
 
