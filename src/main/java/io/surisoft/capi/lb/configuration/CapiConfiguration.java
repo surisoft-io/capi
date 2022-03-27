@@ -215,10 +215,17 @@ import io.surisoft.capi.lb.cache.CacheConfiguration;
 import io.surisoft.capi.lb.processor.ConsulNodeDiscovery;
 import io.surisoft.capi.lb.utils.Constants;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.camel.CamelContext;
+import org.apache.camel.component.http.HttpClientConfigurer;
+import org.apache.camel.component.http.HttpComponent;
 import org.apache.camel.component.micrometer.CamelJmxConfig;
 import org.apache.camel.component.micrometer.DistributionStatisticConfigFilter;
+import org.apache.http.impl.client.HttpClientBuilder;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Conditional;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.dao.annotation.PersistenceExceptionTranslationPostProcessor;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
@@ -228,6 +235,7 @@ import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
 import org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter;
 import org.springframework.transaction.PlatformTransactionManager;
 
+import javax.annotation.PostConstruct;
 import javax.persistence.*;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaDelete;
@@ -260,6 +268,17 @@ public class CapiConfiguration {
 
     @Value("${spring.profiles.active}")
     private String springProfileActive;
+
+    @Autowired
+    private CamelContext camelContext;
+
+    @Bean
+    @ConditionalOnProperty(prefix = "capi.disable", name = "redirect", havingValue = "true")
+    public void disableFollowRedirect() {
+        HttpComponent httpComponent = (HttpComponent) camelContext.getComponent("http");
+        HttpClientConfigurer httpClientConfigurer = clientBuilder -> clientBuilder.disableRedirectHandling();
+        httpComponent.setHttpClientConfigurer(httpClientConfigurer);
+    }
 
     @Bean
     public Config hazelCastConfig() {

@@ -212,7 +212,7 @@
   <groupId>io.surisoft.capi</groupId>
   <artifactId>capi-lb</artifactId>
   <packaging>jar</packaging>
-  <version>1.2.3</version>
+  <version>1.2.4</version>
 
   <name>CAPI Load Balancer</name>
 
@@ -261,7 +261,6 @@
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-security</artifactId>
     </dependency>
-
     <dependency>
       <groupId>org.apache.camel.springboot</groupId>
       <artifactId>camel-spring-boot-starter</artifactId>
@@ -317,19 +316,15 @@
       <artifactId>camel-consul-starter</artifactId>
       <version>${org.apache.camel.springboot-version}</version>
     </dependency>
-
-
     <dependency>
       <groupId>io.hawt</groupId>
       <artifactId>hawtio-springboot</artifactId>
       <version>${io.hawt.version}</version>
     </dependency>
-
     <dependency>
       <groupId>org.apache.camel.springboot</groupId>
       <artifactId>camel-log-starter</artifactId>
       <version>${org.apache.camel.springboot-version}</version>
-      <!-- use the same version as your Camel core version -->
     </dependency>
     <dependency>
       <groupId>org.springframework.boot</groupId>
@@ -345,7 +340,6 @@
       <artifactId>lombok</artifactId>
       <version>${lombok-version}</version>
     </dependency>
-
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-cache</artifactId>
@@ -423,8 +417,8 @@
     <groupId>org.apache.maven.plugins</groupId>
     <artifactId>maven-compiler-plugin</artifactId>
     <configuration>
-      <source>16</source>
-      <target>16</target>
+      <source>17</source>
+      <target>17</target>
     </configuration>
   </plugin>
 </plugins>
