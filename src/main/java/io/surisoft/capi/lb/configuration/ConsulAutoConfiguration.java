@@ -5,6 +5,7 @@ import io.surisoft.capi.lb.cache.ConsulDiscoveryCacheManager;
 import io.surisoft.capi.lb.cache.StickySessionCacheManager;
 import io.surisoft.capi.lb.processor.ConsulNodeDiscovery;
 import io.surisoft.capi.lb.utils.ApiUtils;
+import io.surisoft.capi.lb.utils.HttpUtils;
 import io.surisoft.capi.lb.utils.RouteUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.camel.CamelContext;
@@ -34,6 +35,9 @@ public class ConsulAutoConfiguration {
     private ApiUtils apiUtils;
 
     @Autowired
+    private HttpUtils httpUtils;
+
+    @Autowired
     private RouteUtils routeUtils;
 
     @Autowired
@@ -45,9 +49,12 @@ public class ConsulAutoConfiguration {
     @Autowired
     private ConsulCacheManager consulCacheManager;
 
+    @Value("${camel.servlet.mapping.context-path}")
+    private String capiContext;
+
     @Bean(name = "consulNodeDiscovery")
     public ConsulNodeDiscovery consulNodeDiscovery() {
-        return new ConsulNodeDiscovery(camelContext, capiConsulHost, apiUtils, routeUtils, stickySessionCacheManager, consulCacheManager);
+        return new ConsulNodeDiscovery(camelContext, capiConsulHost, apiUtils, routeUtils, stickySessionCacheManager, consulCacheManager, httpUtils.getCapiContext(capiContext));
     }
 
     @Bean

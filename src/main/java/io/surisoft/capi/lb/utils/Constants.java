@@ -238,6 +238,7 @@ public class Constants {
     public static final String CAPI_URL_IN_ERROR = "HTTP_URL";
     public static final String CAPI_URI_IN_ERROR = "HTTP_URI";
     public static final String MATCH_ON_URI_PREFIX = "?matchOnUriPrefix=";
+    public static final String X_FORWARDED_PREFIX = "x-forwarded-prefix";
     public static final String[] CAPI_WHITELISTED_PATHS = {
             //Swagger UI v2
             "/v2/api-docs",

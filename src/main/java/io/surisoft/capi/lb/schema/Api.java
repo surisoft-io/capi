@@ -240,4 +240,5 @@ public class Api implements Serializable {
     private boolean stickySessionParamInCookie;
     private boolean removeMe;
     private boolean published;
+    private boolean forwardPrefix;
 }

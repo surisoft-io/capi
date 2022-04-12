@@ -214,10 +214,12 @@ import io.surisoft.capi.lb.configuration.SingleRouteProcessor;
 import io.surisoft.capi.lb.repository.ApiRepository;
 import io.surisoft.capi.lb.schema.Api;
 import io.surisoft.capi.lb.schema.RunningApi;
+import io.surisoft.capi.lb.utils.HttpUtils;
 import io.surisoft.capi.lb.utils.RouteUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.camel.CamelContext;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.util.Optional;
@@ -233,10 +235,16 @@ public class RunningApiListener implements EntryEvictedListener<String, RunningA
     private RouteUtils routeUtils;
 
     @Autowired
+    private HttpUtils httpUtils;
+
+    @Autowired
     private ApiRepository apiRepository;
 
     @Autowired
     private StickySessionCacheManager stickySessionCacheManager;
+
+    @Value("${camel.servlet.mapping.context-path}")
+    private String capiContext;
 
 
     @Override
@@ -247,7 +255,7 @@ public class RunningApiListener implements EntryEvictedListener<String, RunningA
             try {
                 Optional<Api> api = apiRepository.findById(runningApi.getApiId());
                 camelContext.removeRoute(runningApi.getRouteId());
-                camelContext.addRoutes(new SingleRouteProcessor(camelContext, api.get(), routeUtils, runningApi, apiRepository, stickySessionCacheManager));
+                camelContext.addRoutes(new SingleRouteProcessor(camelContext, api.get(), routeUtils, runningApi, apiRepository, stickySessionCacheManager, httpUtils.getCapiContext(capiContext)));
             } catch (Exception e) {
                 log.error(e.getMessage(), e);
             }
@@ -261,7 +269,7 @@ public class RunningApiListener implements EntryEvictedListener<String, RunningA
             log.trace("Api with id: {} detected, deploying the route.", runningApi.getApiId());
             try {
                 Optional<Api> api = apiRepository.findById(runningApi.getApiId());
-                camelContext.addRoutes(new SingleRouteProcessor(camelContext, api.get(), routeUtils, runningApi, apiRepository, stickySessionCacheManager));
+                camelContext.addRoutes(new SingleRouteProcessor(camelContext, api.get(), routeUtils, runningApi, apiRepository, stickySessionCacheManager, httpUtils.getCapiContext(capiContext)));
             } catch (Exception e) {
                log.error(e.getMessage(), e);
             }

@@ -225,21 +225,25 @@ public class SingleRouteProcessor extends RouteBuilder {
     private RunningApi runningApi;
     private ApiRepository apiRepository;
     private StickySessionCacheManager stickySessionCacheManager;
+    private String capiContext;
 
-    public SingleRouteProcessor(CamelContext camelContext, Api api, RouteUtils routeUtils, RunningApi runningApi, ApiRepository apiRepository, StickySessionCacheManager stickySessionCacheManager) {
+    public SingleRouteProcessor(CamelContext camelContext, Api api, RouteUtils routeUtils, RunningApi runningApi, ApiRepository apiRepository, StickySessionCacheManager stickySessionCacheManager, String capiContext) {
         super(camelContext);
         this.api = api;
         this.routeUtils = routeUtils;
         this.runningApi = runningApi;
         this.apiRepository = apiRepository;
         this.stickySessionCacheManager = stickySessionCacheManager;
+        this.capiContext = capiContext;
     }
 
     @Override
     public void configure() {
         RouteDefinition routeDefinition = getRouteDefinition(api, runningApi);
+        if(api.isForwardPrefix()) {
+            routeDefinition.setHeader(Constants.X_FORWARDED_PREFIX, constant(capiContext + api.getContext()));
+        }
         String routeId = routeUtils.getRouteId(api, runningApi.getHttpMethod());
-        //routeUtils.setApiDefaults(api);
         log.trace("Trying to build and deploy route {}", routeId);
         routeUtils.buildOnExceptionDefinition(routeDefinition, false, false, false, routeId);
         if(api.isFailoverEnabled()) {

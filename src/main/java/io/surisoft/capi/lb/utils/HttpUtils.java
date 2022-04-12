@@ -231,4 +231,8 @@ public class HttpUtils {
         }
         return endpoint + Constants.CUSTOM_HOST_HEADER + hostName;
     }
+
+    public String getCapiContext(String context) {
+        return context.substring(0, context.indexOf("/*"));
+    }
 }

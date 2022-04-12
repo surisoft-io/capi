@@ -224,7 +224,7 @@ public class Mapping implements Serializable {
     @Id
     private String hostname;
     @Id
-    private int port;
+    private int port = -1;
     private boolean ingress;
 
 }

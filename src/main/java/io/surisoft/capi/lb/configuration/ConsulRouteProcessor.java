@@ -15,18 +15,23 @@ public class ConsulRouteProcessor extends RouteBuilder {
     private Api api;
     private StickySessionCacheManager stickySessionCacheManager;
     private String routeId;
+    private String capiContext;
 
-    public ConsulRouteProcessor(CamelContext camelContext, Api api, RouteUtils routeUtils, String routeId, StickySessionCacheManager stickySessionCacheManager) {
+    public ConsulRouteProcessor(CamelContext camelContext, Api api, RouteUtils routeUtils, String routeId, StickySessionCacheManager stickySessionCacheManager, String capiContext) {
         super(camelContext);
         this.api = api;
         this.routeUtils = routeUtils;
         this.stickySessionCacheManager = stickySessionCacheManager;
         this.routeId = routeId;
+        this.capiContext = capiContext;
     }
 
     @Override
     public void configure() {
         RouteDefinition routeDefinition = getRouteDefinition(api);
+        if(api.isForwardPrefix()) {
+            routeDefinition.setHeader(Constants.X_FORWARDED_PREFIX, constant(capiContext + api.getContext()));
+        }
         log.trace("Trying to build and deploy route {}", routeId);
         routeUtils.buildOnExceptionDefinition(routeDefinition, false, false, false, routeId);
         if(api.isFailoverEnabled()) {
@@ -58,16 +63,24 @@ public class ConsulRouteProcessor extends RouteBuilder {
         api.setMatchOnUriPrefix(true);
         switch (routeUtils.getMethodFromRouteId(routeId)) {
             case "get":
-                routeDefinition = rest().get(routeUtils.buildFrom(api) + Constants.MATCH_ON_URI_PREFIX + api.isMatchOnUriPrefix()).route();
+                routeDefinition = rest().get(routeUtils.buildFrom(api)
+                        + Constants.MATCH_ON_URI_PREFIX
+                        + api.isMatchOnUriPrefix()).route();
                 break;
             case "post":
-                routeDefinition = rest().post(routeUtils.buildFrom(api) + Constants.MATCH_ON_URI_PREFIX + api.isMatchOnUriPrefix()).route();
+                routeDefinition = rest().post(routeUtils.buildFrom(api)
+                        + Constants.MATCH_ON_URI_PREFIX
+                        + api.isMatchOnUriPrefix()).route();
                 break;
             case "put":
-                routeDefinition = rest().put(routeUtils.buildFrom(api) + Constants.MATCH_ON_URI_PREFIX + api.isMatchOnUriPrefix()).route();
+                routeDefinition = rest().put(routeUtils.buildFrom(api)
+                        + Constants.MATCH_ON_URI_PREFIX
+                        + api.isMatchOnUriPrefix()).route();
                 break;
             case "delete":
-                routeDefinition = rest().delete(routeUtils.buildFrom(api) + Constants.MATCH_ON_URI_PREFIX + api.isMatchOnUriPrefix()).route();
+                routeDefinition = rest().delete(routeUtils.buildFrom(api)
+                        + Constants.MATCH_ON_URI_PREFIX
+                        + api.isMatchOnUriPrefix()).route();
                 break;
         }
         return routeDefinition;

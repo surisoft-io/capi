@@ -273,7 +273,12 @@ public class RouteUtils {
             if(api.getHttpProtocol() == null) {
                 api.setHttpProtocol(HttpProtocol.HTTP);
             }
-            String endpoint = api.getHttpProtocol().getProtocol() + "://" + mapping.getHostname() + ":" + mapping.getPort() + mapping.getRootContext() + "?bridgeEndpoint=true&throwExceptionOnFailure=false";
+            String endpoint;
+            if(mapping.getPort() > -1) {
+                endpoint = api.getHttpProtocol().getProtocol() + "://" + mapping.getHostname() + ":" + mapping.getPort() + mapping.getRootContext() + "?bridgeEndpoint=true&throwExceptionOnFailure=false";
+            } else {
+                endpoint = api.getHttpProtocol().getProtocol() + "://" + mapping.getHostname() + mapping.getRootContext() + "?bridgeEndpoint=true&throwExceptionOnFailure=false";
+            }
             if(api.getConnectTimeout() > -1) {
                 endpoint = httpUtils.setHttpConnectTimeout(endpoint, api.getConnectTimeout());
             }
@@ -311,11 +316,6 @@ public class RouteUtils {
 
     public String getRouteId(Api api, String httpMethod) {
         return api.getName() + ":" + api.getContext() + ":" + httpMethod;
-        /*JsonObject jsonObject = new JsonObject();
-        jsonObject.put("apiName", api.getName());
-        jsonObject.put("apiContext", api.getContext());
-        jsonObject.put("httpMethod", httpMethod);
-        return new String(Base64.getEncoder().encode(jsonObject.toJson().getBytes()));*/
     }
 
     public List<String> getAllRouteIdForAGivenApi(Api api) {
@@ -329,9 +329,6 @@ public class RouteUtils {
 
     public String getMethodFromRouteId(String routeId) {
         return routeId.split(":")[2];
-        /*String decodedRouteId = new String(Base64.getDecoder().decode(routeId.getBytes()));
-        JsonObject routeIdObject = Jsoner.deserialize(decodedRouteId, new JsonObject());
-        return routeIdObject.getString("httpMethod");*/
     }
 
     public Api setApiDefaults(Api api) {

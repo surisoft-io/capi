@@ -9,6 +9,7 @@ import io.surisoft.capi.lb.schema.ConsulObject;
 import io.surisoft.capi.lb.schema.HttpMethod;
 import io.surisoft.capi.lb.schema.Mapping;
 import io.surisoft.capi.lb.utils.ApiUtils;
+import io.surisoft.capi.lb.utils.Constants;
 import io.surisoft.capi.lb.utils.RouteUtils;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.*;
@@ -29,17 +30,19 @@ public class ConsulNodeDiscovery {
     private final OkHttpClient client = new OkHttpClient.Builder().build();
     private static final String GET_ALL_SERVICES = "/v1/catalog/services";
     private static final String GET_SERVICE_BY_NAME = "/v1/catalog/service/";
+    private String capiContext;
 
     private final CamelContext camelContext;
     private final ConsulCacheManager consulCacheManager;
 
-    public ConsulNodeDiscovery(CamelContext camelContext, String consulHost, ApiUtils apiUtils, RouteUtils routeUtils, StickySessionCacheManager stickySessionCacheManager, ConsulCacheManager consulCacheManager) {
+    public ConsulNodeDiscovery(CamelContext camelContext, String consulHost, ApiUtils apiUtils, RouteUtils routeUtils, StickySessionCacheManager stickySessionCacheManager, ConsulCacheManager consulCacheManager, String capiContext) {
         this.consulHost = consulHost;
         this.apiUtils = apiUtils;
         this.routeUtils = routeUtils;
         this.camelContext = camelContext;
         this.stickySessionCacheManager = stickySessionCacheManager;
         this.consulCacheManager = consulCacheManager;
+        this.capiContext = capiContext;
     }
 
     public void processInfo() {
@@ -95,6 +98,7 @@ public class ConsulNodeDiscovery {
                     incomingApi.setRoundRobinEnabled(true);
                     incomingApi.setMatchOnUriPrefix(true);
                     incomingApi.setMappingList(entry.getValue());
+                    incomingApi.setForwardPrefix(forwardPrefix(entry.getKey(), consulResponse));
 
                     Api existingApi = consulCacheManager.getApiById(apiId);
                     if(existingApi == null) {
@@ -104,14 +108,14 @@ public class ConsulNodeDiscovery {
                             Route existingRoute = camelContext.getRoute(routeId);
                             if(existingRoute == null) {
                                 try {
-                                    camelContext.addRoutes(new ConsulRouteProcessor(camelContext, incomingApi, routeUtils, routeId, stickySessionCacheManager));
+                                    camelContext.addRoutes(new ConsulRouteProcessor(camelContext, incomingApi, routeUtils, routeId, stickySessionCacheManager, capiContext));
                                 } catch (Exception e) {
                                     e.printStackTrace();
                                 }
                             }
                         }
                     } else {
-                        apiUtils.updateConsulExistingApi(existingApi,incomingApi, consulCacheManager, routeUtils, camelContext, stickySessionCacheManager);
+                        apiUtils.updateConsulExistingApi(existingApi,incomingApi, consulCacheManager, routeUtils, camelContext, stickySessionCacheManager, capiContext);
                     }
                 }
 
@@ -163,5 +167,15 @@ public class ConsulNodeDiscovery {
             }
         }
         return null;
+    }
+
+    private boolean forwardPrefix(String tagName, ConsulObject[] consulObject) {
+        for(ConsulObject entry : consulObject) {
+            if(entry.getServiceTags().contains("group=" + tagName) && entry.getServiceTags().contains(Constants.X_FORWARDED_PREFIX)) {
+                return true;
+
+            }
+        }
+        return false;
     }
 }

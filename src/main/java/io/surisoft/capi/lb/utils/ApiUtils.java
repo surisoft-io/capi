@@ -264,6 +264,7 @@ public class ApiUtils {
         mapping.setHostname(host);
         mapping.setPort(port);
         mapping.setRootContext("/" + consulObject.getServiceName());
+        mapping.setIngress(true);
         return mapping;
     }
 
@@ -299,7 +300,7 @@ public class ApiUtils {
         }
     }
 
-    public void updateConsulExistingApi(Api existingApi, Api incomingApi, ConsulCacheManager apiCacheManager, RouteUtils routeUtils, CamelContext camelContext, StickySessionCacheManager stickySessionCacheManager) {
+    public void updateConsulExistingApi(Api existingApi, Api incomingApi, ConsulCacheManager apiCacheManager, RouteUtils routeUtils, CamelContext camelContext, StickySessionCacheManager stickySessionCacheManager, String capiContext) {
 
         if(isMappingChanged(existingApi.getMappingList(), incomingApi.getMappingList())) {
             log.trace("Changes detected for API: {}, redeploying routes.", existingApi.getId());
@@ -311,7 +312,7 @@ public class ApiUtils {
                 for(String routeId : apiRouteIdList) {
                     camelContext.getRouteController().stopRoute(routeId);
                     camelContext.removeRoute(routeId);
-                    camelContext.addRoutes(new ConsulRouteProcessor(camelContext, incomingApi, routeUtils, routeId, stickySessionCacheManager));
+                    camelContext.addRoutes(new ConsulRouteProcessor(camelContext, incomingApi, routeUtils, routeId, stickySessionCacheManager, capiContext));
                 }
             } catch (Exception e) {
                 e.printStackTrace();
