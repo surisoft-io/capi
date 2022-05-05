@@ -212,7 +212,6 @@ import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
 import io.micrometer.core.instrument.util.HierarchicalNameMapper;
 import io.micrometer.jmx.JmxMeterRegistry;
 import io.surisoft.capi.lb.cache.CacheConfiguration;
-import io.surisoft.capi.lb.processor.ConsulNodeDiscovery;
 import io.surisoft.capi.lb.utils.Constants;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.camel.CamelContext;
@@ -220,34 +219,19 @@ import org.apache.camel.component.http.HttpClientConfigurer;
 import org.apache.camel.component.http.HttpComponent;
 import org.apache.camel.component.micrometer.CamelJmxConfig;
 import org.apache.camel.component.micrometer.DistributionStatisticConfigFilter;
+import org.apache.camel.zipkin.ZipkinTracer;
 import org.apache.http.impl.client.HttpClientBuilder;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Conditional;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.dao.annotation.PersistenceExceptionTranslationPostProcessor;
-import org.springframework.jdbc.datasource.DriverManagerDataSource;
-import org.springframework.orm.jpa.JpaTransactionManager;
-import org.springframework.orm.jpa.JpaVendorAdapter;
-import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
-import org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter;
-import org.springframework.transaction.PlatformTransactionManager;
+import zipkin2.reporter.AsyncReporter;
+import zipkin2.reporter.okhttp3.OkHttpSender;
 
-import javax.annotation.PostConstruct;
-import javax.persistence.*;
-import javax.persistence.criteria.CriteriaBuilder;
-import javax.persistence.criteria.CriteriaDelete;
-import javax.persistence.criteria.CriteriaQuery;
-import javax.persistence.criteria.CriteriaUpdate;
-import javax.persistence.metamodel.Metamodel;
-import javax.sql.DataSource;
 import java.io.File;
 import java.time.Duration;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
+import java.util.HashSet;
+import java.util.Set;
 
 import static org.apache.camel.component.micrometer.MicrometerConstants.DISTRIBUTION_SUMMARIES;
 import static org.apache.camel.component.micrometer.messagehistory.MicrometerMessageHistoryNamingStrategy.MESSAGE_HISTORIES;
@@ -269,15 +253,32 @@ public class CapiConfiguration {
     @Value("${spring.profiles.active}")
     private String springProfileActive;
 
-    @Autowired
-    private CamelContext camelContext;
+    @Value("${capi.zipkin.endpoint}")
+    private String zipkinEndpoint;
+
+    @Bean
+    @ConditionalOnProperty(prefix = "capi.zipkin", name = "enabled", havingValue = "true")
+    ZipkinTracer zipkinTracer(CamelContext camelContext) {
+        log.debug("Zipkin Enabled!");
+        Set<String> excludePatterns = new HashSet<>();
+        excludePatterns.add("timer://");
+        excludePatterns.add("bean://consulNodeDiscovery");
+        ZipkinTracer zipkin = new ZipkinTracer();
+        OkHttpSender okHttpSender = OkHttpSender.create(zipkinEndpoint);
+        zipkin.setSpanReporter(AsyncReporter.create(okHttpSender));
+
+        zipkin.setExcludePatterns(excludePatterns);
+        zipkin.init(camelContext);
+        return zipkin;
+    }
 
     @Bean
     @ConditionalOnProperty(prefix = "capi.disable", name = "redirect", havingValue = "true")
-    public void disableFollowRedirect() {
+    public HttpComponent disableFollowRedirect(CamelContext camelContext) {
         HttpComponent httpComponent = (HttpComponent) camelContext.getComponent("http");
-        HttpClientConfigurer httpClientConfigurer = clientBuilder -> clientBuilder.disableRedirectHandling();
+        HttpClientConfigurer httpClientConfigurer = HttpClientBuilder::disableRedirectHandling;
         httpComponent.setHttpClientConfigurer(httpClientConfigurer);
+        return httpComponent;
     }
 
     @Bean
