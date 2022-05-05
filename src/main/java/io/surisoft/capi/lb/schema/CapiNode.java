@@ -205,20 +205,28 @@
 
 package io.surisoft.capi.lb.schema;
 
-import lombok.Data;
-
-import javax.persistence.Entity;
 import javax.persistence.Id;
-import javax.persistence.Table;
 import java.io.Serializable;
 
-
-@Data
 public class CapiNode implements Serializable {
-    public static final String CLIENT_KEY = "CapiNode";
 
-    //private String uuid;
     @Id
     private String address;
     private int port;
+
+    public String getAddress() {
+        return address;
+    }
+
+    public void setAddress(String address) {
+        this.address = address;
+    }
+
+    public int getPort() {
+        return port;
+    }
+
+    public void setPort(int port) {
+        this.port = port;
+    }
 }
