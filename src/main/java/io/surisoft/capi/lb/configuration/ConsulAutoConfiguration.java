@@ -4,13 +4,13 @@ import io.surisoft.capi.lb.cache.ConsulCacheManager;
 import io.surisoft.capi.lb.cache.ConsulDiscoveryCacheManager;
 import io.surisoft.capi.lb.cache.StickySessionCacheManager;
 import io.surisoft.capi.lb.processor.ConsulNodeDiscovery;
+import io.surisoft.capi.lb.processor.MetricsProcessor;
 import io.surisoft.capi.lb.utils.ApiUtils;
 import io.surisoft.capi.lb.utils.HttpUtils;
 import io.surisoft.capi.lb.utils.RouteUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.camel.CamelContext;
 import org.apache.camel.builder.RouteBuilder;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -28,42 +28,21 @@ public class ConsulAutoConfiguration {
     @Value("${capi.consul.host}")
     private String capiConsulHost;
 
-    @Autowired
-    private ConsulDiscoveryCacheManager consulDiscoveryCacheManager;
-
-    @Autowired
-    private ApiUtils apiUtils;
-
-    @Autowired
-    private HttpUtils httpUtils;
-
-    @Autowired
-    private RouteUtils routeUtils;
-
-    @Autowired
-    private StickySessionCacheManager stickySessionCacheManager;
-
-    @Autowired
-    private CamelContext camelContext;
-
-    @Autowired
-    private ConsulCacheManager consulCacheManager;
-
     @Value("${camel.servlet.mapping.context-path}")
     private String capiContext;
 
     @Bean(name = "consulNodeDiscovery")
-    public ConsulNodeDiscovery consulNodeDiscovery() {
-        return new ConsulNodeDiscovery(camelContext, capiConsulHost, apiUtils, routeUtils, stickySessionCacheManager, consulCacheManager, httpUtils.getCapiContext(capiContext));
+    public ConsulNodeDiscovery consulNodeDiscovery(CamelContext camelContext, ApiUtils apiUtils, RouteUtils routeUtils, MetricsProcessor metricsProcessor, HttpUtils httpUtils, StickySessionCacheManager stickySessionCacheManager, ConsulCacheManager consulCacheManager) {
+        return new ConsulNodeDiscovery(camelContext, capiConsulHost, apiUtils, routeUtils, metricsProcessor, stickySessionCacheManager, consulCacheManager, httpUtils.getCapiContext(capiContext));
     }
 
     @Bean
-    public RouteBuilder routeBuilder() {
+    public RouteBuilder routeBuilder(ConsulDiscoveryCacheManager consulDiscoveryCacheManager) {
         log.debug("Creating Capi Consul Discovery");
         if(consulDiscoveryCacheManager.getLocalMemberID().equals(consulDiscoveryCacheManager.getConsulWorkerNode().getMember()) && consulEnabled) {
             return new RouteBuilder() {
                 @Override
-                public void configure() throws Exception {
+                public void configure() {
                     from("timer:consul-inspect?period=" + consulTimerInterval + "s")
                             .to("bean:consulNodeDiscovery?method=processInfo")
                             .routeId("consul-discovery-service");
