@@ -206,14 +206,12 @@
 package io.surisoft.capi.lb.schema;
 
 import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.Data;
 
 import javax.persistence.*;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
-@Data
 @Entity
 @Schema(hidden = true)
 public class Api implements Serializable {
@@ -241,4 +239,182 @@ public class Api implements Serializable {
     private boolean removeMe;
     private boolean published;
     private boolean forwardPrefix;
+    private boolean zipkinShowTraceId;
+    private String zipkinServiceName;
+
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
+    }
+
+    public String getRouteId() {
+        return routeId;
+    }
+
+    public void setRouteId(String routeId) {
+        this.routeId = routeId;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getContext() {
+        return context;
+    }
+
+    public void setContext(String context) {
+        this.context = context;
+    }
+
+    public List<Mapping> getMappingList() {
+        return mappingList;
+    }
+
+    public void setMappingList(List<Mapping> mappingList) {
+        this.mappingList = mappingList;
+    }
+
+    public boolean isRoundRobinEnabled() {
+        return roundRobinEnabled;
+    }
+
+    public void setRoundRobinEnabled(boolean roundRobinEnabled) {
+        this.roundRobinEnabled = roundRobinEnabled;
+    }
+
+    public boolean isFailoverEnabled() {
+        return failoverEnabled;
+    }
+
+    public void setFailoverEnabled(boolean failoverEnabled) {
+        this.failoverEnabled = failoverEnabled;
+    }
+
+    public boolean isMatchOnUriPrefix() {
+        return matchOnUriPrefix;
+    }
+
+    public void setMatchOnUriPrefix(boolean matchOnUriPrefix) {
+        this.matchOnUriPrefix = matchOnUriPrefix;
+    }
+
+    public HttpMethod getHttpMethod() {
+        return httpMethod;
+    }
+
+    public void setHttpMethod(HttpMethod httpMethod) {
+        this.httpMethod = httpMethod;
+    }
+
+    public HttpProtocol getHttpProtocol() {
+        return httpProtocol;
+    }
+
+    public void setHttpProtocol(HttpProtocol httpProtocol) {
+        this.httpProtocol = httpProtocol;
+    }
+
+    public String getSwaggerEndpoint() {
+        return swaggerEndpoint;
+    }
+
+    public void setSwaggerEndpoint(String swaggerEndpoint) {
+        this.swaggerEndpoint = swaggerEndpoint;
+    }
+
+    public int getConnectTimeout() {
+        return connectTimeout;
+    }
+
+    public void setConnectTimeout(int connectTimeout) {
+        this.connectTimeout = connectTimeout;
+    }
+
+    public int getSocketTimeout() {
+        return socketTimeout;
+    }
+
+    public void setSocketTimeout(int socketTimeout) {
+        this.socketTimeout = socketTimeout;
+    }
+
+    public int getMaximumFailoverAttempts() {
+        return maximumFailoverAttempts;
+    }
+
+    public void setMaximumFailoverAttempts(int maximumFailoverAttempts) {
+        this.maximumFailoverAttempts = maximumFailoverAttempts;
+    }
+
+    public boolean isStickySession() {
+        return stickySession;
+    }
+
+    public void setStickySession(boolean stickySession) {
+        this.stickySession = stickySession;
+    }
+
+    public String getStickySessionParam() {
+        return stickySessionParam;
+    }
+
+    public void setStickySessionParam(String stickySessionParam) {
+        this.stickySessionParam = stickySessionParam;
+    }
+
+    public boolean isStickySessionParamInCookie() {
+        return stickySessionParamInCookie;
+    }
+
+    public void setStickySessionParamInCookie(boolean stickySessionParamInCookie) {
+        this.stickySessionParamInCookie = stickySessionParamInCookie;
+    }
+
+    public boolean isRemoveMe() {
+        return removeMe;
+    }
+
+    public void setRemoveMe(boolean removeMe) {
+        this.removeMe = removeMe;
+    }
+
+    public boolean isPublished() {
+        return published;
+    }
+
+    public void setPublished(boolean published) {
+        this.published = published;
+    }
+
+    public boolean isForwardPrefix() {
+        return forwardPrefix;
+    }
+
+    public void setForwardPrefix(boolean forwardPrefix) {
+        this.forwardPrefix = forwardPrefix;
+    }
+
+    public boolean isZipkinShowTraceId() {
+        return zipkinShowTraceId;
+    }
+
+    public void setZipkinShowTraceId(boolean zipkinShowTraceId) {
+        this.zipkinShowTraceId = zipkinShowTraceId;
+    }
+
+    public String getZipkinServiceName() {
+        return zipkinServiceName;
+    }
+
+    public void setZipkinServiceName(String zipkinServiceName) {
+        this.zipkinServiceName = zipkinServiceName;
+    }
 }
