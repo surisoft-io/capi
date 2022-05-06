@@ -206,6 +206,7 @@
 package io.surisoft.capi.lb.configuration;
 
 import io.surisoft.capi.lb.cache.StickySessionCacheManager;
+import io.surisoft.capi.lb.processor.MetricsProcessor;
 import io.surisoft.capi.lb.processor.SessionChecker;
 import io.surisoft.capi.lb.repository.ApiRepository;
 import io.surisoft.capi.lb.schema.Api;
@@ -216,18 +217,20 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.camel.CamelContext;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.model.RouteDefinition;
+import org.apache.camel.model.rest.RestDefinition;
 
 @Slf4j
 public class SingleRouteProcessor extends RouteBuilder {
 
     private RouteUtils routeUtils;
+    private MetricsProcessor metricsProcessor;
     private Api api;
     private RunningApi runningApi;
     private ApiRepository apiRepository;
     private StickySessionCacheManager stickySessionCacheManager;
     private String capiContext;
 
-    public SingleRouteProcessor(CamelContext camelContext, Api api, RouteUtils routeUtils, RunningApi runningApi, ApiRepository apiRepository, StickySessionCacheManager stickySessionCacheManager, String capiContext) {
+    public SingleRouteProcessor(CamelContext camelContext, Api api, RouteUtils routeUtils, MetricsProcessor metricsProcessor, RunningApi runningApi, ApiRepository apiRepository, StickySessionCacheManager stickySessionCacheManager, String capiContext) {
         super(camelContext);
         this.api = api;
         this.routeUtils = routeUtils;
@@ -235,19 +238,22 @@ public class SingleRouteProcessor extends RouteBuilder {
         this.apiRepository = apiRepository;
         this.stickySessionCacheManager = stickySessionCacheManager;
         this.capiContext = capiContext;
+        this.metricsProcessor = metricsProcessor;
     }
 
     @Override
     public void configure() {
-        RouteDefinition routeDefinition = getRouteDefinition(api, runningApi);
+        RouteDefinition routeDefinition = new RouteDefinition(); //getRouteDefinition(api, runningApi);
+        routeDefinition.setRestDefinition(getRestDefinition(api, runningApi));
         if(api.isForwardPrefix()) {
             routeDefinition.setHeader(Constants.X_FORWARDED_PREFIX, constant(capiContext + api.getContext()));
         }
         String routeId = routeUtils.getRouteId(api, runningApi.getHttpMethod());
         log.trace("Trying to build and deploy route {}", routeId);
-        routeUtils.buildOnExceptionDefinition(routeDefinition, false, false, false, routeId);
+        routeUtils.buildOnExceptionDefinition(routeDefinition, api.isZipkinShowTraceId(), false, false, routeId);
         if(api.isFailoverEnabled()) {
             routeDefinition
+                    .process(metricsProcessor)
                     .loadBalance()
                     .failover(1, false, api.isRoundRobinEnabled(), false)
                     .to(routeUtils.buildEndpoints(api))
@@ -255,6 +261,7 @@ public class SingleRouteProcessor extends RouteBuilder {
                     .routeId(routeId);
         } else if(api.isStickySession()) {
             routeDefinition
+                    .process(metricsProcessor)
                     .loadBalance(new SessionChecker(stickySessionCacheManager, api.getStickySessionParam(), api.isStickySessionParamInCookie()))
                     .to(routeUtils.buildEndpoints(api))
                     .end()
@@ -262,6 +269,7 @@ public class SingleRouteProcessor extends RouteBuilder {
         } else {
             log.info("Creating with session checker");
              routeDefinition
+                     .process(metricsProcessor)
                      .loadBalance()
                      .roundRobin()
                      .to(routeUtils.buildEndpoints(api))
@@ -271,23 +279,25 @@ public class SingleRouteProcessor extends RouteBuilder {
         routeUtils.registerMetric(routeId);
     }
 
-    private RouteDefinition getRouteDefinition(Api api, RunningApi runningApi) {
-        RouteDefinition routeDefinition = null;
+    //private RouteDefinition getRouteDefinition(Api api, RunningApi runningApi) {
+    private RestDefinition getRestDefinition(Api api, RunningApi runningApi) {
+        //RouteDefinition routeDefinition = null;
+        RestDefinition restDefinition = null;
         api.setMatchOnUriPrefix(true);
         switch (runningApi.getHttpMethod()) {
             case "get":
-                routeDefinition = rest().get(routeUtils.buildFrom(api) + Constants.MATCH_ON_URI_PREFIX + api.isMatchOnUriPrefix()).route();
+                restDefinition = rest().get(routeUtils.buildFrom(api) + Constants.MATCH_ON_URI_PREFIX + api.isMatchOnUriPrefix());
                 break;
             case "post":
-                routeDefinition = rest().post(routeUtils.buildFrom(api) + Constants.MATCH_ON_URI_PREFIX + api.isMatchOnUriPrefix()).route();
+                restDefinition = rest().post(routeUtils.buildFrom(api) + Constants.MATCH_ON_URI_PREFIX + api.isMatchOnUriPrefix());
                 break;
             case "put":
-                routeDefinition = rest().put(routeUtils.buildFrom(api) + Constants.MATCH_ON_URI_PREFIX + api.isMatchOnUriPrefix()).route();
+                restDefinition = rest().put(routeUtils.buildFrom(api) + Constants.MATCH_ON_URI_PREFIX + api.isMatchOnUriPrefix());
                 break;
             case "delete":
-                routeDefinition = rest().delete(routeUtils.buildFrom(api) + Constants.MATCH_ON_URI_PREFIX + api.isMatchOnUriPrefix()).route();
+                restDefinition = rest().delete(routeUtils.buildFrom(api) + Constants.MATCH_ON_URI_PREFIX + api.isMatchOnUriPrefix());
                 break;
         }
-        return routeDefinition;
+        return restDefinition;
     }
 }

@@ -209,6 +209,7 @@ import io.surisoft.capi.lb.cache.ConsulCacheManager;
 import io.surisoft.capi.lb.cache.RunningApiManager;
 import io.surisoft.capi.lb.cache.StickySessionCacheManager;
 import io.surisoft.capi.lb.configuration.ConsulRouteProcessor;
+import io.surisoft.capi.lb.processor.MetricsProcessor;
 import io.surisoft.capi.lb.repository.ApiRepository;
 import io.surisoft.capi.lb.schema.Api;
 import io.surisoft.capi.lb.schema.ConsulObject;
@@ -263,7 +264,12 @@ public class ApiUtils {
         Mapping mapping = new Mapping();
         mapping.setHostname(host);
         mapping.setPort(port);
-        mapping.setRootContext("/" + consulObject.getServiceName());
+        if(consulObject.getServiceTags().contains(Constants.NO_ROOT_CONTEXT)) {
+            mapping.setRootContext("/");
+        } else {
+            mapping.setRootContext("/" + consulObject.getServiceName());
+        }
+
         mapping.setIngress(true);
         return mapping;
     }
@@ -300,7 +306,7 @@ public class ApiUtils {
         }
     }
 
-    public void updateConsulExistingApi(Api existingApi, Api incomingApi, ConsulCacheManager apiCacheManager, RouteUtils routeUtils, CamelContext camelContext, StickySessionCacheManager stickySessionCacheManager, String capiContext) {
+    public void updateConsulExistingApi(Api existingApi, Api incomingApi, ConsulCacheManager apiCacheManager, RouteUtils routeUtils, MetricsProcessor metricsProcessor, CamelContext camelContext, StickySessionCacheManager stickySessionCacheManager, String capiContext) {
 
         if(isMappingChanged(existingApi.getMappingList(), incomingApi.getMappingList())) {
             log.trace("Changes detected for API: {}, redeploying routes.", existingApi.getId());
@@ -312,7 +318,7 @@ public class ApiUtils {
                 for(String routeId : apiRouteIdList) {
                     camelContext.getRouteController().stopRoute(routeId);
                     camelContext.removeRoute(routeId);
-                    camelContext.addRoutes(new ConsulRouteProcessor(camelContext, incomingApi, routeUtils, routeId, stickySessionCacheManager, capiContext));
+                    camelContext.addRoutes(new ConsulRouteProcessor(camelContext, incomingApi, routeUtils, metricsProcessor, routeId, stickySessionCacheManager, capiContext));
                 }
             } catch (Exception e) {
                 e.printStackTrace();

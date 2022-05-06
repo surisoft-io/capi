@@ -8,12 +8,10 @@ import io.surisoft.capi.lb.utils.Constants;
 import io.surisoft.capi.lb.utils.RouteUtils;
 import org.apache.camel.CamelContext;
 import org.apache.camel.builder.RouteBuilder;
-import org.apache.camel.component.direct.DirectComponent;
 import org.apache.camel.model.RouteDefinition;
 import org.apache.camel.model.rest.RestDefinition;
-import org.apache.camel.model.rest.VerbDefinition;
 
-public class ConsulRouteProcessor extends RouteBuilder {
+public class ConsulDirectRouteProcessor extends RouteBuilder {
 
     private RouteUtils routeUtils;
     private Api api;
@@ -22,7 +20,7 @@ public class ConsulRouteProcessor extends RouteBuilder {
     private String capiContext;
     private MetricsProcessor metricsProcessor;
 
-    public ConsulRouteProcessor(CamelContext camelContext, Api api, RouteUtils routeUtils, MetricsProcessor metricsProcessor, String routeId, StickySessionCacheManager stickySessionCacheManager, String capiContext) {
+    public ConsulDirectRouteProcessor(CamelContext camelContext, Api api, RouteUtils routeUtils, MetricsProcessor metricsProcessor, String routeId, StickySessionCacheManager stickySessionCacheManager, String capiContext) {
         super(camelContext);
         this.api = api;
         this.routeUtils = routeUtils;
@@ -35,16 +33,16 @@ public class ConsulRouteProcessor extends RouteBuilder {
     @Override
     public void configure() {
 
-        //RouteDefinition routeDefinition = new RouteDefinition();
+        RouteDefinition routeDefinition = from("direct:" + routeId);
 
-        /*if(api.isForwardPrefix()) {
-            routeDefinition.setHeader(Constants.X_FORWARDED_PREFIX, constant(capiContext + api.getContext()));
+        if(api.isForwardPrefix()) {
+            routeDefinition
+                    .setHeader(Constants.X_FORWARDED_PREFIX, constant(capiContext + api.getContext()));
         }
         log.trace("Trying to build and deploy route {}", routeId);
         routeUtils.buildOnExceptionDefinition(routeDefinition, api.isZipkinShowTraceId(), false, false, routeId);
         if(api.isFailoverEnabled()) {
             routeDefinition
-                    .from("direct:" + routeId)
                     .process(metricsProcessor)
                     .loadBalance()
                     .failover(1, false, api.isRoundRobinEnabled(), false)
@@ -53,7 +51,6 @@ public class ConsulRouteProcessor extends RouteBuilder {
                     .routeId(routeId);
         } else if(api.isStickySession()) {
             routeDefinition
-                    .from("direct:" + routeId)
                     .process(metricsProcessor)
                     .loadBalance(new SessionChecker(stickySessionCacheManager, api.getStickySessionParam(), api.isStickySessionParamInCookie()))
                     .to(routeUtils.buildEndpoints(api))
@@ -61,7 +58,6 @@ public class ConsulRouteProcessor extends RouteBuilder {
                     .routeId(routeId);
         } else {
             routeDefinition
-                    .from("direct:" + routeId)
                     .process(metricsProcessor)
                     .loadBalance()
                     .roundRobin()
@@ -71,17 +67,12 @@ public class ConsulRouteProcessor extends RouteBuilder {
         }
         routeUtils.registerMetric(routeId);
         api.setRouteId(routeId);
-        routeUtils.registerTracer(api);*/
+        routeUtils.registerTracer(api);
 
 
-        RestDefinition restDefinition = getRestDefinition(api);
-        restDefinition.to("direct:" + routeId);
-        restDefinition.id("x_" + routeId);
-
-        routeUtils.registerMetric("x_" + routeId);
     }
 
-    private RestDefinition getRestDefinition(Api api) {
+    /*private RestDefinition getRestDefinition(Api api) {
         RestDefinition restDefinition = null;
         api.setMatchOnUriPrefix(true);
 
@@ -108,5 +99,5 @@ public class ConsulRouteProcessor extends RouteBuilder {
                 break;
         }
         return restDefinition;
-    }
+    }*/
 }

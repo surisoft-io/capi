@@ -211,6 +211,7 @@ import com.hazelcast.map.listener.EntryEvictedListener;
 import com.hazelcast.map.listener.EntryRemovedListener;
 import com.hazelcast.map.listener.EntryUpdatedListener;
 import io.surisoft.capi.lb.configuration.SingleRouteProcessor;
+import io.surisoft.capi.lb.processor.MetricsProcessor;
 import io.surisoft.capi.lb.repository.ApiRepository;
 import io.surisoft.capi.lb.schema.Api;
 import io.surisoft.capi.lb.schema.RunningApi;
@@ -243,6 +244,9 @@ public class RunningApiListener implements EntryEvictedListener<String, RunningA
     @Autowired
     private StickySessionCacheManager stickySessionCacheManager;
 
+    @Autowired
+    private MetricsProcessor metricsProcessor;
+
     @Value("${camel.servlet.mapping.context-path}")
     private String capiContext;
 
@@ -255,7 +259,7 @@ public class RunningApiListener implements EntryEvictedListener<String, RunningA
             try {
                 Optional<Api> api = apiRepository.findById(runningApi.getApiId());
                 camelContext.removeRoute(runningApi.getRouteId());
-                camelContext.addRoutes(new SingleRouteProcessor(camelContext, api.get(), routeUtils, runningApi, apiRepository, stickySessionCacheManager, httpUtils.getCapiContext(capiContext)));
+                camelContext.addRoutes(new SingleRouteProcessor(camelContext, api.get(), routeUtils, metricsProcessor, runningApi, apiRepository, stickySessionCacheManager, httpUtils.getCapiContext(capiContext)));
             } catch (Exception e) {
                 log.error(e.getMessage(), e);
             }
@@ -269,7 +273,7 @@ public class RunningApiListener implements EntryEvictedListener<String, RunningA
             log.trace("Api with id: {} detected, deploying the route.", runningApi.getApiId());
             try {
                 Optional<Api> api = apiRepository.findById(runningApi.getApiId());
-                camelContext.addRoutes(new SingleRouteProcessor(camelContext, api.get(), routeUtils, runningApi, apiRepository, stickySessionCacheManager, httpUtils.getCapiContext(capiContext)));
+                camelContext.addRoutes(new SingleRouteProcessor(camelContext, api.get(), routeUtils, metricsProcessor, runningApi, apiRepository, stickySessionCacheManager, httpUtils.getCapiContext(capiContext)));
             } catch (Exception e) {
                log.error(e.getMessage(), e);
             }

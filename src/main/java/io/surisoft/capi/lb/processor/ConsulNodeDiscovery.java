@@ -3,6 +3,7 @@ package io.surisoft.capi.lb.processor;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.surisoft.capi.lb.cache.ConsulCacheManager;
 import io.surisoft.capi.lb.cache.StickySessionCacheManager;
+import io.surisoft.capi.lb.configuration.ConsulDirectRouteProcessor;
 import io.surisoft.capi.lb.configuration.ConsulRouteProcessor;
 import io.surisoft.capi.lb.schema.Api;
 import io.surisoft.capi.lb.schema.ConsulObject;
@@ -26,6 +27,7 @@ public class ConsulNodeDiscovery {
     private final String consulHost;
     private final ApiUtils apiUtils;
     private final RouteUtils routeUtils;
+    private final MetricsProcessor metricsProcessor;
     private final StickySessionCacheManager stickySessionCacheManager;
     private final OkHttpClient client = new OkHttpClient.Builder().build();
     private static final String GET_ALL_SERVICES = "/v1/catalog/services";
@@ -35,7 +37,7 @@ public class ConsulNodeDiscovery {
     private final CamelContext camelContext;
     private final ConsulCacheManager consulCacheManager;
 
-    public ConsulNodeDiscovery(CamelContext camelContext, String consulHost, ApiUtils apiUtils, RouteUtils routeUtils, StickySessionCacheManager stickySessionCacheManager, ConsulCacheManager consulCacheManager, String capiContext) {
+    public ConsulNodeDiscovery(CamelContext camelContext, String consulHost, ApiUtils apiUtils, RouteUtils routeUtils, MetricsProcessor metricsProcessor, StickySessionCacheManager stickySessionCacheManager, ConsulCacheManager consulCacheManager, String capiContext) {
         this.consulHost = consulHost;
         this.apiUtils = apiUtils;
         this.routeUtils = routeUtils;
@@ -43,6 +45,7 @@ public class ConsulNodeDiscovery {
         this.stickySessionCacheManager = stickySessionCacheManager;
         this.consulCacheManager = consulCacheManager;
         this.capiContext = capiContext;
+        this.metricsProcessor = metricsProcessor;
     }
 
     public void processInfo() {
@@ -99,6 +102,7 @@ public class ConsulNodeDiscovery {
                     incomingApi.setMatchOnUriPrefix(true);
                     incomingApi.setMappingList(entry.getValue());
                     incomingApi.setForwardPrefix(forwardPrefix(entry.getKey(), consulResponse));
+                    incomingApi.setZipkinShowTraceId(showZipkinTraceId(entry.getKey(), consulResponse));
 
                     Api existingApi = consulCacheManager.getApiById(apiId);
                     if(existingApi == null) {
@@ -108,14 +112,15 @@ public class ConsulNodeDiscovery {
                             Route existingRoute = camelContext.getRoute(routeId);
                             if(existingRoute == null) {
                                 try {
-                                    camelContext.addRoutes(new ConsulRouteProcessor(camelContext, incomingApi, routeUtils, routeId, stickySessionCacheManager, capiContext));
+                                    camelContext.addRoutes(new ConsulRouteProcessor(camelContext, incomingApi, routeUtils, metricsProcessor, routeId, stickySessionCacheManager, capiContext));
+                                    camelContext.addRoutes(new ConsulDirectRouteProcessor(camelContext, incomingApi, routeUtils, metricsProcessor, routeId, stickySessionCacheManager, capiContext));
                                 } catch (Exception e) {
                                     e.printStackTrace();
                                 }
                             }
                         }
                     } else {
-                        apiUtils.updateConsulExistingApi(existingApi,incomingApi, consulCacheManager, routeUtils, camelContext, stickySessionCacheManager, capiContext);
+                        apiUtils.updateConsulExistingApi(existingApi,incomingApi, consulCacheManager, routeUtils, metricsProcessor, camelContext, stickySessionCacheManager, capiContext);
                     }
                 }
 
@@ -173,7 +178,24 @@ public class ConsulNodeDiscovery {
         for(ConsulObject entry : consulObject) {
             if(entry.getServiceTags().contains("group=" + tagName) && entry.getServiceTags().contains(Constants.X_FORWARDED_PREFIX)) {
                 return true;
+            }
+        }
+        return false;
+    }
 
+    private boolean showZipkinTraceId(String tagName, ConsulObject[] consulObject) {
+        for(ConsulObject entry : consulObject) {
+            if(entry.getServiceTags().contains("group=" + tagName) && entry.getServiceTags().contains(Constants.TRACE_ID_HEADER)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean showZipkinServiceName(String tagName, ConsulObject[] consulObject) {
+        for(ConsulObject entry : consulObject) {
+            if(entry.getServiceTags().contains("group=" + tagName) && entry.getServiceTags().contains(Constants.TRACE_ID_HEADER)) {
+                return true;
             }
         }
         return false;

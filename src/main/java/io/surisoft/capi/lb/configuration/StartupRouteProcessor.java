@@ -207,6 +207,7 @@ package io.surisoft.capi.lb.configuration;
 
 import io.surisoft.capi.lb.cache.RunningApiManager;
 import io.surisoft.capi.lb.cache.StickySessionCacheManager;
+import io.surisoft.capi.lb.processor.MetricsProcessor;
 import io.surisoft.capi.lb.repository.ApiRepository;
 import io.surisoft.capi.lb.schema.Api;
 import io.surisoft.capi.lb.schema.HttpMethod;
@@ -244,6 +245,9 @@ public class StartupRouteProcessor {
     @Autowired
     private StickySessionCacheManager stickySessionCacheManager;
 
+    @Autowired
+    private MetricsProcessor metricsProcessor;
+
     @Value("${capi.persistence.enabled}")
     private boolean capiPersistenceEnabled;
 
@@ -261,7 +265,7 @@ public class StartupRouteProcessor {
                         if(runningApiManager.getRunningApiByRouteId(routeId) != null) {
                             try {
                                 log.trace("Running API with route ID: {}, already cached, deploying the route.", routeId);
-                                camelContext.addRoutes(new SingleRouteProcessor(camelContext, api, routeUtils, runningApiManager.getRunningApiByRouteId(routeId), apiRepository, stickySessionCacheManager, httpUtils.getCapiContext(capiContext)));
+                                camelContext.addRoutes(new SingleRouteProcessor(camelContext, api, routeUtils, metricsProcessor, runningApiManager.getRunningApiByRouteId(routeId), apiRepository, stickySessionCacheManager, httpUtils.getCapiContext(capiContext)));
                             } catch (Exception e) {
                                 log.error(e.getMessage());
                             }
@@ -274,7 +278,7 @@ public class StartupRouteProcessor {
                     if(runningApiManager.getRunningApiByRouteId(routeId) != null) {
                         try {
                             log.trace("Running API with route ID: {}, already cached, deploying the route.", routeId);
-                            camelContext.addRoutes(new SingleRouteProcessor(camelContext, api, routeUtils, runningApiManager.getRunningApiByRouteId(routeId), apiRepository, stickySessionCacheManager, httpUtils.getCapiContext(capiContext)));
+                            camelContext.addRoutes(new SingleRouteProcessor(camelContext, api, routeUtils, metricsProcessor, runningApiManager.getRunningApiByRouteId(routeId), apiRepository, stickySessionCacheManager, httpUtils.getCapiContext(capiContext)));
                         } catch (Exception e) {
                             log.error(e.getMessage());
                         }

@@ -303,29 +303,6 @@ public class ApiManager {
         return new ResponseEntity<>(api, HttpStatus.OK);
     }
 
-    /*@Operation(summary = "Register an API Definition (not published)")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "201", description = "Node added"),
-            @ApiResponse(responseCode = "400", description = "Bad request"),
-            @ApiResponse(responseCode = "409", description = "Already exists")
-    })
-    @PostMapping(path="/register/definition")
-    public ResponseEntity<Api> newApiDefinition(@RequestBody Api api) {
-        if(!isDefinitionValid(api)) {
-            return new  ResponseEntity<>(HttpStatus.BAD_REQUEST);
-        }
-
-        String apiId = apiUtils.getApiId(api);
-        Optional<Api> existingApi = apiRepository.findById(apiId);
-        if(existingApi.isPresent()) {
-            return new ResponseEntity<>(api, HttpStatus.CONFLICT);
-        }
-        apiUtils.applyApiDefaults(api);
-        api.setId(apiId);
-        apiRepository.save(api);
-        return new ResponseEntity<>(api, HttpStatus.OK);
-    }*/
-
     @Operation(summary = "Unregister a node, with the option of removing the entire API.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Node/API removed"),
@@ -343,7 +320,7 @@ public class ApiManager {
 
         String apiId = apiUtils.getApiId(api);
         Optional<Api> existingApi = apiRepository.findById(apiId);
-        if(!existingApi.isPresent()) {
+        if(existingApi.isEmpty()) {
             return new  ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
 
@@ -393,9 +370,5 @@ public class ApiManager {
 
     private boolean isNodeInfoValid(Api api) {
         return api != null && api.getContext() != null && api.getName() != null && api.getMappingList() != null && !api.getMappingList().isEmpty();
-    }
-
-    private boolean isDefinitionValid(Api api) {
-        return api != null && api.getContext() != null && api.getName() != null;
     }
 }
