@@ -2,16 +2,12 @@ package io.surisoft.capi.lb.configuration;
 
 import io.surisoft.capi.lb.cache.StickySessionCacheManager;
 import io.surisoft.capi.lb.processor.MetricsProcessor;
-import io.surisoft.capi.lb.processor.SessionChecker;
 import io.surisoft.capi.lb.schema.Api;
 import io.surisoft.capi.lb.utils.Constants;
 import io.surisoft.capi.lb.utils.RouteUtils;
 import org.apache.camel.CamelContext;
 import org.apache.camel.builder.RouteBuilder;
-import org.apache.camel.component.direct.DirectComponent;
-import org.apache.camel.model.RouteDefinition;
 import org.apache.camel.model.rest.RestDefinition;
-import org.apache.camel.model.rest.VerbDefinition;
 
 public class ConsulRouteProcessor extends RouteBuilder {
 

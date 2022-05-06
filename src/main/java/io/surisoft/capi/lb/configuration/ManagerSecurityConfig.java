@@ -76,7 +76,7 @@ public class ManagerSecurityConfig extends WebSecurityConfigurerAdapter {
         public Jwt decode(String token) throws JwtException {
             try {
                 SignedJWT decodedToken = SignedJWT.parse(token);
-                TypeReference<HashMap<String, Object>> typeReference = new TypeReference<HashMap<String, Object>>() {};
+                TypeReference<HashMap<String, Object>> typeReference = new TypeReference<>() {};
                 HashMap<String, Object> headerMap = new ObjectMapper().readValue(decodedToken.getHeader().toString(), typeReference);
 
                 ConfigurableJWTProcessor<SecurityContext> jwtProcessor = new DefaultJWTProcessor<>();

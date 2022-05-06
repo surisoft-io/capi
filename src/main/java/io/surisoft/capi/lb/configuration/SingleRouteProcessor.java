@@ -213,14 +213,16 @@ import io.surisoft.capi.lb.schema.Api;
 import io.surisoft.capi.lb.schema.RunningApi;
 import io.surisoft.capi.lb.utils.Constants;
 import io.surisoft.capi.lb.utils.RouteUtils;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.camel.CamelContext;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.model.RouteDefinition;
 import org.apache.camel.model.rest.RestDefinition;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-@Slf4j
 public class SingleRouteProcessor extends RouteBuilder {
+
+    private static final Logger log = LoggerFactory.getLogger(SingleRouteProcessor.class);
 
     private RouteUtils routeUtils;
     private MetricsProcessor metricsProcessor;

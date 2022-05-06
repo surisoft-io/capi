@@ -205,15 +205,20 @@
 
 package io.surisoft.capi.lb.cache;
 
-import com.hazelcast.config.*;
-import io.surisoft.capi.lb.utils.Constants;
-import lombok.extern.slf4j.Slf4j;
+import com.hazelcast.config.Config;
+import com.hazelcast.config.EvictionPolicy;
+import com.hazelcast.config.MapConfig;
+import com.hazelcast.config.MaxSizePolicy;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-@Slf4j
 public class CacheConfiguration extends Config {
+
+    private static final Logger log = LoggerFactory.getLogger(CacheConfiguration.class);
 
     public CacheConfiguration(String springProfile) {
         super();
+        log.debug("CAPI cache configuration.");
         setClusterName(springProfile);
         MapConfig mapConfig = new MapConfig()
                 .setName("capi-cache-config")

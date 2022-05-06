@@ -4,14 +4,12 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
 import io.surisoft.capi.lb.schema.StickySession;
 import io.surisoft.capi.lb.utils.RouteUtils;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.util.concurrent.TimeUnit;
 
 @Component
-@Slf4j
 public class StickySessionCacheManager {
 
     private HazelcastInstance hazelcastInstance;

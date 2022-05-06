@@ -213,7 +213,6 @@ import io.micrometer.core.instrument.util.HierarchicalNameMapper;
 import io.micrometer.jmx.JmxMeterRegistry;
 import io.surisoft.capi.lb.cache.CacheConfiguration;
 import io.surisoft.capi.lb.utils.Constants;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.camel.CamelContext;
 import org.apache.camel.component.http.HttpClientConfigurer;
 import org.apache.camel.component.http.HttpComponent;
@@ -221,6 +220,8 @@ import org.apache.camel.component.micrometer.CamelJmxConfig;
 import org.apache.camel.component.micrometer.DistributionStatisticConfigFilter;
 import org.apache.camel.zipkin.ZipkinTracer;
 import org.apache.http.impl.client.HttpClientBuilder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
@@ -238,8 +239,9 @@ import static org.apache.camel.component.micrometer.messagehistory.MicrometerMes
 import static org.apache.camel.component.micrometer.routepolicy.MicrometerRoutePolicyNamingStrategy.ROUTE_POLICIES;
 
 @Configuration
-@Slf4j
 public class CapiConfiguration {
+
+    private static final Logger log = LoggerFactory.getLogger(CapiConfiguration.class);
 
     @Value("${capi.trust.store.path}")
     private String capiTrustStorePath;

@@ -210,7 +210,8 @@ import com.hazelcast.map.IMap;
 import io.surisoft.capi.lb.schema.Api;
 import io.surisoft.capi.lb.schema.RunningApi;
 import io.surisoft.capi.lb.utils.RouteUtils;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
@@ -219,8 +220,9 @@ import java.util.Collection;
 import java.util.List;
 
 @Component
-@Slf4j
 public class RunningApiManager {
+
+    private static final Logger log = LoggerFactory.getLogger(RunningApiManager.class);
 
     private HazelcastInstance hazelcastInstance;
     private RunningApiListener runningApiListener;

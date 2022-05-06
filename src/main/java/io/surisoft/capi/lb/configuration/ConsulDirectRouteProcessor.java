@@ -9,7 +9,6 @@ import io.surisoft.capi.lb.utils.RouteUtils;
 import org.apache.camel.CamelContext;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.model.RouteDefinition;
-import org.apache.camel.model.rest.RestDefinition;
 
 public class ConsulDirectRouteProcessor extends RouteBuilder {
 

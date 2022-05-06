@@ -1,7 +1,8 @@
 package io.surisoft.capi.lb.configuration;
 
 import io.surisoft.capi.lb.cache.ConsulDiscoveryCacheManager;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationEvent;
@@ -10,8 +11,9 @@ import org.springframework.context.event.ContextClosedEvent;
 import org.springframework.stereotype.Component;
 
 @Component
-@Slf4j
 public class CapiListener implements ApplicationListener<ApplicationEvent> {
+
+    private static final Logger log = LoggerFactory.getLogger(CapiListener.class);
 
     @Autowired
     private ConsulDiscoveryCacheManager consulDiscoveryCacheManager;

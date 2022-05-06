@@ -217,8 +217,9 @@ import io.surisoft.capi.lb.schema.Api;
 import io.surisoft.capi.lb.schema.RunningApi;
 import io.surisoft.capi.lb.utils.HttpUtils;
 import io.surisoft.capi.lb.utils.RouteUtils;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.camel.CamelContext;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -226,8 +227,9 @@ import org.springframework.stereotype.Component;
 import java.util.Optional;
 
 @Component
-@Slf4j
 public class RunningApiListener implements EntryEvictedListener<String, RunningApi>, EntryRemovedListener<String, RunningApi>, EntryAddedListener<String, RunningApi>, EntryUpdatedListener<String, RunningApi> {
+
+    private static final Logger log = LoggerFactory.getLogger(RunningApiListener.class);
 
     @Autowired
     private CamelContext camelContext;
