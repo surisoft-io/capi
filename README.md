@@ -2,7 +2,7 @@
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 ![Docker Image Version (latest by date)](https://img.shields.io/docker/v/surisoft/capi-lb)
 [![CodeQL](https://github.com/surisoft-io/capi-lb/actions/workflows/codeql-analysis.yml/badge.svg)](https://github.com/surisoft-io/capi-lb/actions/workflows/codeql-analysis.yml)
-
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=surisoft-io_capi-lb&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=surisoft-io_capi-lb)
 
 # CAPI Load Balancer
 ## _Light Apache Camel Load Balancer_
