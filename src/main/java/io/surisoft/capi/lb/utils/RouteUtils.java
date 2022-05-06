@@ -207,13 +207,14 @@ package io.surisoft.capi.lb.utils;
 
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
 import io.surisoft.capi.lb.processor.HttpErrorProcessor;
-import io.surisoft.capi.lb.schema.*;
+import io.surisoft.capi.lb.schema.Api;
+import io.surisoft.capi.lb.schema.HttpMethod;
+import io.surisoft.capi.lb.schema.HttpProtocol;
+import io.surisoft.capi.lb.schema.Mapping;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.camel.model.RouteDefinition;
 import org.apache.camel.model.rest.*;
-import org.apache.camel.util.json.JsonObject;
-import org.apache.camel.util.json.Jsonable;
-import org.apache.camel.util.json.Jsoner;
+import org.apache.camel.zipkin.ZipkinTracer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -240,8 +241,18 @@ public class RouteUtils {
     @Autowired
     private CompositeMeterRegistry meterRegistry;
 
+    @Autowired(required = false)
+    private ZipkinTracer zipkinTracer;
+
     public void registerMetric(String routeId) {
         meterRegistry.counter(routeId);
+    }
+
+    public void registerTracer(Api api) {
+        if (zipkinTracer != null) {
+            log.debug("Adding API to Zipkin tracer as {}", api.getRouteId());
+            zipkinTracer.addServerServiceMapping(api.getRouteId(), api.getZipkinServiceName() != null ? api.getZipkinServiceName() : api.getRouteId());
+        }
     }
 
     public void buildOnExceptionDefinition(RouteDefinition routeDefinition,
@@ -290,7 +301,7 @@ public class RouteUtils {
             }
             transformedEndpointList.add(endpoint);
         }
-        return transformedEndpointList.stream().toArray(n -> new String[n]);
+        return transformedEndpointList.toArray(String[]::new);
     }
 
     public String buildFrom(Api api) {
@@ -302,13 +313,13 @@ public class RouteUtils {
 
     public HttpMethod getMethodFromRoute(RouteDefinition routeDefinition) {
         VerbDefinition verbDefinition = routeDefinition.getRestDefinition().getVerbs().get(0);
-        if(verbDefinition instanceof GetVerbDefinition) {
+        if(verbDefinition instanceof GetDefinition) {
             return HttpMethod.GET;
-        } else if(verbDefinition instanceof PostVerbDefinition) {
+        } else if(verbDefinition instanceof PostDefinition) {
             return HttpMethod.POST;
-        } else if(verbDefinition instanceof PutVerbDefinition) {
+        } else if(verbDefinition instanceof PutDefinition) {
             return HttpMethod.PUT;
-        } else if(verbDefinition instanceof DeleteVerbDefinition) {
+        } else if(verbDefinition instanceof DeleteDefinition) {
             return HttpMethod.DELETE;
         }
         return null;
