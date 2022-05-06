@@ -167,7 +167,7 @@ public class ConsulNodeDiscovery {
 
     private String getServiceNodeGroup(ConsulObject consulObject) {
         for(String serviceTag : consulObject.getServiceTags()) {
-            if(serviceTag.contains("group=")) {
+            if(serviceTag.contains(Constants.CONSUL_GROUP)) {
                 return serviceTag.substring(serviceTag.lastIndexOf("=") + 1);
             }
         }
@@ -176,7 +176,7 @@ public class ConsulNodeDiscovery {
 
     private boolean forwardPrefix(String tagName, ConsulObject[] consulObject) {
         for(ConsulObject entry : consulObject) {
-            if(entry.getServiceTags().contains("group=" + tagName) && entry.getServiceTags().contains(Constants.X_FORWARDED_PREFIX)) {
+            if(entry.getServiceTags().contains(Constants.CONSUL_GROUP + tagName) && entry.getServiceTags().contains(Constants.X_FORWARDED_PREFIX)) {
                 return true;
             }
         }
@@ -185,7 +185,7 @@ public class ConsulNodeDiscovery {
 
     private boolean showZipkinTraceId(String tagName, ConsulObject[] consulObject) {
         for(ConsulObject entry : consulObject) {
-            if(entry.getServiceTags().contains("group=" + tagName) && entry.getServiceTags().contains(Constants.TRACE_ID_HEADER)) {
+            if(entry.getServiceTags().contains(Constants.CONSUL_GROUP + tagName) && entry.getServiceTags().contains(Constants.TRACE_ID_HEADER)) {
                 return true;
             }
         }
@@ -194,7 +194,7 @@ public class ConsulNodeDiscovery {
 
     private boolean showZipkinServiceName(String tagName, ConsulObject[] consulObject) {
         for(ConsulObject entry : consulObject) {
-            if(entry.getServiceTags().contains("group=" + tagName) && entry.getServiceTags().contains(Constants.TRACE_ID_HEADER)) {
+            if(entry.getServiceTags().contains(Constants.CONSUL_GROUP + tagName) && entry.getServiceTags().contains(Constants.TRACE_ID_HEADER)) {
                 return true;
             }
         }
