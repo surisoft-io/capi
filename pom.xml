@@ -212,29 +212,27 @@
   <groupId>io.surisoft.capi</groupId>
   <artifactId>capi-lb</artifactId>
   <packaging>jar</packaging>
-  <version>1.2.4</version>
+  <version>1.4.0</version>
 
   <name>CAPI Load Balancer</name>
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-
-    <docker.image.prefix>surisoft</docker.image.prefix>
-    <com.google.cloud.tools-version>2.2.0</com.google.cloud.tools-version>
-    <org.apache.camel.springboot-version>3.14.0</org.apache.camel.springboot-version>
-    <io.hawt.version>2.14.3</io.hawt.version>
-    <io.micrometer-version>1.8.1</io.micrometer-version>
-    <org.springdoc-verion>1.6.0</org.springdoc-verion>
-    <nimbus-jose-jwt-version>9.15.2</nimbus-jose-jwt-version>
+    <org.apache.camel.springboot-version>3.16.0</org.apache.camel.springboot-version>
+    <io.hawt.version>2.14.5</io.hawt.version>
+    <io.micrometer-version>1.8.5</io.micrometer-version>
+    <org.springdoc-verion>1.6.8</org.springdoc-verion>
+    <nimbus-jose-jwt-version>9.22</nimbus-jose-jwt-version>
     <lombok-version>1.18.22</lombok-version>
-
+    <spring-cloud-sleuth-version>3.1.1</spring-cloud-sleuth-version>
+    <io.zipkin.reporter2-version>2.16.3</io.zipkin.reporter2-version>
   </properties>
 
   <parent>
     <groupId>org.springframework.boot</groupId>
     <artifactId>spring-boot-starter-parent</artifactId>
-    <version>2.6.2</version>
+    <version>2.6.6</version>
     <relativePath/>
   </parent>
 
@@ -283,6 +281,11 @@
     </dependency>
     <dependency>
       <groupId>org.apache.camel.springboot</groupId>
+      <artifactId>camel-direct-starter</artifactId>
+      <version>${org.apache.camel.springboot-version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.camel.springboot</groupId>
       <artifactId>camel-jackson-starter</artifactId>
       <version>${org.apache.camel.springboot-version}</version>
     </dependency>
@@ -317,6 +320,17 @@
       <version>${org.apache.camel.springboot-version}</version>
     </dependency>
     <dependency>
+      <groupId>org.apache.camel.springboot</groupId>
+      <artifactId>camel-zipkin-starter</artifactId>
+      <version>${org.apache.camel.springboot-version}</version>
+    </dependency>
+    <!-- Instrumentation -->
+    <dependency>
+      <groupId>io.zipkin.reporter2</groupId>
+      <artifactId>zipkin-sender-okhttp3</artifactId>
+      <version>${io.zipkin.reporter2-version}</version>
+    </dependency>
+    <dependency>
       <groupId>io.hawt</groupId>
       <artifactId>hawtio-springboot</artifactId>
       <version>${io.hawt.version}</version>
@@ -329,6 +343,11 @@
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-oauth2-resource-server</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.cloud</groupId>
+      <artifactId>spring-cloud-sleuth-zipkin</artifactId>
+      <version>${spring-cloud-sleuth-version}</version>
     </dependency>
     <dependency>
       <groupId>com.nimbusds</groupId>
