@@ -32,7 +32,7 @@ public class ConsulNodeDiscovery {
     private final OkHttpClient client = new OkHttpClient.Builder().build();
     private static final String GET_ALL_SERVICES = "/v1/catalog/services";
     private static final String GET_SERVICE_BY_NAME = "/v1/catalog/service/";
-    private String capiContext;
+    private final String capiContext;
 
     private final CamelContext camelContext;
     private final ConsulCacheManager consulCacheManager;
@@ -65,7 +65,7 @@ public class ConsulNodeDiscovery {
                 try {
                     apiUtils.removeConsulUnusedApi(camelContext, routeUtils, consulCacheManager, services.stream().toList());
                 } catch (Exception e) {
-                    e.printStackTrace();
+                    log.error(e.getMessage(), e);
                 }
                 for(String service : services) {
                     getServiceByName(service);
@@ -115,7 +115,7 @@ public class ConsulNodeDiscovery {
                                     camelContext.addRoutes(new ConsulRouteProcessor(camelContext, incomingApi, routeUtils, metricsProcessor, routeId, stickySessionCacheManager, capiContext));
                                     camelContext.addRoutes(new ConsulDirectRouteProcessor(camelContext, incomingApi, routeUtils, metricsProcessor, routeId, stickySessionCacheManager, capiContext));
                                 } catch (Exception e) {
-                                    e.printStackTrace();
+                                    log.error(e.getMessage(), e);
                                 }
                             }
                         }
@@ -127,13 +127,13 @@ public class ConsulNodeDiscovery {
                 try {
                     apiUtils.removeConsulUnusedApi(camelContext, routeUtils, consulCacheManager, servicesStructure, serviceName);
                 } catch(Exception e) {
-
+                    log.error(e.getMessage(), e);
                 }
             }
 
             public void onFailure(Call call, IOException e) {
                 //TODO
-                log.info(e.getMessage());
+                log.error(e.getMessage(), e);
             }
         });
     }

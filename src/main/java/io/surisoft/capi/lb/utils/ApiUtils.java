@@ -286,7 +286,7 @@ public class ApiUtils {
                     runningApiManager.updateRunningApi(routeId);
                 }
             } catch (Exception e) {
-                e.printStackTrace();
+                log.error(e.getMessage(), e);
             }
         } else if(isMappingChanged(existingApi.getMappingList(), incomingApi.getMappingList())) {
             log.trace("Changes detected for API: {}, redeploying routes.", existingApi.getId());
@@ -299,7 +299,7 @@ public class ApiUtils {
                     runningApiManager.updateRunningApi(routeId);
                 }
             } catch (Exception e) {
-                e.printStackTrace();
+                log.error(e.getMessage(), e);
             }
         } else {
             log.trace("No changes detected for API: {}.", existingApi.getId());
@@ -321,7 +321,7 @@ public class ApiUtils {
                     camelContext.addRoutes(new ConsulRouteProcessor(camelContext, incomingApi, routeUtils, metricsProcessor, routeId, stickySessionCacheManager, capiContext));
                 }
             } catch (Exception e) {
-                e.printStackTrace();
+                log.error(e.getMessage(), e);
             }
 
 
