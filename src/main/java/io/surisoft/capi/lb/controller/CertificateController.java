@@ -17,11 +17,13 @@ package io.surisoft.capi.lb.controller;
 
 import io.surisoft.capi.lb.schema.AliasInfo;
 import io.surisoft.capi.lb.schema.CertificateRequest;
+import io.surisoft.capi.lb.utils.Constants;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -44,8 +46,9 @@ import java.util.List;
 @RestController
 @RequestMapping("/manager/certificate")
 @Tag(name="Certificate Management")
-@Slf4j
 public class CertificateController {
+
+    private static final Logger log = LoggerFactory.getLogger(CertificateController.class);
 
     @Value("${capi.trust.store.path}")
     private String capiTrustStorePath;
@@ -66,7 +69,7 @@ public class CertificateController {
 
         if(!capiTrustStoreEnabled) {
             AliasInfo aliasInfo = new AliasInfo();
-            aliasInfo.setAdditionalInfo("No custom trust store was provided, to enable this feature, add a custom trust store.");
+            aliasInfo.setAdditionalInfo(Constants.NO_CUSTOM_TRUST_STORE_PROVIDED);
             aliasList.add(aliasInfo);
             return new ResponseEntity<>(aliasList, HttpStatus.OK);
         }
@@ -104,7 +107,7 @@ public class CertificateController {
 
         if(!capiTrustStoreEnabled) {
             aliasInfo = new AliasInfo();
-            aliasInfo.setAdditionalInfo("No custom trust store was provided, to enable this feature, add a custom trust store.");
+            aliasInfo.setAdditionalInfo(Constants.NO_CUSTOM_TRUST_STORE_PROVIDED);
             return new ResponseEntity<>(aliasInfo, HttpStatus.BAD_REQUEST);
         }
 
@@ -145,7 +148,7 @@ public class CertificateController {
         AliasInfo aliasInfo = new AliasInfo();
 
         if(!capiTrustStoreEnabled) {
-            aliasInfo.setAdditionalInfo("No custom trust store was provided, to enable this feature, add a custom trust store.");
+            aliasInfo.setAdditionalInfo(Constants.NO_CUSTOM_TRUST_STORE_PROVIDED);
             return new ResponseEntity<>(aliasInfo, HttpStatus.BAD_REQUEST);
         }
 
@@ -180,7 +183,7 @@ public class CertificateController {
 
         if(!capiTrustStoreEnabled) {
             aliasInfo = new AliasInfo();
-            aliasInfo.setAdditionalInfo("No custom trust store was provided, to enable this feature, add a custom trust store.");
+            aliasInfo.setAdditionalInfo(Constants.NO_CUSTOM_TRUST_STORE_PROVIDED);
             return new ResponseEntity<>(aliasInfo, HttpStatus.BAD_REQUEST);
         }
 

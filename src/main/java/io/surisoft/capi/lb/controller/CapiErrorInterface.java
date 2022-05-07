@@ -206,8 +206,9 @@
 package io.surisoft.capi.lb.controller;
 
 import io.surisoft.capi.lb.utils.Constants;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.camel.util.json.JsonObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.boot.web.servlet.error.ErrorController;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -218,8 +219,10 @@ import javax.servlet.RequestDispatcher;
 import javax.servlet.http.HttpServletRequest;
 
 @Controller
-@Slf4j
 public class CapiErrorInterface implements ErrorController {
+
+    private static final Logger log = LoggerFactory.getLogger(CapiErrorInterface.class);
+
     @GetMapping(value = "/error")
     public ResponseEntity<String> handleError(HttpServletRequest request) {
 

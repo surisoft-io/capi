@@ -12,17 +12,19 @@ import io.surisoft.capi.lb.schema.Mapping;
 import io.surisoft.capi.lb.utils.ApiUtils;
 import io.surisoft.capi.lb.utils.Constants;
 import io.surisoft.capi.lb.utils.RouteUtils;
-import lombok.extern.slf4j.Slf4j;
 import okhttp3.*;
 import org.apache.camel.CamelContext;
 import org.apache.camel.Route;
 import org.apache.camel.util.json.JsonObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.*;
 
-@Slf4j
 public class ConsulNodeDiscovery {
+
+    private static final Logger log = LoggerFactory.getLogger(ConsulNodeDiscovery.class);
 
     private final String consulHost;
     private final ApiUtils apiUtils;
@@ -90,35 +92,11 @@ public class ConsulNodeDiscovery {
 
                 for (var entry : servicesStructure.entrySet()) {
                     String apiId = serviceName + ":" + entry.getKey();
-                    Api incomingApi = new Api();
-                    incomingApi.setId(apiId);
-                    incomingApi.setName(serviceName);
-                    incomingApi.setContext("/" + serviceName + "/" + entry.getKey());
-                    incomingApi.setHttpMethod(HttpMethod.ALL);
-                    incomingApi.setPublished(true);
-                    incomingApi.setMappingList(new ArrayList<>());
-                    incomingApi.setFailoverEnabled(true);
-                    incomingApi.setRoundRobinEnabled(true);
-                    incomingApi.setMatchOnUriPrefix(true);
-                    incomingApi.setMappingList(entry.getValue());
-                    incomingApi.setForwardPrefix(forwardPrefix(entry.getKey(), consulResponse));
-                    incomingApi.setZipkinShowTraceId(showZipkinTraceId(entry.getKey(), consulResponse));
+                    Api incomingApi = createApiObject(apiId, serviceName, entry.getKey(), entry.getValue(), consulResponse);
 
                     Api existingApi = consulCacheManager.getApiById(apiId);
                     if(existingApi == null) {
-                        consulCacheManager.createApi(incomingApi);
-                        List<String> apiRouteIdList = routeUtils.getAllRouteIdForAGivenApi(incomingApi);
-                        for(String routeId : apiRouteIdList) {
-                            Route existingRoute = camelContext.getRoute(routeId);
-                            if(existingRoute == null) {
-                                try {
-                                    camelContext.addRoutes(new ConsulRestDefinitionProcessor(camelContext, incomingApi, routeUtils, routeId));
-                                    camelContext.addRoutes(new ConsulDirectRouteProcessor(camelContext, incomingApi, routeUtils, metricsProcessor, routeId, stickySessionCacheManager, capiContext));
-                                } catch (Exception e) {
-                                    log.error(e.getMessage(), e);
-                                }
-                            }
-                        }
+                        createRoute(incomingApi);
                     } else {
                         apiUtils.updateConsulExistingApi(existingApi,incomingApi, consulCacheManager, routeUtils, metricsProcessor, camelContext, stickySessionCacheManager, capiContext);
                     }
@@ -132,7 +110,6 @@ public class ConsulNodeDiscovery {
             }
 
             public void onFailure(Call call, IOException e) {
-                //TODO
                 log.error(e.getMessage(), e);
             }
         });
@@ -199,5 +176,38 @@ public class ConsulNodeDiscovery {
             }
         }
         return false;
+    }
+
+    private Api createApiObject(String apiId, String serviceName, String key, List<Mapping> mappingList, ConsulObject[] consulResponse) {
+        Api incomingApi = new Api();
+        incomingApi.setId(apiId);
+        incomingApi.setName(serviceName);
+        incomingApi.setContext("/" + serviceName + "/" + key);
+        incomingApi.setHttpMethod(HttpMethod.ALL);
+        incomingApi.setPublished(true);
+        incomingApi.setMappingList(new ArrayList<>());
+        incomingApi.setFailoverEnabled(true);
+        incomingApi.setRoundRobinEnabled(true);
+        incomingApi.setMatchOnUriPrefix(true);
+        incomingApi.setMappingList(mappingList);
+        incomingApi.setForwardPrefix(forwardPrefix(key, consulResponse));
+        incomingApi.setZipkinShowTraceId(showZipkinTraceId(key, consulResponse));
+        return incomingApi;
+    }
+
+    private void createRoute(Api incomingApi) {
+        consulCacheManager.createApi(incomingApi);
+        List<String> apiRouteIdList = routeUtils.getAllRouteIdForAGivenApi(incomingApi);
+        for(String routeId : apiRouteIdList) {
+            Route existingRoute = camelContext.getRoute(routeId);
+            if(existingRoute == null) {
+                try {
+                    camelContext.addRoutes(new ConsulRestDefinitionProcessor(camelContext, incomingApi, routeUtils, routeId));
+                    camelContext.addRoutes(new ConsulDirectRouteProcessor(camelContext, incomingApi, routeUtils, metricsProcessor, routeId, stickySessionCacheManager, capiContext));
+                } catch (Exception e) {
+                    log.error(e.getMessage(), e);
+                }
+            }
+        }
     }
 }
