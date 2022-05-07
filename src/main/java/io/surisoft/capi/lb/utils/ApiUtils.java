@@ -208,45 +208,31 @@ package io.surisoft.capi.lb.utils;
 import io.surisoft.capi.lb.cache.ConsulCacheManager;
 import io.surisoft.capi.lb.cache.RunningApiManager;
 import io.surisoft.capi.lb.cache.StickySessionCacheManager;
-import io.surisoft.capi.lb.configuration.ConsulRouteProcessor;
+import io.surisoft.capi.lb.configuration.ConsulDirectRouteProcessor;
+import io.surisoft.capi.lb.configuration.ConsulRestDefinitionProcessor;
 import io.surisoft.capi.lb.processor.MetricsProcessor;
 import io.surisoft.capi.lb.repository.ApiRepository;
 import io.surisoft.capi.lb.schema.Api;
 import io.surisoft.capi.lb.schema.ConsulObject;
-import io.surisoft.capi.lb.schema.HttpMethod;
 import io.surisoft.capi.lb.schema.Mapping;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.camel.CamelContext;
-import org.apache.camel.util.json.JsonObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
-import java.util.*;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 @Component
-@Slf4j
 public class ApiUtils {
+
+    private static final Logger log = LoggerFactory.getLogger(ApiUtils.class);
 
     public String getApiId(Api api) {
         return api.getName() + ":" + api.getContext();
-        /*JsonObject jsonObject = new JsonObject();
-        jsonObject.put("apiName", api.getName());
-        jsonObject.put("apiContext", api.getContext());
-        if(api.getHttpMethod() == null || api.getHttpMethod().equals(HttpMethod.ALL)) {
-            api.setHttpMethod(HttpMethod.ALL);
-            jsonObject.put("httpMethod", HttpMethod.ALL);
-        } else {
-            jsonObject.put("httpMethod", api.getHttpMethod().getMethod());
-        }
-        return new String(Base64.getEncoder().encode(jsonObject.toJson().getBytes()));*/
     }
-
-    /*public String getApiId(String apiName) {
-        JsonObject jsonObject = new JsonObject();
-        jsonObject.put("apiName", apiName);
-        jsonObject.put("apiContext", apiName);
-        jsonObject.put("httpMethod", HttpMethod.ALL);
-        return new String(Base64.getEncoder().encode(jsonObject.toJson().getBytes()));
-    }*/
 
     public boolean isMappingNew(Api existingApi, Mapping mapping) {
         boolean isNew = false;
@@ -318,7 +304,8 @@ public class ApiUtils {
                 for(String routeId : apiRouteIdList) {
                     camelContext.getRouteController().stopRoute(routeId);
                     camelContext.removeRoute(routeId);
-                    camelContext.addRoutes(new ConsulRouteProcessor(camelContext, incomingApi, routeUtils, metricsProcessor, routeId, stickySessionCacheManager, capiContext));
+                    camelContext.addRoutes(new ConsulRestDefinitionProcessor(camelContext, incomingApi, routeUtils, routeId));
+                    camelContext.addRoutes(new ConsulDirectRouteProcessor(camelContext, incomingApi, routeUtils, metricsProcessor, routeId, stickySessionCacheManager, capiContext));
                 }
             } catch (Exception e) {
                 log.error(e.getMessage(), e);

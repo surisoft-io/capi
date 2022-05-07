@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.surisoft.capi.lb.cache.ConsulCacheManager;
 import io.surisoft.capi.lb.cache.StickySessionCacheManager;
 import io.surisoft.capi.lb.configuration.ConsulDirectRouteProcessor;
-import io.surisoft.capi.lb.configuration.ConsulRouteProcessor;
+import io.surisoft.capi.lb.configuration.ConsulRestDefinitionProcessor;
 import io.surisoft.capi.lb.schema.Api;
 import io.surisoft.capi.lb.schema.ConsulObject;
 import io.surisoft.capi.lb.schema.HttpMethod;
@@ -112,7 +112,7 @@ public class ConsulNodeDiscovery {
                             Route existingRoute = camelContext.getRoute(routeId);
                             if(existingRoute == null) {
                                 try {
-                                    camelContext.addRoutes(new ConsulRouteProcessor(camelContext, incomingApi, routeUtils, metricsProcessor, routeId, stickySessionCacheManager, capiContext));
+                                    camelContext.addRoutes(new ConsulRestDefinitionProcessor(camelContext, incomingApi, routeUtils, routeId));
                                     camelContext.addRoutes(new ConsulDirectRouteProcessor(camelContext, incomingApi, routeUtils, metricsProcessor, routeId, stickySessionCacheManager, capiContext));
                                 } catch (Exception e) {
                                     log.error(e.getMessage(), e);
