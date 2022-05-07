@@ -169,15 +169,6 @@ public class ConsulNodeDiscovery {
         return false;
     }
 
-    private boolean showZipkinServiceName(String tagName, ConsulObject[] consulObject) {
-        for(ConsulObject entry : consulObject) {
-            if(entry.getServiceTags().contains(Constants.CONSUL_GROUP + tagName) && entry.getServiceTags().contains(Constants.TRACE_ID_HEADER)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
     private Api createApiObject(String apiId, String serviceName, String key, List<Mapping> mappingList, ConsulObject[] consulResponse) {
         Api incomingApi = new Api();
         incomingApi.setId(apiId);
