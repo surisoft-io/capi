@@ -241,7 +241,7 @@ public class SingleRouteProcessor extends RouteBuilder {
 
     @Override
     public void configure() {
-        RouteDefinition routeDefinition = new RouteDefinition(); //getRouteDefinition(api, runningApi);
+        RouteDefinition routeDefinition = new RouteDefinition();
         routeDefinition.setRestDefinition(getRestDefinition(api, runningApi));
         if(api.isForwardPrefix()) {
             routeDefinition.setHeader(Constants.X_FORWARDED_PREFIX, constant(capiContext + api.getContext()));
@@ -277,9 +277,7 @@ public class SingleRouteProcessor extends RouteBuilder {
         routeUtils.registerMetric(routeId);
     }
 
-    //private RouteDefinition getRouteDefinition(Api api, RunningApi runningApi) {
     private RestDefinition getRestDefinition(Api api, RunningApi runningApi) {
-        //RouteDefinition routeDefinition = null;
         RestDefinition restDefinition = null;
         api.setMatchOnUriPrefix(true);
         switch (runningApi.getHttpMethod()) {

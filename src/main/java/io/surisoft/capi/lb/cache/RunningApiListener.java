@@ -271,14 +271,13 @@ public class RunningApiListener implements EntryEvictedListener<String, RunningA
     @Override
     public void entryAdded(EntryEvent<String, RunningApi> entryEvent) {
         RunningApi runningApi = entryEvent.getValue();
-        //if(!entryEvent.getMember().localMember()) {
-            log.trace("Api with id: {} detected, deploying the route.", runningApi.getApiId());
-            try {
-                Optional<Api> api = apiRepository.findById(runningApi.getApiId());
-                camelContext.addRoutes(new SingleRouteProcessor(camelContext, api.get(), routeUtils, metricsProcessor, runningApi, apiRepository, stickySessionCacheManager, httpUtils.getCapiContext(capiContext)));
-            } catch (Exception e) {
-               log.error(e.getMessage(), e);
-            }
+        log.trace("Api with id: {} detected, deploying the route.", runningApi.getApiId());
+        try {
+            Optional<Api> api = apiRepository.findById(runningApi.getApiId());
+            camelContext.addRoutes(new SingleRouteProcessor(camelContext, api.get(), routeUtils, metricsProcessor, runningApi, apiRepository, stickySessionCacheManager, httpUtils.getCapiContext(capiContext)));
+        } catch (Exception e) {
+           log.error(e.getMessage(), e);
+        }
     }
 
     @Override

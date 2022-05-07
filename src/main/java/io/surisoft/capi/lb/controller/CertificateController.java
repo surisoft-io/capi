@@ -202,7 +202,7 @@ public class CertificateController {
                     log.info("Certificate is active for current date");
                     aliasInfo = saveCertificateToTrustStore(cert, certificateRequest.getAlias());
                 } else {
-                    log.info("Unknown certificate type: " + cert);
+                    log.info("Unknown certificate type: {}", cert);
                     aliasInfo.setAdditionalInfo("Unknown certificate type: " + cert);
                 }
             }

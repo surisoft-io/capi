@@ -70,33 +70,4 @@ public class ConsulDirectRouteProcessor extends RouteBuilder {
 
 
     }
-
-    /*private RestDefinition getRestDefinition(Api api) {
-        RestDefinition restDefinition = null;
-        api.setMatchOnUriPrefix(true);
-
-        switch (routeUtils.getMethodFromRouteId(routeId)) {
-            case "get":
-                restDefinition = rest().get(routeUtils.buildFrom(api)
-                        + Constants.MATCH_ON_URI_PREFIX
-                        + api.isMatchOnUriPrefix()); //.route();
-                break;
-            case "post":
-                restDefinition = rest().post(routeUtils.buildFrom(api)
-                        + Constants.MATCH_ON_URI_PREFIX
-                        + api.isMatchOnUriPrefix()); //.route();
-                break;
-            case "put":
-                restDefinition = rest().put(routeUtils.buildFrom(api)
-                        + Constants.MATCH_ON_URI_PREFIX
-                        + api.isMatchOnUriPrefix()); //.route();
-                break;
-            case "delete":
-                restDefinition = rest().delete(routeUtils.buildFrom(api)
-                        + Constants.MATCH_ON_URI_PREFIX
-                        + api.isMatchOnUriPrefix()); //.route();
-                break;
-        }
-        return restDefinition;
-    }*/
 }
