@@ -243,6 +243,8 @@ public class Constants {
     public static final String CONSUL_GROUP = "group=";
     public static final String CAMEL_DIRECT = "direct:";
     public static final String CAMEL_REST_PREFIX = "rd_";
+    public static final String ERROR_MESSAGE = "errorMessage";
+    public static final String ERROR_CODE = "errorCode";
     public static final String[] CAPI_WHITELISTED_PATHS = {
             //Swagger UI v2
             "/v2/api-docs",
