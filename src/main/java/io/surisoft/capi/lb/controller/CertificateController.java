@@ -181,12 +181,16 @@ public class CertificateController {
             return new ResponseEntity<>(aliasInfo, HttpStatus.BAD_REQUEST);
         }
 
-        if(!certificateRequest.getUrl().startsWith("https://")) {
-            certificateRequest.setUrl("https://" + certificateRequest.getUrl()  + ":" + certificateRequest.getPort());
+        String normalizedUrl = normalizeUrl(certificateRequest);
+
+        if(normalizedUrl.isEmpty()) {
+            aliasInfo = new AliasInfo();
+            aliasInfo.setAdditionalInfo(Constants.NO_CUSTOM_TRUST_STORE_PROVIDED);
+            return new ResponseEntity<>(aliasInfo, HttpStatus.BAD_REQUEST);
         }
         
         try {
-            URL destinationURL = new URL(certificateRequest.getUrl());
+            URL destinationURL = new URL(normalizedUrl);
             HttpsURLConnection conn = (HttpsURLConnection) destinationURL.openConnection();
             conn.connect();
             Certificate[] certs = conn.getServerCertificates();
@@ -230,5 +234,20 @@ public class CertificateController {
             aliasInfo.setAdditionalInfo(e.getMessage());
         }
         return aliasInfo;
+    }
+
+    private String normalizeUrl(CertificateRequest certificateRequest) {
+        String formattedUrl = "https://%s:/%s";
+        String url = new String();
+        if(certificateRequest.getUrl().startsWith("https")) {
+            url = certificateRequest.getUrl().substring(certificateRequest.getUrl().indexOf("https://") + 8, certificateRequest.getUrl().length());
+
+        }
+        if(certificateRequest.getUrl().startsWith("http")) {
+            url = certificateRequest.getUrl().substring(certificateRequest.getUrl().indexOf("https://") + 7, certificateRequest.getUrl().length());
+        }
+        url = url.replace("\\", "");
+        url = url.replaceAll("\\/","");
+        return String.format(formattedUrl, url, certificateRequest.getPort());
     }
 }
