@@ -26,7 +26,7 @@ public class ConsulNodeDiscovery {
 
     private static final Logger log = LoggerFactory.getLogger(ConsulNodeDiscovery.class);
 
-    private final String consulHost;
+    private String consulHost;
     private final ApiUtils apiUtils;
     private final RouteUtils routeUtils;
     private final MetricsProcessor metricsProcessor;
@@ -34,19 +34,17 @@ public class ConsulNodeDiscovery {
     private final OkHttpClient client = new OkHttpClient.Builder().build();
     private static final String GET_ALL_SERVICES = "/v1/catalog/services";
     private static final String GET_SERVICE_BY_NAME = "/v1/catalog/service/";
-    private final String capiContext;
+    private String capiContext;
 
     private final CamelContext camelContext;
     private final ConsulCacheManager consulCacheManager;
 
-    public ConsulNodeDiscovery(CamelContext camelContext, String consulHost, ApiUtils apiUtils, RouteUtils routeUtils, MetricsProcessor metricsProcessor, StickySessionCacheManager stickySessionCacheManager, ConsulCacheManager consulCacheManager, String capiContext) {
-        this.consulHost = consulHost;
+    public ConsulNodeDiscovery(CamelContext camelContext, ApiUtils apiUtils, RouteUtils routeUtils, MetricsProcessor metricsProcessor, StickySessionCacheManager stickySessionCacheManager, ConsulCacheManager consulCacheManager) {
         this.apiUtils = apiUtils;
         this.routeUtils = routeUtils;
         this.camelContext = camelContext;
         this.stickySessionCacheManager = stickySessionCacheManager;
         this.consulCacheManager = consulCacheManager;
-        this.capiContext = capiContext;
         this.metricsProcessor = metricsProcessor;
     }
 
@@ -200,5 +198,13 @@ public class ConsulNodeDiscovery {
                 }
             }
         }
+    }
+
+    public void setConsulHost(String consulHost) {
+        this.consulHost = consulHost;
+    }
+
+    public void setCapiContext(String capiContext) {
+        this.capiContext = capiContext;
     }
 }

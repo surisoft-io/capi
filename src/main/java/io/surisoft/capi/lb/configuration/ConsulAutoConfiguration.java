@@ -35,7 +35,10 @@ public class ConsulAutoConfiguration {
 
     @Bean(name = "consulNodeDiscovery")
     public ConsulNodeDiscovery consulNodeDiscovery(CamelContext camelContext, ApiUtils apiUtils, RouteUtils routeUtils, MetricsProcessor metricsProcessor, HttpUtils httpUtils, StickySessionCacheManager stickySessionCacheManager, ConsulCacheManager consulCacheManager) {
-        return new ConsulNodeDiscovery(camelContext, capiConsulHost, apiUtils, routeUtils, metricsProcessor, stickySessionCacheManager, consulCacheManager, httpUtils.getCapiContext(capiContext));
+        ConsulNodeDiscovery consulNodeDiscovery = new ConsulNodeDiscovery(camelContext, apiUtils, routeUtils, metricsProcessor, stickySessionCacheManager, consulCacheManager);
+        consulNodeDiscovery.setCapiContext(httpUtils.getCapiContext(capiContext));
+        consulNodeDiscovery.setConsulHost(capiConsulHost);
+        return consulNodeDiscovery;
     }
 
     @Bean
