@@ -8,7 +8,9 @@ import io.swagger.v3.oas.models.security.SecurityRequirement;
 import io.swagger.v3.oas.models.security.SecurityScheme;
 import lombok.extern.slf4j.Slf4j;
 import org.springdoc.core.GroupedOpenApi;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.info.BuildProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -19,11 +21,8 @@ public class SwaggerConfig {
     @Value("${capi.manager.security.enabled}")
     private boolean capiManagerSecurityEnabled;
 
-    @Value("${build.version}")
-    private String capiVersion;
-
-    @Value("${capi.name}")
-    private String capiName;
+    @Autowired
+    private BuildProperties buildProperties;
 
     @Bean
     public GroupedOpenApi publicApi() {
@@ -52,9 +51,9 @@ public class SwaggerConfig {
                         )
                 );
         }
-        openAPI.info(new Info().title(capiName)
+        openAPI.info(new Info().title(buildProperties.getName())
                 .description("Management endpoint")
-                .version(capiVersion)
+                .version(buildProperties.getVersion())
                 .license(new License().name("Apache 2.0")));
         return openAPI;
     }

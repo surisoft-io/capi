@@ -13,6 +13,7 @@ import org.apache.camel.builder.RouteBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -34,6 +35,7 @@ public class ConsulAutoConfiguration {
     private String capiContext;
 
     @Bean(name = "consulNodeDiscovery")
+    @ConditionalOnProperty(prefix = "capi.consul.discovery", name = "enabled", havingValue = "true")
     public ConsulNodeDiscovery consulNodeDiscovery(CamelContext camelContext, ApiUtils apiUtils, RouteUtils routeUtils, MetricsProcessor metricsProcessor, HttpUtils httpUtils, StickySessionCacheManager stickySessionCacheManager, ConsulCacheManager consulCacheManager) {
         ConsulNodeDiscovery consulNodeDiscovery = new ConsulNodeDiscovery(camelContext, apiUtils, routeUtils, metricsProcessor, stickySessionCacheManager, consulCacheManager);
         consulNodeDiscovery.setCapiContext(httpUtils.getCapiContext(capiContext));
@@ -42,6 +44,7 @@ public class ConsulAutoConfiguration {
     }
 
     @Bean
+    @ConditionalOnProperty(prefix = "capi.consul.discovery", name = "enabled", havingValue = "true")
     public RouteBuilder routeBuilder(ConsulDiscoveryCacheManager consulDiscoveryCacheManager) {
         log.debug("Creating Capi Consul Discovery");
         if(consulDiscoveryCacheManager.getLocalMemberID().equals(consulDiscoveryCacheManager.getConsulWorkerNode().getMember()) && consulEnabled) {
