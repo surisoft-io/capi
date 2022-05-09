@@ -376,16 +376,18 @@ public class ApiManager {
     }
 
     private void updateExistingMapping(Api api, Optional<Api> existingApi, Mapping mapping) {
-        apiRepository.update(existingApi.get());
-        mappingRepository.delete(mapping);
-        if(existingApi.get().getHttpMethod().equals(HttpMethod.ALL)) {
-            //update all
-            List<String> routeIdList = routeUtils.getAllRouteIdForAGivenApi(api);
-            for(String routeId : routeIdList) {
-                runningApiManager.updateRunningApi(routeId);
+        if(existingApi.isPresent()) {
+            apiRepository.update(existingApi.get());
+            mappingRepository.delete(mapping);
+            if(existingApi.get().getHttpMethod().equals(HttpMethod.ALL)) {
+                //update all
+                List<String> routeIdList = routeUtils.getAllRouteIdForAGivenApi(api);
+                for(String routeId : routeIdList) {
+                    runningApiManager.updateRunningApi(routeId);
+                }
+            } else {
+                runningApiManager.updateRunningApi(routeUtils.getRouteId(api, api.getHttpMethod().getMethod()));
             }
-        } else {
-            runningApiManager.updateRunningApi(routeUtils.getRouteId(api, api.getHttpMethod().getMethod()));
         }
     }
 }
