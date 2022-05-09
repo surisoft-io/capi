@@ -347,7 +347,10 @@ public class ApiManager {
         } else {
             runningApiManager.deleteRunningApi(routeUtils.getRouteId(api, api.getHttpMethod().getMethod()));
         }
-        apiRepository.delete(existingApi.get());
+
+        if(existingApi.isPresent()) {
+            apiRepository.delete(existingApi.get());
+        }
     }
 
     private void deleteMappingAndUpdate(Api api, Optional<Api> existingApi) {
