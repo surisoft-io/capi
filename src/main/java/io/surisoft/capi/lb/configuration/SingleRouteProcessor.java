@@ -293,6 +293,8 @@ public class SingleRouteProcessor extends RouteBuilder {
             case "delete":
                 restDefinition = rest().delete(routeUtils.buildFrom(api) + Constants.MATCH_ON_URI_PREFIX + api.isMatchOnUriPrefix());
                 break;
+            default:
+                return null;
         }
         return restDefinition;
     }

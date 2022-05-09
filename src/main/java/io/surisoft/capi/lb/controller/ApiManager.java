@@ -370,18 +370,22 @@ public class ApiManager {
                 apiRepository.delete(existingApi.get());
                 mappingRepository.delete(mapping);
             } else {
-                apiRepository.update(existingApi.get());
-                mappingRepository.delete(mapping);
-                if(existingApi.get().getHttpMethod().equals(HttpMethod.ALL)) {
-                    //update all
-                    List<String> routeIdList = routeUtils.getAllRouteIdForAGivenApi(api);
-                    for(String routeId : routeIdList) {
-                        runningApiManager.updateRunningApi(routeId);
-                    }
-                } else {
-                    runningApiManager.updateRunningApi(routeUtils.getRouteId(api, api.getHttpMethod().getMethod()));
-                }
+               updateExistingMapping(api, existingApi, mapping);
             }
+        }
+    }
+
+    private void updateExistingMapping(Api api, Optional<Api> existingApi, Mapping mapping) {
+        apiRepository.update(existingApi.get());
+        mappingRepository.delete(mapping);
+        if(existingApi.get().getHttpMethod().equals(HttpMethod.ALL)) {
+            //update all
+            List<String> routeIdList = routeUtils.getAllRouteIdForAGivenApi(api);
+            for(String routeId : routeIdList) {
+                runningApiManager.updateRunningApi(routeId);
+            }
+        } else {
+            runningApiManager.updateRunningApi(routeUtils.getRouteId(api, api.getHttpMethod().getMethod()));
         }
     }
 }

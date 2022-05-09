@@ -247,7 +247,7 @@ public class CertificateController {
             url = certificateRequest.getUrl().substring(certificateRequest.getUrl().indexOf("https://") + 7, certificateRequest.getUrl().length());
         }
         url = url.replace("\\", "");
-        url = url.replaceAll("\\/","");
+        url = url.replace("\\/","");
         return String.format(formattedUrl, url, certificateRequest.getPort());
     }
 }
