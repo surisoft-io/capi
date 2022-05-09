@@ -44,7 +44,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @TestPropertySource(
       locations = "classpath:test-application.properties"
 )
-public class TestCertificateController {
+class TestCertificateController {
 
     private static final String DEFAULT_ALIAS;
     private static final String CACERT_NAME;
@@ -68,7 +68,7 @@ public class TestCertificateController {
     }
 
     @Test
-    public void testGetAll() throws Exception {
+    void testGetAll() throws Exception {
         MvcResult getResult = mockMvc.perform(MockMvcRequestBuilders.get("/manager/certificate")
                         .accept(MediaType.APPLICATION_JSON_VALUE))
                         .andExpect(status().isOk())
@@ -80,7 +80,7 @@ public class TestCertificateController {
     }
 
     @Test
-    public void testCertificateUpload() throws Exception {
+    void testCertificateUpload() throws Exception {
         File capiUnitTestCer = createTestCertificate();
         Assertions.assertNotNull(capiUnitTestCer);
 

@@ -227,8 +227,12 @@
     <lombok-version>1.18.22</lombok-version>
     <spring-cloud-sleuth-version>3.1.1</spring-cloud-sleuth-version>
     <io.zipkin.reporter2-version>2.16.3</io.zipkin.reporter2-version>
+    <jacoco.version>0.8.6</jacoco.version>
     <sonar.organization>surisoft-io</sonar.organization>
     <sonar.host.url>https://sonarcloud.io</sonar.host.url>
+    <sonar.java.coveragePlugin>jacoco</sonar.java.coveragePlugin>
+    <sonar.dynamicAnalysis>reuseReports</sonar.dynamicAnalysis>
+    <sonar.jacoco.reportPath>${project.basedir}/../target/jacoco.exec</sonar.jacoco.reportPath>
   </properties>
 
   <parent>
@@ -472,6 +476,26 @@
       <execution>
         <goals>
           <goal>build-info</goal>
+        </goals>
+      </execution>
+    </executions>
+  </plugin>
+  <plugin>
+    <groupId>org.jacoco</groupId>
+    <artifactId>jacoco-maven-plugin</artifactId>
+    <version>${jacoco.version}</version>
+    <executions>
+      <execution>
+        <id>jacoco-initialize</id>
+        <goals>
+          <goal>prepare-agent</goal>
+        </goals>
+      </execution>
+      <execution>
+        <id>jacoco-site</id>
+        <phase>package</phase>
+        <goals>
+          <goal>report</goal>
         </goals>
       </execution>
     </executions>
