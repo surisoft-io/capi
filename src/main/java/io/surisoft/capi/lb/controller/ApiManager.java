@@ -338,7 +338,7 @@ public class ApiManager {
     }
 
     private void deleteAllRoutes(Api api, Optional<Api> existingApi) {
-        if(existingApi.get().getHttpMethod().equals(HttpMethod.ALL)) {
+        if(existingApi.isPresent() && existingApi.get().getHttpMethod().equals(HttpMethod.ALL)) {
             //update all
             List<String> routeIdList = routeUtils.getAllRouteIdForAGivenApi(api);
             for(String routeId : routeIdList) {
@@ -352,30 +352,32 @@ public class ApiManager {
 
     private void deleteMappingAndUpdate(Api api, Optional<Api> existingApi) {
         Mapping mapping = api.getMappingList().get(0);
-        existingApi.get().getMappingList().remove(api.getMappingList().get(0));
-        if(existingApi.get().getMappingList().isEmpty()) {
-            if(existingApi.get().getHttpMethod().equals(HttpMethod.ALL)) {
-                //update all
-                List<String> routeIdList = routeUtils.getAllRouteIdForAGivenApi(api);
-                for(String routeId : routeIdList) {
-                    runningApiManager.deleteRunningApi(routeId);
+        if(existingApi.isPresent()) {
+            existingApi.get().getMappingList().remove(api.getMappingList().get(0));
+            if(existingApi.get().getMappingList().isEmpty()) {
+                if(existingApi.get().getHttpMethod().equals(HttpMethod.ALL)) {
+                    //update all
+                    List<String> routeIdList = routeUtils.getAllRouteIdForAGivenApi(api);
+                    for(String routeId : routeIdList) {
+                        runningApiManager.deleteRunningApi(routeId);
+                    }
+                } else {
+                    runningApiManager.deleteRunningApi(routeUtils.getRouteId(api, api.getHttpMethod().getMethod()));
                 }
+                apiRepository.delete(existingApi.get());
+                mappingRepository.delete(mapping);
             } else {
-                runningApiManager.deleteRunningApi(routeUtils.getRouteId(api, api.getHttpMethod().getMethod()));
-            }
-            apiRepository.delete(existingApi.get());
-            mappingRepository.delete(mapping);
-        } else {
-            apiRepository.update(existingApi.get());
-            mappingRepository.delete(mapping);
-            if(existingApi.get().getHttpMethod().equals(HttpMethod.ALL)) {
-                //update all
-                List<String> routeIdList = routeUtils.getAllRouteIdForAGivenApi(api);
-                for(String routeId : routeIdList) {
-                    runningApiManager.updateRunningApi(routeId);
+                apiRepository.update(existingApi.get());
+                mappingRepository.delete(mapping);
+                if(existingApi.get().getHttpMethod().equals(HttpMethod.ALL)) {
+                    //update all
+                    List<String> routeIdList = routeUtils.getAllRouteIdForAGivenApi(api);
+                    for(String routeId : routeIdList) {
+                        runningApiManager.updateRunningApi(routeId);
+                    }
+                } else {
+                    runningApiManager.updateRunningApi(routeUtils.getRouteId(api, api.getHttpMethod().getMethod()));
                 }
-            } else {
-                runningApiManager.updateRunningApi(routeUtils.getRouteId(api, api.getHttpMethod().getMethod()));
             }
         }
     }

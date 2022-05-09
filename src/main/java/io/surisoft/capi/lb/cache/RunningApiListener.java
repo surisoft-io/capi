@@ -260,8 +260,10 @@ public class RunningApiListener implements EntryEvictedListener<String, RunningA
             log.info("Removing route: {} for updating", runningApi.getRouteId());
             try {
                 Optional<Api> api = apiRepository.findById(runningApi.getApiId());
-                camelContext.removeRoute(runningApi.getRouteId());
-                camelContext.addRoutes(new SingleRouteProcessor(camelContext, api.get(), routeUtils, metricsProcessor, runningApi, apiRepository, stickySessionCacheManager, httpUtils.getCapiContext(capiContext)));
+                if(api.isPresent()) {
+                    camelContext.removeRoute(runningApi.getRouteId());
+                    camelContext.addRoutes(new SingleRouteProcessor(camelContext, api.get(), routeUtils, metricsProcessor, runningApi, apiRepository, stickySessionCacheManager, httpUtils.getCapiContext(capiContext)));
+                }
             } catch (Exception e) {
                 log.error(e.getMessage(), e);
             }
@@ -274,7 +276,9 @@ public class RunningApiListener implements EntryEvictedListener<String, RunningA
         log.trace("Api with id: {} detected, deploying the route.", runningApi.getApiId());
         try {
             Optional<Api> api = apiRepository.findById(runningApi.getApiId());
-            camelContext.addRoutes(new SingleRouteProcessor(camelContext, api.get(), routeUtils, metricsProcessor, runningApi, apiRepository, stickySessionCacheManager, httpUtils.getCapiContext(capiContext)));
+            if(api.isPresent()) {
+                camelContext.addRoutes(new SingleRouteProcessor(camelContext, api.get(), routeUtils, metricsProcessor, runningApi, apiRepository, stickySessionCacheManager, httpUtils.getCapiContext(capiContext)));
+            }
         } catch (Exception e) {
            log.error(e.getMessage(), e);
         }

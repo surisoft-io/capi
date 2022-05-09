@@ -24,9 +24,13 @@ public class ConsulRestDefinitionProcessor extends RouteBuilder {
     public void configure() {
         String restRouteId = Constants.CAMEL_REST_PREFIX + routeId;
         RestDefinition restDefinition = getRestDefinition(api);
-        restDefinition.to(Constants.CAMEL_DIRECT + routeId);
-        restDefinition.id(restRouteId);
-        routeUtils.registerMetric(restRouteId);
+        if(restDefinition != null) {
+            restDefinition.to(Constants.CAMEL_DIRECT + routeId);
+            restDefinition.id(restRouteId);
+            routeUtils.registerMetric(restRouteId);
+        } else {
+            log.error("Null Rest Definition for routeId {}", routeId);
+        }
     }
 
     private RestDefinition getRestDefinition(Api api) {
