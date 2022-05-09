@@ -227,6 +227,8 @@
     <lombok-version>1.18.22</lombok-version>
     <spring-cloud-sleuth-version>3.1.1</spring-cloud-sleuth-version>
     <io.zipkin.reporter2-version>2.16.3</io.zipkin.reporter2-version>
+    <sonar.organization>surisoft-io</sonar.organization>
+    <sonar.host.url>https://sonarcloud.io</sonar.host.url>
   </properties>
 
   <parent>
