@@ -74,9 +74,7 @@ public class CertificateController {
             return new ResponseEntity<>(aliasList, HttpStatus.OK);
         }
 
-        try {
-            FileInputStream is = new FileInputStream(capiTrustStorePath);
-
+        try(FileInputStream is = new FileInputStream(capiTrustStorePath)) {
             KeyStore keystore = KeyStore.getInstance(KeyStore.getDefaultType());
             keystore.load(is, capiTrustStorePassword.toCharArray());
             Enumeration<String> aliases = keystore.aliases();
@@ -111,8 +109,7 @@ public class CertificateController {
             return new ResponseEntity<>(aliasInfo, HttpStatus.BAD_REQUEST);
         }
 
-        try {
-            FileInputStream is = new FileInputStream(capiTrustStorePath);
+        try(FileInputStream is = new FileInputStream(capiTrustStorePath)) {
             KeyStore keystore = KeyStore.getInstance(KeyStore.getDefaultType());
             keystore.load(is, capiTrustStorePassword.toCharArray());
 
@@ -126,10 +123,9 @@ public class CertificateController {
 
             keystore.setCertificateEntry(alias, newTrusted);
 
-            FileOutputStream storeOutputStream = new FileOutputStream(capiTrustStorePath);
-            keystore.store(storeOutputStream, capiTrustStorePassword.toCharArray());
-
-
+            try(FileOutputStream storeOutputStream = new FileOutputStream(capiTrustStorePath)) {
+                keystore.store(storeOutputStream, capiTrustStorePassword.toCharArray());
+            }
         } catch (Exception e) {
            log.debug(e.getMessage(), e);
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
@@ -154,17 +150,15 @@ public class CertificateController {
 
         aliasInfo.setAlias(alias);
 
-        try {
-            FileInputStream is = new FileInputStream(capiTrustStorePath);
+        try(FileInputStream is = new FileInputStream(capiTrustStorePath)) {
             KeyStore keystore = KeyStore.getInstance(KeyStore.getDefaultType());
             keystore.load(is, capiTrustStorePassword.toCharArray());
 
             keystore.deleteEntry(alias);
 
-            FileOutputStream storeOutputStream = new FileOutputStream(capiTrustStorePath);
-            keystore.store(storeOutputStream, capiTrustStorePassword.toCharArray());
-
-
+            try(FileOutputStream storeOutputStream = new FileOutputStream(capiTrustStorePath)) {
+                keystore.store(storeOutputStream, capiTrustStorePassword.toCharArray());
+            }
         } catch (Exception e) {
             log.debug(e.getMessage(), e);
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
@@ -216,8 +210,7 @@ public class CertificateController {
 
     private AliasInfo saveCertificateToTrustStore(Certificate newTrusted, String alias) {
         AliasInfo aliasInfo = new AliasInfo();
-        try {
-            FileInputStream is = new FileInputStream(capiTrustStorePath);
+        try(FileInputStream is = new FileInputStream(capiTrustStorePath)) {
             KeyStore keystore = KeyStore.getInstance(KeyStore.getDefaultType());
             keystore.load(is, capiTrustStorePassword.toCharArray());
 
@@ -227,9 +220,9 @@ public class CertificateController {
 
             keystore.setCertificateEntry(alias, newTrusted);
 
-            FileOutputStream storeOutputStream = new FileOutputStream(capiTrustStorePath);
-            keystore.store(storeOutputStream, capiTrustStorePassword.toCharArray());
-
+            try(FileOutputStream storeOutputStream = new FileOutputStream(capiTrustStorePath)) {
+                keystore.store(storeOutputStream, capiTrustStorePassword.toCharArray());
+            }
             aliasInfo.setAlias(alias);
 
         } catch (Exception e) {
