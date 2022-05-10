@@ -12,7 +12,6 @@ import org.bouncycastle.operator.ContentSigner;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -127,11 +126,12 @@ class TestCertificateController {
     }
 
     private void createEmptyCacerts() {
+        System.out.println("EXECUTE FIRST---------------------");
         String storePassword = "changeit";
         String storeName = null;
         try {
-            String propertiesClassPath = ResourceUtils.getFile("classpath:application.properties").getAbsolutePath();
-            String executionPath = propertiesClassPath.substring(0, propertiesClassPath.indexOf("application"));
+            String propertiesClassPath = ResourceUtils.getFile("classpath:test-application.properties").getAbsolutePath();
+            String executionPath = propertiesClassPath.substring(0, propertiesClassPath.indexOf("test-application"));
             storeName = executionPath + CACERT_NAME;
         } catch (FileNotFoundException e) {
             e.printStackTrace();

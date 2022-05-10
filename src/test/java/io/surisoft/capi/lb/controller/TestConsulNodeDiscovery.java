@@ -96,7 +96,7 @@ class TestConsulNodeDiscovery {
         Assertions.assertNotNull(consulCacheManager);
 
         ConsulNodeDiscovery consulNodeDiscovery = new ConsulNodeDiscovery(camelContext, apiUtils, routeUtils, metricsProcessor, stickySessionCacheManager, consulCacheManager);
-        consulNodeDiscovery.setConsulHost("http://localhost:888");
+        consulNodeDiscovery.setConsulHost("http://localhost:8888");
         consulNodeDiscovery.setCapiContext("/capi/test");
         consulNodeDiscovery.processInfo();
 
