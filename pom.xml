@@ -228,6 +228,8 @@
     <spring-cloud-sleuth-version>3.1.1</spring-cloud-sleuth-version>
     <io.zipkin.reporter2-version>2.16.3</io.zipkin.reporter2-version>
     <wiremock.version>2.27.2</wiremock.version>
+    <org.bouncycastle.version>1.58</org.bouncycastle.version>
+    <org.junit.jupiter.version>5.8.1</org.junit.jupiter.version>
     <jacoco.version>0.8.8</jacoco.version>
     <sonar.organization>surisoft-io</sonar.organization>
     <sonar.host.url>https://sonarcloud.io</sonar.host.url>
@@ -428,7 +430,7 @@
     <dependency>
       <groupId>org.junit.jupiter</groupId>
       <artifactId>junit-jupiter-engine</artifactId>
-      <version>5.8.1</version>
+      <version>${org.junit.jupiter.version}</version>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -439,7 +441,7 @@
     <dependency>
       <groupId>org.bouncycastle</groupId>
       <artifactId>bcpkix-jdk15on</artifactId>
-      <version>1.58</version>
+      <version>${org.bouncycastle.version}</version>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -448,12 +450,16 @@
       <version>${wiremock.version}</version>
       <scope>test</scope>
     </dependency>
+    <dependency>
+      <groupId>com.h2database</groupId>
+      <artifactId>h2</artifactId>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 <build>
   <resources>
     <resource>
       <directory>src/main/resources</directory>
-      <!--filtering>true</filtering-->
     </resource>
   </resources>
 <plugins>

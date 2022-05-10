@@ -82,17 +82,13 @@ class TestConsulNodeDiscovery {
 
     WireMockServer wireMockServer;
 
-
-    @BeforeEach
-    public void initialize() {
-        wireMockServer = new WireMockServer(888);
+    @Test
+    void testGetAllServices() throws Exception {
+        wireMockServer = new WireMockServer(8888);
         wireMockServer.start();
         wireMockServer.stubFor(get(urlEqualTo("/v1/catalog/services")).willReturn(aResponse().withBody(SERVICES_RESPONSE)));
         wireMockServer.stubFor(get(urlEqualTo("/v1/catalog/service/dummy")).willReturn(aResponse().withBody(SERVICE_DUMMY_RESPONSE)));
-    }
 
-    @Test
-    void testGetAllServices() throws Exception {
         Assertions.assertNotNull(camelContext);
         Assertions.assertNotNull(apiUtils);
         Assertions.assertNotNull(routeUtils);
