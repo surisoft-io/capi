@@ -9,7 +9,6 @@ import io.surisoft.capi.lb.utils.ApiUtils;
 import io.surisoft.capi.lb.utils.RouteUtils;
 import org.apache.camel.CamelContext;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,7 +21,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.*;
 @ExtendWith(SpringExtension.class)
 @SpringBootTest
 @TestPropertySource(
-      locations = "classpath:test-application.properties"
+      locations = "classpath:test-consul-application.properties"
 )
 class TestConsulNodeDiscovery {
 
