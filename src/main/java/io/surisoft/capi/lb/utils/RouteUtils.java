@@ -212,6 +212,8 @@ import io.surisoft.capi.lb.schema.HttpMethod;
 import io.surisoft.capi.lb.schema.HttpProtocol;
 import io.surisoft.capi.lb.schema.Mapping;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.camel.CamelContext;
+import org.apache.camel.Route;
 import org.apache.camel.model.RouteDefinition;
 import org.apache.camel.model.rest.*;
 import org.apache.camel.zipkin.ZipkinTracer;
@@ -355,5 +357,14 @@ public class RouteUtils {
 
     public String getStickySessionId(String paramName, String paramValue) {
         return new String(Base64.getEncoder().encode((paramName + paramValue).getBytes()));
+    }
+
+    public List<String> getAllActiveRoutes(CamelContext camelContext) {
+        List<String> routeIdList = new ArrayList<>();
+        List<Route> routeList = camelContext.getRoutes();
+        for(Route route : routeList) {
+            routeIdList.add(route.getRouteId());
+        }
+        return routeIdList;
     }
 }

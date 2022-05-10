@@ -67,7 +67,5 @@ public class ConsulDirectRouteProcessor extends RouteBuilder {
         routeUtils.registerMetric(routeId);
         api.setRouteId(routeId);
         routeUtils.registerTracer(api);
-
-
     }
 }
