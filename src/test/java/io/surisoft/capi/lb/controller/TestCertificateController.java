@@ -126,7 +126,6 @@ class TestCertificateController {
     }
 
     private void createEmptyCacerts() {
-        System.out.println("EXECUTE FIRST---------------------");
         String storePassword = "changeit";
         String storeName = null;
         try {

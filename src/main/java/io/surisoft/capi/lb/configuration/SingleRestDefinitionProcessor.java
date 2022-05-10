@@ -207,7 +207,6 @@ package io.surisoft.capi.lb.configuration;
 
 import io.surisoft.capi.lb.cache.StickySessionCacheManager;
 import io.surisoft.capi.lb.processor.MetricsProcessor;
-import io.surisoft.capi.lb.processor.SessionChecker;
 import io.surisoft.capi.lb.repository.ApiRepository;
 import io.surisoft.capi.lb.schema.Api;
 import io.surisoft.capi.lb.schema.RunningApi;
@@ -215,66 +214,38 @@ import io.surisoft.capi.lb.utils.Constants;
 import io.surisoft.capi.lb.utils.RouteUtils;
 import org.apache.camel.CamelContext;
 import org.apache.camel.builder.RouteBuilder;
-import org.apache.camel.model.RouteDefinition;
 import org.apache.camel.model.rest.RestDefinition;
 
-public class SingleRouteProcessor extends RouteBuilder {
+public class SingleRestDefinitionProcessor extends RouteBuilder {
 
     private RouteUtils routeUtils;
     private MetricsProcessor metricsProcessor;
     private Api api;
     private RunningApi runningApi;
-    private ApiRepository apiRepository;
-    private StickySessionCacheManager stickySessionCacheManager;
     private String capiContext;
 
-    public SingleRouteProcessor(CamelContext camelContext, Api api, RouteUtils routeUtils, MetricsProcessor metricsProcessor, RunningApi runningApi, ApiRepository apiRepository, StickySessionCacheManager stickySessionCacheManager, String capiContext) {
+    public SingleRestDefinitionProcessor(CamelContext camelContext, Api api, RouteUtils routeUtils, MetricsProcessor metricsProcessor, RunningApi runningApi, String capiContext) {
         super(camelContext);
         this.api = api;
         this.routeUtils = routeUtils;
         this.runningApi = runningApi;
-        this.apiRepository = apiRepository;
-        this.stickySessionCacheManager = stickySessionCacheManager;
         this.capiContext = capiContext;
         this.metricsProcessor = metricsProcessor;
     }
 
     @Override
     public void configure() {
-        RouteDefinition routeDefinition = new RouteDefinition();
-        routeDefinition.setRestDefinition(getRestDefinition(api, runningApi));
-        if(api.isForwardPrefix()) {
-            routeDefinition.setHeader(Constants.X_FORWARDED_PREFIX, constant(capiContext + api.getContext()));
-        }
         String routeId = routeUtils.getRouteId(api, runningApi.getHttpMethod());
-        log.trace("Trying to build and deploy route {}", routeId);
-        routeUtils.buildOnExceptionDefinition(routeDefinition, api.isZipkinShowTraceId(), false, false, routeId);
-        if(api.isFailoverEnabled()) {
-            routeDefinition
-                    .process(metricsProcessor)
-                    .loadBalance()
-                    .failover(1, false, api.isRoundRobinEnabled(), false)
-                    .to(routeUtils.buildEndpoints(api))
-                    .end()
-                    .routeId(routeId);
-        } else if(api.isStickySession()) {
-            routeDefinition
-                    .process(metricsProcessor)
-                    .loadBalance(new SessionChecker(stickySessionCacheManager, api.getStickySessionParam(), api.isStickySessionParamInCookie()))
-                    .to(routeUtils.buildEndpoints(api))
-                    .end()
-                    .routeId(routeId);
+        String restRouteId = Constants.CAMEL_REST_PREFIX + routeId;
+
+        RestDefinition restDefinition = getRestDefinition(api, runningApi);
+        if(restDefinition != null) {
+            restDefinition.to(Constants.CAMEL_DIRECT + routeId);
+            restDefinition.id(restRouteId);
+            routeUtils.registerMetric(restRouteId);
         } else {
-            log.info("Creating with session checker");
-             routeDefinition
-                     .process(metricsProcessor)
-                     .loadBalance()
-                     .roundRobin()
-                     .to(routeUtils.buildEndpoints(api))
-                     .end()
-                     .routeId(routeId);
+            log.error("Null Rest Definition for routeId {}", routeId);
         }
-        routeUtils.registerMetric(routeId);
     }
 
     private RestDefinition getRestDefinition(Api api, RunningApi runningApi) {

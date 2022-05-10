@@ -274,7 +274,8 @@ public class StartupRouteProcessor {
             if(runningApiManager.getRunningApiByRouteId(routeId) != null) {
                 try {
                     log.trace("Running API with route ID: {}, already cached, deploying the route.", routeId);
-                    camelContext.addRoutes(new SingleRouteProcessor(camelContext, api, routeUtils, metricsProcessor, runningApiManager.getRunningApiByRouteId(routeId), apiRepository, stickySessionCacheManager, httpUtils.getCapiContext(capiContext)));
+                    camelContext.addRoutes(new SingleRestDefinitionProcessor(camelContext, api, routeUtils, metricsProcessor, runningApiManager.getRunningApiByRouteId(routeId), httpUtils.getCapiContext(capiContext)));
+                    camelContext.addRoutes(new SingleDirectRouteProcessor(camelContext, api, routeUtils, metricsProcessor, runningApiManager.getRunningApiByRouteId(routeId), apiRepository, stickySessionCacheManager, httpUtils.getCapiContext(capiContext)));
                 } catch (Exception e) {
                     log.error(e.getMessage());
                 }
@@ -289,7 +290,8 @@ public class StartupRouteProcessor {
         if(runningApiManager.getRunningApiByRouteId(routeId) != null) {
             try {
                 log.trace("Running API with route ID: {}, already cached, deploying the route.", routeId);
-                camelContext.addRoutes(new SingleRouteProcessor(camelContext, api, routeUtils, metricsProcessor, runningApiManager.getRunningApiByRouteId(routeId), apiRepository, stickySessionCacheManager, httpUtils.getCapiContext(capiContext)));
+                camelContext.addRoutes(new SingleRestDefinitionProcessor(camelContext, api, routeUtils, metricsProcessor, runningApiManager.getRunningApiByRouteId(routeId), httpUtils.getCapiContext(capiContext)));
+                camelContext.addRoutes(new SingleDirectRouteProcessor(camelContext, api, routeUtils, metricsProcessor, runningApiManager.getRunningApiByRouteId(routeId), apiRepository, stickySessionCacheManager, httpUtils.getCapiContext(capiContext)));
             } catch (Exception e) {
                 log.error(e.getMessage());
             }

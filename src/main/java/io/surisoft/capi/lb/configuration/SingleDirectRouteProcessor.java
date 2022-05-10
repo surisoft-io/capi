@@ -203,108 +203,79 @@
  *    limitations under the License.
  */
 
-package io.surisoft.capi.lb.cache;
+package io.surisoft.capi.lb.configuration;
 
-import com.hazelcast.core.EntryEvent;
-import com.hazelcast.map.listener.EntryAddedListener;
-import com.hazelcast.map.listener.EntryEvictedListener;
-import com.hazelcast.map.listener.EntryRemovedListener;
-import com.hazelcast.map.listener.EntryUpdatedListener;
-import io.surisoft.capi.lb.configuration.SingleDirectRouteProcessor;
-import io.surisoft.capi.lb.configuration.SingleRestDefinitionProcessor;
+import io.surisoft.capi.lb.cache.StickySessionCacheManager;
 import io.surisoft.capi.lb.processor.MetricsProcessor;
+import io.surisoft.capi.lb.processor.SessionChecker;
 import io.surisoft.capi.lb.repository.ApiRepository;
 import io.surisoft.capi.lb.schema.Api;
 import io.surisoft.capi.lb.schema.RunningApi;
-import io.surisoft.capi.lb.utils.HttpUtils;
+import io.surisoft.capi.lb.utils.Constants;
 import io.surisoft.capi.lb.utils.RouteUtils;
 import org.apache.camel.CamelContext;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Component;
+import org.apache.camel.builder.RouteBuilder;
+import org.apache.camel.model.RouteDefinition;
 
-import java.util.Optional;
+public class SingleDirectRouteProcessor extends RouteBuilder {
 
-@Component
-public class RunningApiListener implements EntryEvictedListener<String, RunningApi>, EntryRemovedListener<String, RunningApi>, EntryAddedListener<String, RunningApi>, EntryUpdatedListener<String, RunningApi> {
-
-    private static final Logger log = LoggerFactory.getLogger(RunningApiListener.class);
-
-    @Autowired
-    private CamelContext camelContext;
-
-    @Autowired
     private RouteUtils routeUtils;
-
-    @Autowired
-    private HttpUtils httpUtils;
-
-    @Autowired
-    private ApiRepository apiRepository;
-
-    @Autowired
-    private StickySessionCacheManager stickySessionCacheManager;
-
-    @Autowired
     private MetricsProcessor metricsProcessor;
-
-    @Value("${camel.servlet.mapping.context-path}")
+    private Api api;
+    private RunningApi runningApi;
+    private ApiRepository apiRepository;
+    private StickySessionCacheManager stickySessionCacheManager;
     private String capiContext;
 
-
-    @Override
-    public void entryUpdated(EntryEvent<String, RunningApi> event) {
-        if(event.getValue() != null) {
-            RunningApi runningApi = event.getValue();
-            log.info("Removing route: {} for updating", runningApi.getRouteId());
-            try {
-                Optional<Api> api = apiRepository.findById(runningApi.getApiId());
-                if(api.isPresent()) {
-                    camelContext.removeRoute(runningApi.getRouteId());
-                    camelContext.addRoutes(new SingleRestDefinitionProcessor(camelContext, api.get(), routeUtils, metricsProcessor, runningApi, httpUtils.getCapiContext(capiContext)));
-                    camelContext.addRoutes(new SingleDirectRouteProcessor(camelContext, api.get(), routeUtils, metricsProcessor, runningApi, apiRepository, stickySessionCacheManager, httpUtils.getCapiContext(capiContext)));
-                }
-            } catch (Exception e) {
-                log.error(e.getMessage(), e);
-            }
-        }
+    public SingleDirectRouteProcessor(CamelContext camelContext, Api api, RouteUtils routeUtils, MetricsProcessor metricsProcessor, RunningApi runningApi, ApiRepository apiRepository, StickySessionCacheManager stickySessionCacheManager, String capiContext) {
+        super(camelContext);
+        this.api = api;
+        this.routeUtils = routeUtils;
+        this.runningApi = runningApi;
+        this.apiRepository = apiRepository;
+        this.stickySessionCacheManager = stickySessionCacheManager;
+        this.capiContext = capiContext;
+        this.metricsProcessor = metricsProcessor;
     }
 
     @Override
-    public void entryAdded(EntryEvent<String, RunningApi> entryEvent) {
-        RunningApi runningApi = entryEvent.getValue();
-        log.trace("Api with id: {} detected, deploying the route.", runningApi.getApiId());
-        try {
-            Optional<Api> api = apiRepository.findById(runningApi.getApiId());
-            if(api.isPresent()) {
-                camelContext.addRoutes(new SingleRestDefinitionProcessor(camelContext, api.get(), routeUtils, metricsProcessor, runningApi, httpUtils.getCapiContext(capiContext)));
-                camelContext.addRoutes(new SingleDirectRouteProcessor(camelContext, api.get(), routeUtils, metricsProcessor, runningApi, apiRepository, stickySessionCacheManager, httpUtils.getCapiContext(capiContext)));
-            }
-        } catch (Exception e) {
-           log.error(e.getMessage(), e);
+    public void configure() {
+        String routeId = routeUtils.getRouteId(api, runningApi.getHttpMethod());
+        RouteDefinition routeDefinition = from("direct:" + routeId);
+
+
+        if(api.isForwardPrefix()) {
+            routeDefinition
+                    .setHeader(Constants.X_FORWARDED_PREFIX, constant(capiContext + api.getContext()));
         }
-    }
-
-    @Override
-    public void entryRemoved(EntryEvent<String, RunningApi> event) {
-        log.info("Removed route: {}", event.getOldValue().getRouteId());
-        if(event.getOldValue() != null) {
-            RunningApi runningApi = event.getOldValue();
-            log.info("Removing route: {}", runningApi.getRouteId());
-            try {
-                camelContext.getRouteController().stopRoute(runningApi.getRouteId());
-                camelContext.removeRoute(runningApi.getRouteId());
-            } catch (Exception e) {
-                log.error(e.getMessage(), e);
-            }
+        log.trace("Trying to build and deploy route {}", routeId);
+        routeUtils.buildOnExceptionDefinition(routeDefinition, api.isZipkinShowTraceId(), false, false, routeId);
+        if(api.isFailoverEnabled()) {
+            routeDefinition
+                    .process(metricsProcessor)
+                    .loadBalance()
+                    .failover(1, false, api.isRoundRobinEnabled(), false)
+                    .to(routeUtils.buildEndpoints(api))
+                    .end()
+                    .routeId(routeId);
+        } else if(api.isStickySession()) {
+            routeDefinition
+                    .process(metricsProcessor)
+                    .loadBalance(new SessionChecker(stickySessionCacheManager, api.getStickySessionParam(), api.isStickySessionParamInCookie()))
+                    .to(routeUtils.buildEndpoints(api))
+                    .end()
+                    .routeId(routeId);
+        } else {
+            routeDefinition
+                    .process(metricsProcessor)
+                    .loadBalance()
+                    .roundRobin()
+                    .to(routeUtils.buildEndpoints(api))
+                    .end()
+                    .routeId(routeId);
         }
-    }
-
-    @Override
-    public void entryEvicted(EntryEvent<String, RunningApi> event) {
-        log.info("Evicted route: {}", event.getOldValue().getRouteId());
-
+        routeUtils.registerMetric(routeId);
+        api.setRouteId(routeId);
+        routeUtils.registerTracer(api);
     }
 }
