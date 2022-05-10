@@ -161,4 +161,25 @@ class TestApiManager {
         Assertions.assertTrue(apiList.size() == 1);
         Assertions.assertTrue(apiList.get(0).getMappingList().size() == 2);
     }
+
+    @Test
+    @Order(8)
+    void removeDeplyedApi() throws Exception {
+        mockMvc.perform(MockMvcRequestBuilders.post("/manager/api/unregister/node").content(GOOD_API_NEW_MAPPING)
+                        .contentType(MediaType.APPLICATION_JSON_VALUE)
+                        .accept(MediaType.APPLICATION_JSON_VALUE))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    @Order(9)
+    void testEmptyResultAfterUndeploy() throws Exception {
+        MvcResult getResult = mockMvc.perform(MockMvcRequestBuilders.get("/manager/api/configured")
+                        .accept(MediaType.APPLICATION_JSON_VALUE))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        List<Api> apiList = objectMapper.readValue(getResult.getResponse().getContentAsString(), objectMapper.getTypeFactory().constructCollectionType(List.class, Api.class));
+        Assertions.assertTrue(apiList.size() == 0);
+    }
 }
