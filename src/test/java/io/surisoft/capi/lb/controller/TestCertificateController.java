@@ -10,9 +10,7 @@ import org.bouncycastle.cert.jcajce.JcaX509v3CertificateBuilder;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.operator.ContentSigner;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -26,11 +24,10 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.util.ResourceUtils;
 import org.springframework.web.context.WebApplicationContext;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
+import java.io.*;
 import java.math.BigInteger;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.security.*;
 import java.security.cert.X509Certificate;
 import java.util.Date;
@@ -59,9 +56,18 @@ class TestCertificateController {
     private MockMvc mockMvc;
     private ObjectMapper objectMapper;
 
+    @BeforeAll
+    static void before() {
+        createEmptyCacerts();
+    }
+
+    @AfterAll
+    static void after() {
+        removeTestCacerts();
+    }
+
     @BeforeEach
     public void initialize() {
-        createEmptyCacerts();
         mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext).build();
         objectMapper = new ObjectMapper();
     }
@@ -104,7 +110,7 @@ class TestCertificateController {
         return capiUnitTestCer;
     }
 
-    private X509Certificate createCertificate(String name) throws Exception {
+    private static X509Certificate createCertificate(String name) throws Exception {
         BouncyCastleProvider bouncyCastleProvider = new BouncyCastleProvider();
 
         KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("RSA");
@@ -125,25 +131,35 @@ class TestCertificateController {
         return x509Certificate;
     }
 
-    private void createEmptyCacerts() {
+    private static void createEmptyCacerts() {
         String storePassword = "changeit";
-        String storeName = null;
+        String testStoreName = null;
         try {
-            String executionPath = ResourceUtils.getFile("classpath:").getAbsolutePath();
-            storeName = executionPath + "/" + CACERT_NAME;
+            String testExecutionPath = ResourceUtils.getFile("classpath:").getAbsolutePath();
+            testStoreName = testExecutionPath + "/" + CACERT_NAME;
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         }
 
-        Assertions.assertNotNull(storeName);
-
+        Assertions.assertNotNull(testStoreName);
         String storeType = "JKS";
-        try (FileOutputStream fileOutputStream = new FileOutputStream(storeName)) {
+
+        try (FileOutputStream testFileOutputStream = new FileOutputStream(testStoreName)) {
             KeyStore keystore = KeyStore.getInstance(storeType);
             keystore.load(null, storePassword.toCharArray());
             keystore.setCertificateEntry(DEFAULT_ALIAS, createCertificate(DEFAULT_ALIAS));
-            keystore.store(fileOutputStream, storePassword.toCharArray());
+            keystore.store(testFileOutputStream, storePassword.toCharArray());
         } catch(Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private static void removeTestCacerts() {
+        try {
+            String testExecutionPath = ResourceUtils.getFile("classpath:").getAbsolutePath();
+            String testStoreName = testExecutionPath + "/" + CACERT_NAME;
+            Files.delete(Paths.get(testStoreName));
+        } catch (IOException e) {
             e.printStackTrace();
         }
     }
