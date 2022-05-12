@@ -129,9 +129,8 @@ class TestCertificateController {
         String storePassword = "changeit";
         String storeName = null;
         try {
-            String propertiesClassPath = ResourceUtils.getFile("classpath:test-application.properties").getAbsolutePath();
-            String executionPath = propertiesClassPath.substring(0, propertiesClassPath.indexOf("test-application"));
-            storeName = executionPath + CACERT_NAME;
+            String executionPath = ResourceUtils.getFile("classpath:").getAbsolutePath();
+            storeName = executionPath + "/" + CACERT_NAME;
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         }
