@@ -136,7 +136,7 @@ class TestApiManager {
                 .andReturn();
 
         List<RunningApi> runningApiList = objectMapper.readValue(getResult.getResponse().getContentAsString(), objectMapper.getTypeFactory().constructCollectionType(List.class, RunningApi.class));
-        Assertions.assertTrue(runningApiList.size() == 4);
+        Assertions.assertTrue(runningApiList.size() > 0);
     }
 
     @Test
