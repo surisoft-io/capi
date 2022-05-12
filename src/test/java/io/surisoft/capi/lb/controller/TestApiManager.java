@@ -1,7 +1,6 @@
 package io.surisoft.capi.lb.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.surisoft.capi.lb.repository.ApiRepository;
 import io.surisoft.capi.lb.schema.Api;
 import io.surisoft.capi.lb.schema.RunningApi;
 import org.junit.jupiter.api.*;
