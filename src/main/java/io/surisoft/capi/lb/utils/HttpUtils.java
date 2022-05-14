@@ -212,27 +212,29 @@ import org.springframework.stereotype.Component;
 @Slf4j
 public class HttpUtils {
     public String setHttpConnectTimeout(String endpoint, int timeout) {
-        if (!endpoint.endsWith("&")) {
-            endpoint = endpoint + "&";
-        }
-        return endpoint + Constants.HTTP_CONNECT_TIMEOUT + timeout;
+        return prepareEndpoint(endpoint) + Constants.HTTP_CONNECT_TIMEOUT + timeout;
     }
 
     public String setHttpSocketTimeout(String endpoint, int timeout) {
-        if (!endpoint.endsWith("&")) {
-            endpoint = endpoint + "&";
-        }
-        return endpoint + Constants.HTTP_SOCKET_TIMEOUT + timeout;
+        return prepareEndpoint(endpoint) + Constants.HTTP_SOCKET_TIMEOUT + timeout;
     }
 
     public String setIngressEndpoint(String endpoint, String hostName) {
-        if (!endpoint.endsWith("&")) {
-            endpoint = endpoint + "&";
-        }
-        return endpoint + Constants.CUSTOM_HOST_HEADER + hostName;
+        return prepareEndpoint(endpoint) + Constants.CUSTOM_HOST_HEADER + hostName;
     }
 
     public String getCapiContext(String context) {
         return context.substring(0, context.indexOf("/*"));
+    }
+
+    private String prepareEndpoint(String endpoint) {
+        if(endpoint.contains("?")) {
+            if (!endpoint.endsWith("&")) {
+                endpoint = endpoint + "&";
+            }
+        } else {
+            endpoint = endpoint + "?";
+        }
+        return endpoint;
     }
 }
