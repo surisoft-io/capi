@@ -93,13 +93,4 @@ class TestRouteUtils {
         String routeId = "unit-test:test:get";
         Assertions.assertEquals("get", routeUtils.getMethodFromRouteId(routeId));
     }
-
-    @Test
-    void testGetAllRouteIdForAGivenApi() {
-        Api api = new Api();
-        api.setName("unit-test");
-        api.setContext("test");
-        List<String> routeIdList = routeUtils.getAllRouteIdForAGivenApi(api);
-        Assertions.assertEquals(routeIdList.size(), 4);
-    }
 }

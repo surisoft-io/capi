@@ -319,10 +319,10 @@ public class RouteUtils {
 
     public List<String> getAllRouteIdForAGivenApi(Api api) {
         List<String> routeIdList = new ArrayList<>();
-        routeIdList.add(api.getId() + ":" + api.getContext() + ":" + HttpMethod.DELETE.getMethod());
-        routeIdList.add(api.getId() + ":" + api.getContext() + ":" + HttpMethod.PUT.getMethod());
-        routeIdList.add(api.getId() + ":" + api.getContext() + ":" + HttpMethod.POST.getMethod());
-        routeIdList.add(api.getId() + ":" + api.getContext() + ":" + HttpMethod.GET.getMethod());
+        routeIdList.add(api.getId() + ":" + HttpMethod.DELETE.getMethod());
+        routeIdList.add(api.getId() + ":" + HttpMethod.PUT.getMethod());
+        routeIdList.add(api.getId() + ":" + HttpMethod.POST.getMethod());
+        routeIdList.add(api.getId() + ":" + HttpMethod.GET.getMethod());
         return routeIdList;
     }
 
