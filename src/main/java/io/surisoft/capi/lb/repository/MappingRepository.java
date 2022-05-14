@@ -1,6 +1,5 @@
 package io.surisoft.capi.lb.repository;
 
-import io.surisoft.capi.lb.schema.Api;
 import io.surisoft.capi.lb.schema.Mapping;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;

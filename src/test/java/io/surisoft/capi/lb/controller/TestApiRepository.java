@@ -34,7 +34,7 @@ class TestApiRepository {
     @Order(1)
     void testSaveApi() {
         deleteAllBeforeAndAfter();
-        
+
         Api api = new Api();
         api.setName("unit-test");
         api.setContext("unit-test-context");
