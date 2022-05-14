@@ -33,6 +33,8 @@ class TestApiRepository {
     @Test
     @Order(1)
     void testSaveApi() {
+        deleteAllBeforeAndAfter();
+        
         Api api = new Api();
         api.setName("unit-test");
         api.setContext("unit-test-context");
@@ -100,5 +102,14 @@ class TestApiRepository {
         Optional<Api> updatedApi = apiRepository.findById("unit-test-2:unit-test-2-context");
         Assertions.assertTrue(updatedApi.isPresent());
         Assertions.assertFalse(updatedApi.get().getMappingList().isEmpty());
+
+        deleteAllBeforeAndAfter();
+    }
+
+    void deleteAllBeforeAndAfter() {
+        Collection<Api> apiList = apiRepository.findAll();
+        for(Api api : apiList) {
+            apiRepository.delete(api);
+        }
     }
 }
