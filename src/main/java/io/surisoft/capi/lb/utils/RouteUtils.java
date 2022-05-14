@@ -313,30 +313,16 @@ public class RouteUtils {
         return api.getContext();
     }
 
-    public HttpMethod getMethodFromRoute(RouteDefinition routeDefinition) {
-        VerbDefinition verbDefinition = routeDefinition.getRestDefinition().getVerbs().get(0);
-        if(verbDefinition instanceof GetDefinition) {
-            return HttpMethod.GET;
-        } else if(verbDefinition instanceof PostDefinition) {
-            return HttpMethod.POST;
-        } else if(verbDefinition instanceof PutDefinition) {
-            return HttpMethod.PUT;
-        } else if(verbDefinition instanceof DeleteDefinition) {
-            return HttpMethod.DELETE;
-        }
-        return null;
-    }
-
     public String getRouteId(Api api, String httpMethod) {
         return api.getName() + ":" + api.getContext() + ":" + httpMethod;
     }
 
     public List<String> getAllRouteIdForAGivenApi(Api api) {
         List<String> routeIdList = new ArrayList<>();
-        routeIdList.add(api.getId() + ":" + HttpMethod.DELETE.getMethod());
-        routeIdList.add(api.getId() + ":" + HttpMethod.PUT.getMethod());
-        routeIdList.add(api.getId() + ":" + HttpMethod.POST.getMethod());
-        routeIdList.add(api.getId() + ":" + HttpMethod.GET.getMethod());
+        routeIdList.add(api.getId() + ":" + api.getContext() + ":" + HttpMethod.DELETE.getMethod());
+        routeIdList.add(api.getId() + ":" + api.getContext() + ":" + HttpMethod.PUT.getMethod());
+        routeIdList.add(api.getId() + ":" + api.getContext() + ":" + HttpMethod.POST.getMethod());
+        routeIdList.add(api.getId() + ":" + api.getContext() + ":" + HttpMethod.GET.getMethod());
         return routeIdList;
     }
 
