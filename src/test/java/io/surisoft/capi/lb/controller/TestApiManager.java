@@ -2,6 +2,12 @@ package io.surisoft.capi.lb.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.surisoft.capi.lb.schema.Api;
+import org.cache2k.Cache;
+import org.cache2k.CacheEntry;
+import org.cache2k.CacheManager;
+import org.cache2k.annotation.Nullable;
+import org.cache2k.processor.EntryProcessor;
+import org.junit.After;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,6 +22,11 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentMap;
+import java.util.function.Function;
 
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 

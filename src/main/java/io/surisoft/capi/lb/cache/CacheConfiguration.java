@@ -229,7 +229,7 @@ public class CacheConfiguration {
     public Cache<String, Api> apiCache() {
         log.debug("Creating API Cache");
         return new Cache2kBuilder<String, Api>(){}
-                .name("apiCache")
+                .name("apiCache-" + hashCode())
                 .eternal(true)
                 .entryCapacity(10000)
                 .storeByReference(true)
@@ -240,7 +240,7 @@ public class CacheConfiguration {
     public Cache<String, StickySession> stickySessionCache() {
         log.debug("Creating Sticky Session Cache");
         return new Cache2kBuilder<String, StickySession>(){}
-                .name("stickySession")
+                .name("stickySession-" + hashCode())
                 .expireAfterWrite(stickySessionTimeToLive, TimeUnit.HOURS)
                 .entryCapacity(10000)
                 .storeByReference(true)
