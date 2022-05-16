@@ -19,8 +19,8 @@ public class SwaggerConfig {
     @Value("${capi.manager.security.enabled}")
     private boolean capiManagerSecurityEnabled;
 
-    //@Autowired
-    //private BuildProperties buildProperties;
+    @Autowired
+    private BuildProperties buildProperties;
 
     @Bean
     public GroupedOpenApi publicApi() {
@@ -49,14 +49,10 @@ public class SwaggerConfig {
                         )
                 );
         }
-        openAPI.info(new Info().title("dummy")
-                .description("Management endpoint")
-                .version("1000")
-                .license(new License().name("Apache 2.0")));
-        /*openAPI.info(new Info().title(buildProperties.getName())
+        openAPI.info(new Info().title(buildProperties.getName())
                 .description("Management endpoint")
                 .version(buildProperties.getVersion())
-                .license(new License().name("Apache 2.0")));*/
+                .license(new License().name("Apache 2.0")));
         return openAPI;
     }
 }
