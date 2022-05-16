@@ -1,9 +1,9 @@
 package io.surisoft.capi.lb.configuration;
 
 import io.surisoft.capi.lb.cache.StickySessionCacheManager;
+import io.surisoft.capi.lb.processor.MetricsProcessor;
 import io.surisoft.capi.lb.schema.Api;
 import io.surisoft.capi.lb.service.ConsulNodeDiscovery;
-import io.surisoft.capi.lb.processor.MetricsProcessor;
 import io.surisoft.capi.lb.utils.ApiUtils;
 import io.surisoft.capi.lb.utils.HttpUtils;
 import io.surisoft.capi.lb.utils.RouteUtils;

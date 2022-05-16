@@ -256,4 +256,13 @@ public class Mapping implements Serializable {
     public void setIngress(boolean ingress) {
         this.ingress = ingress;
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if(o == null || getClass() != o.getClass()) return false;
+        Mapping mapping = (Mapping) o;
+        return rootContext.equals(mapping.getRootContext()) &&
+                hostname.equals(mapping.getHostname()) &&
+                        port == mapping.getPort();
+    }
 }

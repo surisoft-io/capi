@@ -5,10 +5,7 @@ import io.surisoft.capi.lb.cache.StickySessionCacheManager;
 import io.surisoft.capi.lb.builder.DirectRouteProcessor;
 import io.surisoft.capi.lb.builder.RestDefinitionProcessor;
 import io.surisoft.capi.lb.processor.MetricsProcessor;
-import io.surisoft.capi.lb.schema.Api;
-import io.surisoft.capi.lb.schema.ConsulObject;
-import io.surisoft.capi.lb.schema.HttpMethod;
-import io.surisoft.capi.lb.schema.Mapping;
+import io.surisoft.capi.lb.schema.*;
 import io.surisoft.capi.lb.utils.ApiUtils;
 import io.surisoft.capi.lb.utils.Constants;
 import io.surisoft.capi.lb.utils.RouteUtils;
@@ -96,7 +93,7 @@ public class ConsulNodeDiscovery {
                     if(existingApi == null) {
                         createRoute(incomingApi);
                     } else {
-                        apiUtils.updateExistingApi(existingApi,incomingApi, apiCache, routeUtils, metricsProcessor, camelContext, stickySessionCacheManager, capiContext);
+                        apiUtils.updateExistingApi(existingApi, incomingApi, apiCache, routeUtils, metricsProcessor, camelContext, stickySessionCacheManager, capiContext);
                     }
                 }
 
