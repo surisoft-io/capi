@@ -463,12 +463,10 @@
   <plugin>
     <groupId>org.springframework.boot</groupId>
     <artifactId>spring-boot-maven-plugin</artifactId>
+    <configuration>
+      <mainClass>io.surisoft.capi.lb.CapiLoadBalancer</mainClass>
+    </configuration>
     <executions>
-      <execution>
-        <configuration>
-          <mainClass>io.surisoft.capi.lb.CapiLoadBalancer</mainClass>
-        </configuration>
-      </execution>
       <execution>
         <goals>
           <goal>build-info</goal>
