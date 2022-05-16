@@ -16,7 +16,8 @@ import com.nimbusds.jwt.SignedJWT;
 import com.nimbusds.jwt.proc.ConfigurableJWTProcessor;
 import com.nimbusds.jwt.proc.DefaultJWTProcessor;
 import io.surisoft.capi.lb.utils.Constants;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -32,8 +33,9 @@ import java.text.ParseException;
 import java.util.HashMap;
 
 @Configuration
-@Slf4j
 public class ManagerSecurityConfig extends WebSecurityConfigurerAdapter {
+
+    private static final Logger log = LoggerFactory.getLogger(ManagerSecurityConfig.class);
 
     @Value("${capi.manager.security.enabled}")
     private boolean capiManagerSecurityEnabled;

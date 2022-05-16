@@ -206,14 +206,12 @@
 package io.surisoft.capi.lb.schema;
 
 import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.Data;
 
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.IdClass;
 import java.io.Serializable;
 
-@Data
 @Entity
 @IdClass(MappingId.class)
 @Schema(hidden = true)
@@ -227,4 +225,35 @@ public class Mapping implements Serializable {
     private int port = -1;
     private boolean ingress;
 
+    public String getRootContext() {
+        return rootContext;
+    }
+
+    public void setRootContext(String rootContext) {
+        this.rootContext = rootContext;
+    }
+
+    public String getHostname() {
+        return hostname;
+    }
+
+    public void setHostname(String hostname) {
+        this.hostname = hostname;
+    }
+
+    public int getPort() {
+        return port;
+    }
+
+    public void setPort(int port) {
+        this.port = port;
+    }
+
+    public boolean isIngress() {
+        return ingress;
+    }
+
+    public void setIngress(boolean ingress) {
+        this.ingress = ingress;
+    }
 }

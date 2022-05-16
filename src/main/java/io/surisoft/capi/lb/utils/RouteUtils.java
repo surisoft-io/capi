@@ -206,17 +206,23 @@
 package io.surisoft.capi.lb.utils;
 
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
+import io.surisoft.capi.lb.builder.DirectRouteProcessor;
+import io.surisoft.capi.lb.builder.RestDefinitionProcessor;
+import io.surisoft.capi.lb.cache.StickySessionCacheManager;
 import io.surisoft.capi.lb.processor.HttpErrorProcessor;
+import io.surisoft.capi.lb.processor.MetricsProcessor;
 import io.surisoft.capi.lb.schema.Api;
 import io.surisoft.capi.lb.schema.HttpMethod;
 import io.surisoft.capi.lb.schema.HttpProtocol;
 import io.surisoft.capi.lb.schema.Mapping;
-import lombok.extern.slf4j.Slf4j;
+
 import org.apache.camel.CamelContext;
 import org.apache.camel.Route;
 import org.apache.camel.model.RouteDefinition;
-import org.apache.camel.model.rest.*;
 import org.apache.camel.zipkin.ZipkinTracer;
+import org.cache2k.Cache;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -228,8 +234,9 @@ import java.util.List;
 import static org.apache.camel.language.constant.ConstantLanguage.constant;
 
 @Component
-@Slf4j
 public class RouteUtils {
+
+    private static final Logger log = LoggerFactory.getLogger(RouteUtils.class);
 
     @Value("${capi.gateway.error.endpoint}")
     private String capiGatewayErrorEndpoint;
@@ -352,5 +359,21 @@ public class RouteUtils {
             routeIdList.add(route.getRouteId());
         }
         return routeIdList;
+    }
+
+    public void createRoute(Api incomingApi, Cache<String, Api> apiCache, CamelContext camelContext, MetricsProcessor metricsProcessor, StickySessionCacheManager stickySessionCacheManager, String capiContext) {
+        apiCache.put(incomingApi.getId(), incomingApi);
+        List<String> apiRouteIdList = getAllRouteIdForAGivenApi(incomingApi);
+        for(String routeId : apiRouteIdList) {
+            Route existingRoute = camelContext.getRoute(routeId);
+            if(existingRoute == null) {
+                try {
+                    camelContext.addRoutes(new RestDefinitionProcessor(camelContext, incomingApi, this, routeId));
+                    camelContext.addRoutes(new DirectRouteProcessor(camelContext, incomingApi, this, metricsProcessor, routeId, stickySessionCacheManager, capiContext));
+                } catch (Exception e) {
+                    log.error(e.getMessage(), e);
+                }
+            }
+        }
     }
 }

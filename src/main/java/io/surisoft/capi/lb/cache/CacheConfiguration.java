@@ -205,30 +205,45 @@
 
 package io.surisoft.capi.lb.cache;
 
-import com.hazelcast.config.Config;
-import com.hazelcast.config.EvictionPolicy;
-import com.hazelcast.config.MapConfig;
-import com.hazelcast.config.MaxSizePolicy;
+import io.surisoft.capi.lb.schema.Api;
+import io.surisoft.capi.lb.schema.StickySession;
+import org.cache2k.Cache;
+import org.cache2k.Cache2kBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 
-public class CacheConfiguration extends Config {
+import java.util.concurrent.TimeUnit;
+
+@Configuration
+public class CacheConfiguration {
 
     private static final Logger log = LoggerFactory.getLogger(CacheConfiguration.class);
 
-    public CacheConfiguration(String springProfile) {
-        super();
-        log.debug("CAPI cache configuration.");
-        setClusterName(springProfile);
-        MapConfig mapConfig = new MapConfig()
-                .setName("capi-cache-config")
-                .setTimeToLiveSeconds(-1);
-        mapConfig.getEvictionConfig()
-                .setMaxSizePolicy(MaxSizePolicy.FREE_HEAP_SIZE)
-                .setSize(20000)
-                .setEvictionPolicy(EvictionPolicy.LRU);
-        setInstanceName("capi-cache-instance")
-                .setClusterName(springProfile)
-                .addMapConfig(mapConfig);
+    @Value("${sticky.session.time.to.live}")
+    private Integer stickySessionTimeToLive;
+
+    @Bean
+    public Cache<String, Api> apiCache() {
+        log.debug("Creating API Cache");
+        return new Cache2kBuilder<String, Api>(){}
+                .name("apiCache")
+                .eternal(true)
+                .entryCapacity(10000)
+                .storeByReference(true)
+                .build();
+    }
+
+    @Bean
+    public Cache<String, StickySession> stickySessionCache() {
+        log.debug("Creating Sticky Session Cache");
+        return new Cache2kBuilder<String, StickySession>(){}
+                .name("stickySession")
+                .expireAfterWrite(stickySessionTimeToLive, TimeUnit.HOURS)
+                .entryCapacity(10000)
+                .storeByReference(true)
+                .build();
     }
 }

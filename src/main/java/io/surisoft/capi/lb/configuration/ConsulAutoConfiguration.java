@@ -1,15 +1,15 @@
 package io.surisoft.capi.lb.configuration;
 
-import io.surisoft.capi.lb.cache.ConsulCacheManager;
-import io.surisoft.capi.lb.cache.ConsulDiscoveryCacheManager;
 import io.surisoft.capi.lb.cache.StickySessionCacheManager;
-import io.surisoft.capi.lb.processor.ConsulNodeDiscovery;
+import io.surisoft.capi.lb.schema.Api;
+import io.surisoft.capi.lb.service.ConsulNodeDiscovery;
 import io.surisoft.capi.lb.processor.MetricsProcessor;
 import io.surisoft.capi.lb.utils.ApiUtils;
 import io.surisoft.capi.lb.utils.HttpUtils;
 import io.surisoft.capi.lb.utils.RouteUtils;
 import org.apache.camel.CamelContext;
 import org.apache.camel.builder.RouteBuilder;
+import org.cache2k.Cache;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -22,9 +22,6 @@ public class ConsulAutoConfiguration {
 
     private static final Logger log = LoggerFactory.getLogger(ConsulAutoConfiguration.class);
 
-    @Value("${capi.consul.discovery.enabled}")
-    private boolean consulEnabled;
-
     @Value("${capi.consul.discovery.timer.interval}")
     private int consulTimerInterval;
 
@@ -36,8 +33,8 @@ public class ConsulAutoConfiguration {
 
     @Bean(name = "consulNodeDiscovery")
     @ConditionalOnProperty(prefix = "capi.consul.discovery", name = "enabled", havingValue = "true")
-    public ConsulNodeDiscovery consulNodeDiscovery(CamelContext camelContext, ApiUtils apiUtils, RouteUtils routeUtils, MetricsProcessor metricsProcessor, HttpUtils httpUtils, StickySessionCacheManager stickySessionCacheManager, ConsulCacheManager consulCacheManager) {
-        ConsulNodeDiscovery consulNodeDiscovery = new ConsulNodeDiscovery(camelContext, apiUtils, routeUtils, metricsProcessor, stickySessionCacheManager, consulCacheManager);
+    public ConsulNodeDiscovery consulNodeDiscovery(CamelContext camelContext, ApiUtils apiUtils, RouteUtils routeUtils, MetricsProcessor metricsProcessor, HttpUtils httpUtils, StickySessionCacheManager stickySessionCacheManager, Cache<String, Api> apiCache) {
+        ConsulNodeDiscovery consulNodeDiscovery = new ConsulNodeDiscovery(camelContext, apiUtils, routeUtils, metricsProcessor, stickySessionCacheManager, apiCache);
         consulNodeDiscovery.setCapiContext(httpUtils.getCapiContext(capiContext));
         consulNodeDiscovery.setConsulHost(capiConsulHost);
         return consulNodeDiscovery;
@@ -45,19 +42,15 @@ public class ConsulAutoConfiguration {
 
     @Bean
     @ConditionalOnProperty(prefix = "capi.consul.discovery", name = "enabled", havingValue = "true")
-    public RouteBuilder routeBuilder(ConsulDiscoveryCacheManager consulDiscoveryCacheManager) {
-        log.debug("Creating Capi Consul Discovery");
-        if(consulDiscoveryCacheManager.getLocalMemberID().equals(consulDiscoveryCacheManager.getConsulWorkerNode().getMember()) && consulEnabled) {
-            return new RouteBuilder() {
-                @Override
-                public void configure() {
-                    from("timer:consul-inspect?period=" + consulTimerInterval + "s")
-                            .to("bean:consulNodeDiscovery?method=processInfo")
-                            .routeId("consul-discovery-service");
-                }
-            };
-        } else {
-            return null;
-        }
+    public RouteBuilder routeBuilder() {
+        log.debug("Creating Capi Consul Node Discovery");
+        return new RouteBuilder() {
+            @Override
+            public void configure() {
+                from("timer:consul-inspect?period=" + consulTimerInterval + "s")
+                        .to("bean:consulNodeDiscovery?method=processInfo")
+                        .routeId("consul-discovery-service");
+            }
+        };
     }
 }

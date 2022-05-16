@@ -246,6 +246,7 @@ public class Constants {
     public static final String ERROR_MESSAGE = "errorMessage";
     public static final String ERROR_CODE = "errorCode";
     public static final String NO_CUSTOM_TRUST_STORE_PROVIDED = "No custom trust store was provided, to enable this feature, add a custom trust store.";
+    public static final String STICKY_SESSION_IMAP_NAME = "stickySession";
     public static final String[] CAPI_WHITELISTED_PATHS = {
             //Swagger UI v2
             "/v2/api-docs",

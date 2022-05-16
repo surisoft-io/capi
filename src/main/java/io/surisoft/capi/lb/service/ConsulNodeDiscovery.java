@@ -1,10 +1,10 @@
-package io.surisoft.capi.lb.processor;
+package io.surisoft.capi.lb.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.surisoft.capi.lb.cache.ConsulCacheManager;
 import io.surisoft.capi.lb.cache.StickySessionCacheManager;
-import io.surisoft.capi.lb.configuration.ConsulDirectRouteProcessor;
-import io.surisoft.capi.lb.configuration.ConsulRestDefinitionProcessor;
+import io.surisoft.capi.lb.builder.DirectRouteProcessor;
+import io.surisoft.capi.lb.builder.RestDefinitionProcessor;
+import io.surisoft.capi.lb.processor.MetricsProcessor;
 import io.surisoft.capi.lb.schema.Api;
 import io.surisoft.capi.lb.schema.ConsulObject;
 import io.surisoft.capi.lb.schema.HttpMethod;
@@ -16,6 +16,7 @@ import okhttp3.*;
 import org.apache.camel.CamelContext;
 import org.apache.camel.Route;
 import org.apache.camel.util.json.JsonObject;
+import org.cache2k.Cache;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -37,14 +38,14 @@ public class ConsulNodeDiscovery {
     private String capiContext;
 
     private final CamelContext camelContext;
-    private final ConsulCacheManager consulCacheManager;
+    private final Cache<String, Api> apiCache;
 
-    public ConsulNodeDiscovery(CamelContext camelContext, ApiUtils apiUtils, RouteUtils routeUtils, MetricsProcessor metricsProcessor, StickySessionCacheManager stickySessionCacheManager, ConsulCacheManager consulCacheManager) {
+    public ConsulNodeDiscovery(CamelContext camelContext, ApiUtils apiUtils, RouteUtils routeUtils, MetricsProcessor metricsProcessor, StickySessionCacheManager stickySessionCacheManager, Cache<String, Api> apiCache) {
         this.apiUtils = apiUtils;
         this.routeUtils = routeUtils;
         this.camelContext = camelContext;
         this.stickySessionCacheManager = stickySessionCacheManager;
-        this.consulCacheManager = consulCacheManager;
+        this.apiCache = apiCache;
         this.metricsProcessor = metricsProcessor;
     }
 
@@ -63,7 +64,7 @@ public class ConsulNodeDiscovery {
                 responseObject.remove("consul");
                 Set<String> services = responseObject.keySet();
                 try {
-                    apiUtils.removeConsulUnusedApi(camelContext, routeUtils, consulCacheManager, services.stream().toList());
+                    apiUtils.removeUnusedApi(camelContext, routeUtils, apiCache, services.stream().toList());
                 } catch (Exception e) {
                     log.error(e.getMessage(), e);
                 }
@@ -91,17 +92,16 @@ public class ConsulNodeDiscovery {
                 for (var entry : servicesStructure.entrySet()) {
                     String apiId = serviceName + ":" + entry.getKey();
                     Api incomingApi = createApiObject(apiId, serviceName, entry.getKey(), entry.getValue(), consulResponse);
-
-                    Api existingApi = consulCacheManager.getApiById(apiId);
+                    Api existingApi = apiCache.peek(apiId);
                     if(existingApi == null) {
                         createRoute(incomingApi);
                     } else {
-                        apiUtils.updateConsulExistingApi(existingApi,incomingApi, consulCacheManager, routeUtils, metricsProcessor, camelContext, stickySessionCacheManager, capiContext);
+                        apiUtils.updateExistingApi(existingApi,incomingApi, apiCache, routeUtils, metricsProcessor, camelContext, stickySessionCacheManager, capiContext);
                     }
                 }
 
                 try {
-                    apiUtils.removeConsulUnusedApi(camelContext, routeUtils, consulCacheManager, servicesStructure, serviceName);
+                    apiUtils.removeUnusedApi(camelContext, routeUtils, apiCache, servicesStructure, serviceName);
                 } catch(Exception e) {
                     log.error(e.getMessage(), e);
                 }
@@ -124,13 +124,11 @@ public class ConsulNodeDiscovery {
                 log.trace("Service Tag group not present, service will not be deployed");
             }
         }
-        Iterator<String> iterator = serviceIdList.iterator();
-        while(iterator.hasNext()) {
-            String id = iterator.next();
+        for (String id : serviceIdList) {
             List<Mapping> mappingList = new ArrayList<>();
-            for(ConsulObject serviceIdToProcess : consulService) {
+            for (ConsulObject serviceIdToProcess : consulService) {
                 String serviceNodeGroup = getServiceNodeGroup(serviceIdToProcess);
-                if(id.equals(serviceNodeGroup)) {
+                if (id.equals(serviceNodeGroup)) {
                     Mapping entryMapping = apiUtils.consulObjectToMapping(serviceIdToProcess);
                     mappingList.add(entryMapping);
                 }
@@ -185,14 +183,14 @@ public class ConsulNodeDiscovery {
     }
 
     private void createRoute(Api incomingApi) {
-        consulCacheManager.createApi(incomingApi);
+        apiCache.put(incomingApi.getId(), incomingApi);
         List<String> apiRouteIdList = routeUtils.getAllRouteIdForAGivenApi(incomingApi);
         for(String routeId : apiRouteIdList) {
             Route existingRoute = camelContext.getRoute(routeId);
             if(existingRoute == null) {
                 try {
-                    camelContext.addRoutes(new ConsulRestDefinitionProcessor(camelContext, incomingApi, routeUtils, routeId));
-                    camelContext.addRoutes(new ConsulDirectRouteProcessor(camelContext, incomingApi, routeUtils, metricsProcessor, routeId, stickySessionCacheManager, capiContext));
+                    camelContext.addRoutes(new RestDefinitionProcessor(camelContext, incomingApi, routeUtils, routeId));
+                    camelContext.addRoutes(new DirectRouteProcessor(camelContext, incomingApi, routeUtils, metricsProcessor, routeId, stickySessionCacheManager, capiContext));
                 } catch (Exception e) {
                     log.error(e.getMessage(), e);
                 }

@@ -205,12 +205,15 @@
 
 package io.surisoft.capi.lb.utils;
 
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 @Component
-@Slf4j
 public class HttpUtils {
+
+    private static final Logger log = LoggerFactory.getLogger(HttpUtils.class);
+
     public String setHttpConnectTimeout(String endpoint, int timeout) {
         return prepareEndpoint(endpoint) + Constants.HTTP_CONNECT_TIMEOUT + timeout;
     }

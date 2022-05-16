@@ -1,13 +1,14 @@
 package io.surisoft.capi.lb.controller;
 
 import com.github.tomakehurst.wiremock.WireMockServer;
-import io.surisoft.capi.lb.cache.ConsulCacheManager;
 import io.surisoft.capi.lb.cache.StickySessionCacheManager;
-import io.surisoft.capi.lb.processor.ConsulNodeDiscovery;
+import io.surisoft.capi.lb.schema.Api;
+import io.surisoft.capi.lb.service.ConsulNodeDiscovery;
 import io.surisoft.capi.lb.processor.MetricsProcessor;
 import io.surisoft.capi.lb.utils.ApiUtils;
 import io.surisoft.capi.lb.utils.RouteUtils;
 import org.apache.camel.CamelContext;
+import org.cache2k.Cache;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -74,7 +75,7 @@ class TestConsulNodeDiscovery {
     StickySessionCacheManager stickySessionCacheManager;
 
     @Autowired
-    ConsulCacheManager consulCacheManager;
+    Cache<String, Api> apiCache;
 
     @Autowired
     MetricsProcessor metricsProcessor;
@@ -93,9 +94,9 @@ class TestConsulNodeDiscovery {
         Assertions.assertNotNull(routeUtils);
         Assertions.assertNotNull(metricsProcessor);
         Assertions.assertNotNull(stickySessionCacheManager);
-        Assertions.assertNotNull(consulCacheManager);
+        Assertions.assertNotNull(apiCache);
 
-        ConsulNodeDiscovery consulNodeDiscovery = new ConsulNodeDiscovery(camelContext, apiUtils, routeUtils, metricsProcessor, stickySessionCacheManager, consulCacheManager);
+        ConsulNodeDiscovery consulNodeDiscovery = new ConsulNodeDiscovery(camelContext, apiUtils, routeUtils, metricsProcessor, stickySessionCacheManager, apiCache);
         consulNodeDiscovery.setConsulHost("http://localhost:8888");
         consulNodeDiscovery.setCapiContext("/capi/test");
         consulNodeDiscovery.processInfo();

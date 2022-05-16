@@ -1,4 +1,4 @@
-package io.surisoft.capi.lb.configuration;
+package io.surisoft.capi.lb.builder;
 
 import io.surisoft.capi.lb.schema.Api;
 import io.surisoft.capi.lb.utils.Constants;
@@ -7,13 +7,13 @@ import org.apache.camel.CamelContext;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.model.rest.RestDefinition;
 
-public class ConsulRestDefinitionProcessor extends RouteBuilder {
+public class RestDefinitionProcessor extends RouteBuilder {
 
     private RouteUtils routeUtils;
     private Api api;
     private String routeId;
 
-    public ConsulRestDefinitionProcessor(CamelContext camelContext, Api api, RouteUtils routeUtils, String routeId) {
+    public RestDefinitionProcessor(CamelContext camelContext, Api api, RouteUtils routeUtils, String routeId) {
         super(camelContext);
         this.api = api;
         this.routeUtils = routeUtils;

@@ -2,7 +2,6 @@ package io.surisoft.capi.lb.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.surisoft.capi.lb.schema.Api;
-import io.surisoft.capi.lb.schema.RunningApi;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,11 +28,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class TestApiManager {
 
     private static final String GOOD_API = """
-            { 
+            {
                  "name": "unit-test-api",
                  "context": "unit-test-api",
                  "mappingList": [
-                        { 
+                        {
                             "hostname": "localhost",
                             "port": 8080,
                             "rootContext": "/",
@@ -46,14 +45,14 @@ class TestApiManager {
                  "httpMethod": "ALL",
                  "httpProtocol": "HTTP",
                  "removeMe": false
-            } """;
+            }""";
 
     private static final String GOOD_API_NEW_MAPPING = """
-            { 
+            {
                  "name": "unit-test-api",
                  "context": "unit-test-api",
                  "mappingList": [
-                        { 
+                        {
                             "hostname": "localhost",
                             "port": 8081,
                             "rootContext": "/",
@@ -66,7 +65,7 @@ class TestApiManager {
                  "httpMethod": "ALL",
                  "httpProtocol": "HTTP",
                  "removeMe": false
-            } """;
+            }""";
 
     @Autowired
     private WebApplicationContext webApplicationContext;
@@ -99,7 +98,6 @@ class TestApiManager {
         api.setName("unit-test");
         api.setContext("/unit-test");
 
-        System.out.println(objectMapper.writeValueAsString(api));
         mockMvc.perform(MockMvcRequestBuilders.post("/manager/api/register/node", objectMapper.writeValueAsString(api))
                         .accept(MediaType.APPLICATION_JSON_VALUE))
                 .andExpect(status().isBadRequest());
@@ -123,24 +121,12 @@ class TestApiManager {
                 .andReturn();
 
         List<Api> apiList = objectMapper.readValue(getResult.getResponse().getContentAsString(), objectMapper.getTypeFactory().constructCollectionType(List.class, Api.class));
-        Assertions.assertTrue(apiList.size() == 1);
-        Assertions.assertTrue(apiList.get(0).getMappingList().size() == 1);
+        Assertions.assertEquals(1, apiList.size());
+        Assertions.assertEquals(1, apiList.get(0).getMappingList().size());
     }
 
     @Test
     @Order(5)
-    void testGetRunningApi() throws Exception {
-        MvcResult getResult = mockMvc.perform(MockMvcRequestBuilders.get("/manager/api/running")
-                        .accept(MediaType.APPLICATION_JSON_VALUE))
-                .andExpect(status().isOk())
-                .andReturn();
-
-        List<RunningApi> runningApiList = objectMapper.readValue(getResult.getResponse().getContentAsString(), objectMapper.getTypeFactory().constructCollectionType(List.class, RunningApi.class));
-        Assertions.assertTrue(runningApiList.size() > 0);
-    }
-
-    @Test
-    @Order(6)
     void testRegisterNodeForSameApiWithSuccess() throws Exception {
         mockMvc.perform(MockMvcRequestBuilders.post("/manager/api/register/node").content(GOOD_API_NEW_MAPPING)
                         .contentType(MediaType.APPLICATION_JSON_VALUE)
@@ -149,7 +135,7 @@ class TestApiManager {
     }
 
     @Test
-    @Order(7)
+    @Order(6)
     void testGetConfiguredApiWithNewMapping() throws Exception {
         MvcResult getResult = mockMvc.perform(MockMvcRequestBuilders.get("/manager/api/configured")
                         .accept(MediaType.APPLICATION_JSON_VALUE))
@@ -157,12 +143,12 @@ class TestApiManager {
                 .andReturn();
 
         List<Api> apiList = objectMapper.readValue(getResult.getResponse().getContentAsString(), objectMapper.getTypeFactory().constructCollectionType(List.class, Api.class));
-        Assertions.assertTrue(apiList.size() == 1);
-        Assertions.assertTrue(apiList.get(0).getMappingList().size() == 2);
+        Assertions.assertEquals(1, apiList.size());
+        Assertions.assertEquals(2, apiList.get(0).getMappingList().size());
     }
 
     @Test
-    @Order(8)
+    @Order(7)
     void removeDeplyedApi() throws Exception {
         mockMvc.perform(MockMvcRequestBuilders.post("/manager/api/unregister/node").content(GOOD_API_NEW_MAPPING)
                         .contentType(MediaType.APPLICATION_JSON_VALUE)
@@ -171,7 +157,7 @@ class TestApiManager {
     }
 
     @Test
-    @Order(9)
+    @Order(8)
     void testEmptyResultAfterUndeploy() throws Exception {
         MvcResult getResult = mockMvc.perform(MockMvcRequestBuilders.get("/manager/api/configured")
                         .accept(MediaType.APPLICATION_JSON_VALUE))
@@ -179,6 +165,6 @@ class TestApiManager {
                 .andReturn();
 
         List<Api> apiList = objectMapper.readValue(getResult.getResponse().getContentAsString(), objectMapper.getTypeFactory().constructCollectionType(List.class, Api.class));
-        Assertions.assertTrue(apiList.size() == 0);
+        Assertions.assertEquals(0, apiList.size());
     }
 }

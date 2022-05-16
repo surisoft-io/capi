@@ -1,41 +1,30 @@
 package io.surisoft.capi.lb.cache;
 
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.map.IMap;
 import io.surisoft.capi.lb.schema.StickySession;
 import io.surisoft.capi.lb.utils.RouteUtils;
-import org.springframework.beans.factory.annotation.Value;
+import org.cache2k.Cache;
 import org.springframework.stereotype.Component;
-
-import java.util.concurrent.TimeUnit;
 
 @Component
 public class StickySessionCacheManager {
 
-    private HazelcastInstance hazelcastInstance;
     private RouteUtils routeUtils;
+    private Cache<String, StickySession> stickySessionCache;
 
-    @Value("${sticky.session.time.to.live}")
-    private long stickySessionTimeToLive;
-
-    public StickySessionCacheManager(HazelcastInstance hazelcastInstance, RouteUtils routeUtils) {
-        this.hazelcastInstance = hazelcastInstance;
+    public StickySessionCacheManager(Cache<String, StickySession> stickySessionCache, RouteUtils routeUtils) {
+        this.stickySessionCache = stickySessionCache;
         this.routeUtils = routeUtils;
     }
 
-    private IMap<String, StickySession> getCachedStickySessions() {
-        return hazelcastInstance.getMap(CacheConstants.STICKY_SESSION_IMAP_NAME);
-    }
-
     public void createStickySession(StickySession stickySession) {
-        getCachedStickySessions().put(stickySession.getId(), stickySession, stickySessionTimeToLive, TimeUnit.HOURS);
+        stickySessionCache.put(stickySession.getId(), stickySession);
     }
 
     public StickySession getStickySessionById(String paramName, String paramValue) {
-        return getCachedStickySessions().get(routeUtils.getStickySessionId(paramName, paramValue));
+        return stickySessionCache.peek(routeUtils.getStickySessionId(paramName, paramValue));
     }
 
     public void deleteStickySession(StickySession stickySession) {
-        getCachedStickySessions().remove(stickySession.getId());
+        stickySessionCache.remove(stickySession.getId());
     }
 }
