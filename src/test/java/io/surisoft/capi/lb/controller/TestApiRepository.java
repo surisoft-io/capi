@@ -69,7 +69,7 @@ class TestApiRepository {
     @Order(3)
     void testFindByPublished() {
         Collection<Api> unpublishedApu = apiRepository.findByPublished(false);
-        Assertions.assertTrue(unpublishedApu.size() == 1);
+        Assertions.assertEquals(1, unpublishedApu.size());
     }
 
     @Test

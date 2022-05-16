@@ -1,6 +1,6 @@
 package io.surisoft.capi.lb.controller;
 
-import io.surisoft.capi.lb.processor.ConsulNodeDiscovery;
+import io.surisoft.capi.lb.service.ConsulNodeDiscovery;
 import org.apache.camel.builder.RouteBuilder;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;

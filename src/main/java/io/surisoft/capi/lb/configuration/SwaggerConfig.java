@@ -6,7 +6,6 @@ import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.info.License;
 import io.swagger.v3.oas.models.security.SecurityRequirement;
 import io.swagger.v3.oas.models.security.SecurityScheme;
-import lombok.extern.slf4j.Slf4j;
 import org.springdoc.core.GroupedOpenApi;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -15,14 +14,13 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
-@Slf4j
 public class SwaggerConfig {
 
     @Value("${capi.manager.security.enabled}")
     private boolean capiManagerSecurityEnabled;
 
-    @Autowired
-    private BuildProperties buildProperties;
+    //@Autowired
+    //private BuildProperties buildProperties;
 
     @Bean
     public GroupedOpenApi publicApi() {
@@ -51,10 +49,14 @@ public class SwaggerConfig {
                         )
                 );
         }
-        openAPI.info(new Info().title(buildProperties.getName())
+        openAPI.info(new Info().title("dummy")
+                .description("Management endpoint")
+                .version("1000")
+                .license(new License().name("Apache 2.0")));
+        /*openAPI.info(new Info().title(buildProperties.getName())
                 .description("Management endpoint")
                 .version(buildProperties.getVersion())
-                .license(new License().name("Apache 2.0")));
+                .license(new License().name("Apache 2.0")));*/
         return openAPI;
     }
 }

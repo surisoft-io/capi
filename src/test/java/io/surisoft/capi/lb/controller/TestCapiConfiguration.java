@@ -1,6 +1,5 @@
 package io.surisoft.capi.lb.controller;
 
-import com.hazelcast.config.Config;
 import org.apache.camel.component.http.HttpComponent;
 import org.apache.camel.zipkin.ZipkinTracer;
 import org.junit.jupiter.api.Assertions;
@@ -24,9 +23,6 @@ class TestCapiConfiguration {
     @Autowired
     HttpComponent httpComponent;
 
-    @Autowired
-    Config hazelcastConfig;
-
     @Test
     void testZipkin() {
         Assertions.assertNotNull(zipkinTracer);
@@ -35,11 +31,5 @@ class TestCapiConfiguration {
     @Test
     void testHttpComponent() {
         Assertions.assertNotNull(httpComponent);
-    }
-
-    @Test
-    void testHazelcastConfig() {
-        Assertions.assertNotNull(hazelcastConfig);
-        Assertions.assertEquals(hazelcastConfig.getClusterName(), "default");
     }
 }

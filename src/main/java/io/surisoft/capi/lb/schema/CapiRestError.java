@@ -205,9 +205,6 @@
 
 package io.surisoft.capi.lb.schema;
 
-import lombok.Data;
-
-@Data
 public class CapiRestError {
     private String routeID;
     private String errorMessage;
@@ -217,4 +214,68 @@ public class CapiRestError {
     private String exception;
     private String internalExceptionMessage;
     private String zipkinTraceID;
+
+    public String getRouteID() {
+        return routeID;
+    }
+
+    public void setRouteID(String routeID) {
+        this.routeID = routeID;
+    }
+
+    public String getErrorMessage() {
+        return errorMessage;
+    }
+
+    public void setErrorMessage(String errorMessage) {
+        this.errorMessage = errorMessage;
+    }
+
+    public int getErrorCode() {
+        return errorCode;
+    }
+
+    public void setErrorCode(int errorCode) {
+        this.errorCode = errorCode;
+    }
+
+    public String getHttpUrl() {
+        return httpUrl;
+    }
+
+    public void setHttpUrl(String httpUrl) {
+        this.httpUrl = httpUrl;
+    }
+
+    public String getHttpUri() {
+        return httpUri;
+    }
+
+    public void setHttpUri(String httpUri) {
+        this.httpUri = httpUri;
+    }
+
+    public String getException() {
+        return exception;
+    }
+
+    public void setException(String exception) {
+        this.exception = exception;
+    }
+
+    public String getInternalExceptionMessage() {
+        return internalExceptionMessage;
+    }
+
+    public void setInternalExceptionMessage(String internalExceptionMessage) {
+        this.internalExceptionMessage = internalExceptionMessage;
+    }
+
+    public String getZipkinTraceID() {
+        return zipkinTraceID;
+    }
+
+    public void setZipkinTraceID(String zipkinTraceID) {
+        this.zipkinTraceID = zipkinTraceID;
+    }
 }

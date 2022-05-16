@@ -1,4 +1,4 @@
-package io.surisoft.capi.lb.configuration;
+package io.surisoft.capi.lb.builder;
 
 import io.surisoft.capi.lb.cache.StickySessionCacheManager;
 import io.surisoft.capi.lb.processor.MetricsProcessor;
@@ -10,7 +10,7 @@ import org.apache.camel.CamelContext;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.model.RouteDefinition;
 
-public class ConsulDirectRouteProcessor extends RouteBuilder {
+public class DirectRouteProcessor extends RouteBuilder {
 
     private RouteUtils routeUtils;
     private Api api;
@@ -19,7 +19,7 @@ public class ConsulDirectRouteProcessor extends RouteBuilder {
     private String capiContext;
     private MetricsProcessor metricsProcessor;
 
-    public ConsulDirectRouteProcessor(CamelContext camelContext, Api api, RouteUtils routeUtils, MetricsProcessor metricsProcessor, String routeId, StickySessionCacheManager stickySessionCacheManager, String capiContext) {
+    public DirectRouteProcessor(CamelContext camelContext, Api api, RouteUtils routeUtils, MetricsProcessor metricsProcessor, String routeId, StickySessionCacheManager stickySessionCacheManager, String capiContext) {
         super(camelContext);
         this.api = api;
         this.routeUtils = routeUtils;

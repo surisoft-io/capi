@@ -212,7 +212,7 @@
   <groupId>io.surisoft.capi</groupId>
   <artifactId>capi-lb</artifactId>
   <packaging>jar</packaging>
-  <version>1.4.0</version>
+  <version>2.0.0</version>
 
   <name>CAPI Load Balancer</name>
 
@@ -224,7 +224,6 @@
     <io.micrometer-version>1.8.5</io.micrometer-version>
     <org.springdoc-verion>1.6.8</org.springdoc-verion>
     <nimbus-jose-jwt-version>9.22</nimbus-jose-jwt-version>
-    <lombok-version>1.18.22</lombok-version>
     <spring-cloud-sleuth-version>3.1.1</spring-cloud-sleuth-version>
     <io.zipkin.reporter2-version>2.16.3</io.zipkin.reporter2-version>
     <wiremock.version>2.27.2</wiremock.version>
@@ -236,12 +235,13 @@
     <sonar.java.coveragePlugin>jacoco</sonar.java.coveragePlugin>
     <sonar.dynamicAnalysis>reuseReports</sonar.dynamicAnalysis>
     <sonar.jacoco.reportPath>${project.basedir}/../target/jacoco.exec</sonar.jacoco.reportPath>
+    <cache2k-version>2.6.1.Final</cache2k-version>
   </properties>
 
   <parent>
     <groupId>org.springframework.boot</groupId>
     <artifactId>spring-boot-starter-parent</artifactId>
-    <version>2.6.6</version>
+    <version>2.6.7</version>
     <relativePath/>
   </parent>
 
@@ -328,11 +328,6 @@
       <artifactId>camel-consul-starter</artifactId>
       <version>${org.apache.camel.springboot-version}</version>
     </dependency>
-    <dependency>
-      <groupId>org.apache.camel.springboot</groupId>
-      <artifactId>camel-zipkin-starter</artifactId>
-      <version>${org.apache.camel.springboot-version}</version>
-    </dependency>
     <!-- Instrumentation -->
     <dependency>
       <groupId>io.zipkin.reporter2</groupId>
@@ -364,15 +359,6 @@
       <version>${nimbus-jose-jwt-version}</version>
     </dependency>
     <dependency>
-      <groupId>org.projectlombok</groupId>
-      <artifactId>lombok</artifactId>
-      <version>${lombok-version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.springframework.boot</groupId>
-      <artifactId>spring-boot-starter-cache</artifactId>
-    </dependency>
-    <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-data-jpa</artifactId>
     </dependency>
@@ -381,16 +367,8 @@
       <artifactId>mysql-connector-java</artifactId>
     </dependency>
     <dependency>
-      <groupId>com.hazelcast</groupId>
-      <artifactId>hazelcast</artifactId>
-    </dependency>
-    <dependency>
       <groupId>org.springframework</groupId>
       <artifactId>spring-context</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>com.hazelcast</groupId>
-      <artifactId>hazelcast-spring</artifactId>
     </dependency>
 
     <!-- Springdoc -->
@@ -460,6 +438,20 @@
       <artifactId>camel-test-spring-junit5</artifactId>
       <version>${org.apache.camel.springboot-version}</version>
     </dependency>
+
+    <!-- Caching -->
+    <dependency>
+      <groupId>org.cache2k</groupId>
+      <artifactId>cache2k-api</artifactId>
+      <version>${cache2k-version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.cache2k</groupId>
+      <artifactId>cache2k-core</artifactId>
+      <version>${cache2k-version}</version>
+      <scope>runtime</scope>
+    </dependency>
+
   </dependencies>
 <build>
   <resources>
@@ -477,6 +469,11 @@
           <mainClass>io.surisoft.capi.lb.CapiLoadBalancer</mainClass>
         </configuration>
       </execution>
+      <execution>
+        <goals>
+          <goal>build-info</goal>
+        </goals>
+      </execution>
     </executions>
   </plugin>
   <plugin>
@@ -486,17 +483,6 @@
       <source>17</source>
       <target>17</target>
     </configuration>
-  </plugin>
-  <plugin>
-    <groupId>org.springframework.boot</groupId>
-    <artifactId>spring-boot-maven-plugin</artifactId>
-    <executions>
-      <execution>
-        <goals>
-          <goal>build-info</goal>
-        </goals>
-      </execution>
-    </executions>
   </plugin>
   <plugin>
     <groupId>org.jacoco</groupId>

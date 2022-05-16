@@ -205,13 +205,11 @@
 
 package io.surisoft.capi.lb.configuration;
 
-import com.hazelcast.config.Config;
 import io.micrometer.core.instrument.Clock;
 import io.micrometer.core.instrument.Tags;
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
 import io.micrometer.core.instrument.util.HierarchicalNameMapper;
 import io.micrometer.jmx.JmxMeterRegistry;
-import io.surisoft.capi.lb.cache.CacheConfiguration;
 import io.surisoft.capi.lb.utils.Constants;
 import org.apache.camel.CamelContext;
 import org.apache.camel.component.http.HttpClientConfigurer;
@@ -256,9 +254,6 @@ public class CapiConfiguration {
     @Value("${capi.trust.store.enabled}")
     private boolean capiTrustStoreEnabled;
 
-    @Value("${spring.profiles.active}")
-    private String springProfileActive;
-
     @Value("${capi.zipkin.endpoint}")
     private String zipkinEndpoint;
 
@@ -288,11 +283,6 @@ public class CapiConfiguration {
         HttpClientConfigurer httpClientConfigurer = HttpClientBuilder::disableRedirectHandling;
         httpComponent.setHttpClientConfigurer(httpClientConfigurer);
         return httpComponent;
-    }
-
-    @Bean
-    public Config hazelCastConfig() {
-        return new CacheConfiguration(springProfileActive);
     }
 
     @Bean

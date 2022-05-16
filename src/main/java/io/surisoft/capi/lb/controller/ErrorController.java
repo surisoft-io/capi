@@ -207,7 +207,6 @@ package io.surisoft.capi.lb.controller;
 
 import io.surisoft.capi.lb.schema.CapiRestError;
 import io.surisoft.capi.lb.utils.Constants;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -215,7 +214,6 @@ import org.springframework.web.bind.annotation.*;
 import javax.servlet.http.HttpServletRequest;
 
 @RestController
-@Slf4j
 public class ErrorController {
     @GetMapping(path = Constants.CAPI_INTERNAL_REST_ERROR_PATH + "/**")
     public ResponseEntity<CapiRestError> get(HttpServletRequest request) {

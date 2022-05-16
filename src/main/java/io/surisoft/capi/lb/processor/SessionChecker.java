@@ -207,17 +207,19 @@ package io.surisoft.capi.lb.processor;
 
 import io.surisoft.capi.lb.cache.StickySessionCacheManager;
 import io.surisoft.capi.lb.schema.StickySession;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.camel.*;
 import org.apache.camel.processor.loadbalancer.ExceptionFailureStatistics;
 import org.apache.camel.processor.loadbalancer.LoadBalancerSupport;
 import org.apache.camel.support.ExchangeHelper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
 
-@Slf4j
 public class SessionChecker extends LoadBalancerSupport implements Traceable, CamelContextAware {
+
+    private static final Logger log = LoggerFactory.getLogger(SessionChecker.class);
 
     private CamelContext camelContext;
     private StickySessionCacheManager stickySessionCacheManager;
@@ -296,13 +298,13 @@ public class SessionChecker extends LoadBalancerSupport implements Traceable, Ca
 
     private void persistProcessedIndex(StickySession stickySession) {
         if(stickySession.getParamValue() != null) {
-            stickySessionCacheManager.createStickySession(stickySession);
+            //stickySessionCacheManager.createStickySession(stickySession);
         }
     }
 
     private void deleteFailedSession(StickySession stickySession) {
         log.debug("Deleting object with value: {}", stickySession.getParamValue());
-        stickySessionCacheManager.deleteStickySession(stickySession);
+        //stickySessionCacheManager.deleteStickySession(stickySession);
         stickySession.setParamValue(null);
     }
 
@@ -357,7 +359,7 @@ public class SessionChecker extends LoadBalancerSupport implements Traceable, Ca
                 paramValue = exchange.getIn().getHeader(paramName, String.class);
             }
             log.info("Starting to process route for paramName: {} with value: {}", paramName, paramValue);
-            stickySession = stickySessionCacheManager.getStickySessionById(paramName, paramValue);
+            //stickySession = stickySessionCacheManager.getStickySessionById(paramName, paramValue);
             if(stickySession == null) {
                 log.debug("New value, processing for the first time...");
                 index = counter.updateAndGet(x -> ++x < processors.length ? x : 0);

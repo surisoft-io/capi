@@ -205,33 +205,30 @@
 
 package io.surisoft.capi.lb.controller;
 
-import io.surisoft.capi.lb.cache.RunningApiManager;
 import io.surisoft.capi.lb.repository.ApiRepository;
 import io.surisoft.capi.lb.repository.MappingRepository;
 import io.surisoft.capi.lb.schema.Api;
-import io.surisoft.capi.lb.schema.HttpMethod;
 import io.surisoft.capi.lb.schema.Mapping;
-import io.surisoft.capi.lb.schema.RunningApi;
 import io.surisoft.capi.lb.utils.ApiUtils;
-import io.surisoft.capi.lb.utils.RouteUtils;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import lombok.extern.slf4j.Slf4j;
+import org.cache2k.Cache;
+import org.cache2k.CacheEntry;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-
+import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 
 @RestController
 @RequestMapping("/manager/api")
-@Slf4j
 @Tag(name="API Manager", description = "Node and API management endpoint")
 public class ApiManager {
 
@@ -242,13 +239,11 @@ public class ApiManager {
     private MappingRepository mappingRepository;
 
     @Autowired
-    private RouteUtils routeUtils;
-
-    @Autowired
-    private RunningApiManager runningApiManager;
-
-    @Autowired
     private ApiUtils apiUtils;
+
+    @Autowired
+    private Cache<String, Api> apiCache;
+
 
     @Value("${capi.persistence.enabled}")
     private boolean capiPersistenceEnabled;
@@ -263,10 +258,15 @@ public class ApiManager {
         }
     }
 
-    @Operation(summary = "Get all running APIs")
-    @GetMapping(path = "/running")
-    public ResponseEntity<Iterable<RunningApi>> getAllRunningApi() {
-        return new ResponseEntity<>(runningApiManager.getRunningApi(), HttpStatus.OK);
+    @Operation(summary = "Get all cached APIs")
+    @GetMapping(path = "/cached")
+    public ResponseEntity<Iterable<Api>> getCachedApi() {
+        List<Api> apiList = new ArrayList<>();
+        Iterator<CacheEntry<String, Api>> cachedEntryIterator = apiCache.entries().iterator();
+        while(cachedEntryIterator.hasNext()) {
+            apiList.add(cachedEntryIterator.next().getValue());
+        }
+        return new ResponseEntity<>(apiList, HttpStatus.OK);
     }
 
     @Operation(summary = "Register a node")
@@ -287,7 +287,7 @@ public class ApiManager {
         String apiId = apiUtils.getApiId(api);
         Optional<Api> existingApi = apiRepository.findById(apiId);
         if(existingApi.isPresent()) {
-            apiUtils.updateExistingApi(existingApi.get(), api, apiRepository, routeUtils, runningApiManager);
+            apiUtils.updateExistingApi(existingApi.get(), api, apiRepository);
             return new ResponseEntity<>(api, HttpStatus.OK);
         }
 
@@ -295,11 +295,7 @@ public class ApiManager {
         api.setPublished(true);
         apiUtils.applyApiDefaults(api);
         apiRepository.save(api);
-        if(api.getHttpMethod().equals(HttpMethod.ALL)) {
-            runningApiManager.runApi(routeUtils.getAllRouteIdForAGivenApi(api), api, routeUtils);
-        } else {
-            runningApiManager.runApi(routeUtils.getRouteId(api, api.getHttpMethod().getMethod()), api);
-        }
+
         return new ResponseEntity<>(api, HttpStatus.OK);
     }
 
@@ -328,7 +324,7 @@ public class ApiManager {
             deleteMappingAndUpdate(api, existingApi);
         } else {
             //delete all
-            deleteAllRoutes(api, existingApi);
+            deleteAllRoutes(existingApi);
         }
         return new ResponseEntity<>(HttpStatus.OK);
     }
@@ -337,17 +333,7 @@ public class ApiManager {
         return api != null && api.getContext() != null && api.getName() != null && api.getMappingList() != null && !api.getMappingList().isEmpty();
     }
 
-    private void deleteAllRoutes(Api api, Optional<Api> existingApi) {
-        if(existingApi.isPresent() && existingApi.get().getHttpMethod().equals(HttpMethod.ALL)) {
-            //update all
-            List<String> routeIdList = routeUtils.getAllRouteIdForAGivenApi(api);
-            for(String routeId : routeIdList) {
-                runningApiManager.deleteRunningApi(routeId);
-            }
-        } else {
-            runningApiManager.deleteRunningApi(routeUtils.getRouteId(api, api.getHttpMethod().getMethod()));
-        }
-
+    private void deleteAllRoutes(Optional<Api> existingApi) {
         if(existingApi.isPresent()) {
             apiRepository.delete(existingApi.get());
         }
@@ -356,38 +342,22 @@ public class ApiManager {
     private void deleteMappingAndUpdate(Api api, Optional<Api> existingApi) {
         Mapping mapping = api.getMappingList().get(0);
         if(existingApi.isPresent()) {
-            existingApi.get().getMappingList().remove(api.getMappingList().get(0));
-            if(existingApi.get().getMappingList().isEmpty()) {
-                if(existingApi.get().getHttpMethod().equals(HttpMethod.ALL)) {
-                    //update all
-                    List<String> routeIdList = routeUtils.getAllRouteIdForAGivenApi(api);
-                    for(String routeId : routeIdList) {
-                        runningApiManager.deleteRunningApi(routeId);
-                    }
+            if(existingApi.get().getMappingList().contains(mapping)) {
+                existingApi.get().getMappingList().remove(mapping);
+                if(existingApi.get().getMappingList().isEmpty()) {
+                    apiRepository.delete(existingApi.get());
+                    mappingRepository.delete(mapping);
                 } else {
-                    runningApiManager.deleteRunningApi(routeUtils.getRouteId(api, api.getHttpMethod().getMethod()));
+                    updateExistingMapping(existingApi, mapping);
                 }
-                apiRepository.delete(existingApi.get());
-                mappingRepository.delete(mapping);
-            } else {
-               updateExistingMapping(api, existingApi, mapping);
             }
         }
     }
 
-    private void updateExistingMapping(Api api, Optional<Api> existingApi, Mapping mapping) {
+    private void updateExistingMapping(Optional<Api> existingApi, Mapping mapping) {
         if(existingApi.isPresent()) {
             apiRepository.update(existingApi.get());
             mappingRepository.delete(mapping);
-            if(existingApi.get().getHttpMethod().equals(HttpMethod.ALL)) {
-                //update all
-                List<String> routeIdList = routeUtils.getAllRouteIdForAGivenApi(api);
-                for(String routeId : routeIdList) {
-                    runningApiManager.updateRunningApi(routeId);
-                }
-            } else {
-                runningApiManager.updateRunningApi(routeUtils.getRouteId(api, api.getHttpMethod().getMethod()));
-            }
         }
     }
 }
