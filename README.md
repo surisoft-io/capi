@@ -23,7 +23,6 @@ capi.persistence.enabled=true
 ```
 With persistence enabled you will be able to deploy new apis using:
 * CAPI Manager endpoint.
-* Spring Boot Capi Starter (injected on your API)
 If you scale up CAPI, new instances will read the deployments from the database.
 
 If you choose not to enable persistence you will need to provide a Consul instance, CAPI will then read Consul catalog and deploy the available services. 
@@ -86,7 +85,7 @@ Security to this API is disabled by default, if you need to enable security you 
 If security (OpenID Connect/oauth2) is enabled CAPI needs the endpoint of your identity provider JWK.
 ###### With the API you can:
 * Get all configured API's
-* Get all running API's
+* Get all cached API's
 * Add/Remove a node to an API
 
 Certificate management is disabled by default, to enable it you need to provide a valid path to a truststore. 
@@ -105,7 +104,7 @@ With the Certificate Management enabled you can:
 
 ### Install CAPI fat jar on a VM
 * You need a valid MySQL running instance, with CAPI db created.
-* You need Open JDK 14
+* You need Open JDK 17
 ```
 $ mkdir logs
 $ git clone this repo
@@ -115,14 +114,6 @@ $ java \
      -XX:MaxHeapSize=2g \
      -XX:+HeapDumpOnOutOfMemoryError \
      -XX:HeapDumpPath="$PWD/logs/heap-dump.hprof" \
-     -Dhazelcast.diagnostics.enabled=true \
-     -Dhazelcast.diagnostics.directory="$CAPI_HOME/logs" \
-     --add-modules java.se --add-exports java.base/jdk.internal.ref=ALL-UNNAMED \
-     --add-opens java.base/java.lang=ALL-UNNAMED \
-     --add-opens java.base/java.nio=ALL-UNNAMED \
-     --add-opens java.base/sun.nio.ch=ALL-UNNAMED \
-     --add-opens java.management/sun.management=ALL-UNNAMED \
-     --add-opens jdk.management/com.sun.management.internal=ALL-UNNAMED \
      -Dspring.datasource.url=jdbc:mysql://localhost:3306/capi \
      -Dspring.datasource.username=root \
      -Dspring.datasource.password=root \
@@ -146,12 +137,10 @@ version: "3"
 services:
   capi:
     container_name: capi
-    image: surisoft/capi-lb:0.0.1
+    image: surisoft/capi-lb:2.0.0
     ports:
       - "8380:8380"
     environment:
-      - hazelcast.diagnostics.enabled=true
-      - hazelcast.diagnostics.directory=/capi/logs
       - spring.datasource.url=jdbc:mysql://capi-db:3306/capi
       - spring.datasource.username=root
       - spring.datasource.password=secret
