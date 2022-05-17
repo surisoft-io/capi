@@ -211,6 +211,7 @@ import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.IdClass;
 import java.io.Serializable;
+import java.util.Objects;
 
 @Entity
 @IdClass(MappingId.class)
@@ -264,5 +265,10 @@ public class Mapping implements Serializable {
         return rootContext.equals(mapping.getRootContext()) &&
                 hostname.equals(mapping.getHostname()) &&
                         port == mapping.getPort();
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(rootContext, hostname, port);
     }
 }
