@@ -42,15 +42,19 @@ public class CapiSslConfiguration {
             File filePath = getFile();
 
             HttpComponent httpComponent = (HttpComponent) camelContext.getComponent("https");
+            if(filePath != null) {
+                CapiTrustManager capiTrustManager = new CapiTrustManager(filePath.getAbsolutePath(), capiTrustStorePassword);
+                TrustManagersParameters trustManagersParameters = new TrustManagersParameters();
+                trustManagersParameters.setTrustManager(capiTrustManager);
 
-            CapiTrustManager capiTrustManager = new CapiTrustManager(filePath.getAbsolutePath(), capiTrustStorePassword);
-            TrustManagersParameters trustManagersParameters = new TrustManagersParameters();
-            trustManagersParameters.setTrustManager(capiTrustManager);
+                SSLContextParameters sslContextParameters = new SSLContextParameters();
+                sslContextParameters.setTrustManagers(trustManagersParameters);
+                sslContextParameters.createSSLContext(camelContext);
+                httpComponent.setSslContextParameters(sslContextParameters);
+            } else {
+                log.warn("Could not create SSL Context, the provided certificate path is invalid");
+            }
 
-            SSLContextParameters sslContextParameters = new SSLContextParameters();
-            sslContextParameters.setTrustManagers(trustManagersParameters);
-            sslContextParameters.createSSLContext(camelContext);
-            httpComponent.setSslContextParameters(sslContextParameters);
         } catch(Exception e) {
             log.error(e.getMessage(), e);
         }
