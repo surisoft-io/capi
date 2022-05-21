@@ -2,6 +2,7 @@ package io.surisoft.capi.lb.configuration;
 
 import io.surisoft.capi.lb.schema.Api;
 import io.surisoft.capi.lb.schema.StickySession;
+import org.apache.camel.CamelContext;
 import org.cache2k.Cache;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

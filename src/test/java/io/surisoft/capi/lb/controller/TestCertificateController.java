@@ -2,6 +2,8 @@ package io.surisoft.capi.lb.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.surisoft.capi.lb.schema.AliasInfo;
+import io.surisoft.capi.lb.schema.Api;
+import io.surisoft.capi.lb.utils.ApiUtils;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cert.X509v3CertificateBuilder;
@@ -53,6 +55,9 @@ class TestCertificateController {
     @Autowired
     private WebApplicationContext webApplicationContext;
 
+    @Autowired
+    private ApiUtils apiUtils;
+
     private MockMvc mockMvc;
     private ObjectMapper objectMapper;
 
@@ -89,14 +94,20 @@ class TestCertificateController {
         File capiUnitTestCer = createTestCertificate();
         Assertions.assertNotNull(capiUnitTestCer);
 
+        Api api = new Api();
+        api.setName("test");
+        api.setContext("context");
+        String apiId = apiUtils.getApiId(api);
+
         FileInputStream inputStream = new FileInputStream(capiUnitTestCer);
         MvcResult postResult  = mockMvc.perform(MockMvcRequestBuilders
-                        .multipart("/manager/certificate/capi-unit-test").file("file", inputStream.readAllBytes()))
+                        .multipart("/manager/certificate/capi-unit-test/" + apiId).file("file", inputStream.readAllBytes()))
                 .andExpect(status().isOk())
                 .andReturn();
         AliasInfo aliasInfo = objectMapper.readValue(postResult.getResponse().getContentAsString(), AliasInfo.class);
         System.out.println(postResult.getResponse().getContentAsString());
         Assertions.assertEquals("capi-unit-test", aliasInfo.getAlias());
+        Assertions.assertEquals(apiId, aliasInfo.getApiId());
     }
 
     private File createTestCertificate() throws Exception {

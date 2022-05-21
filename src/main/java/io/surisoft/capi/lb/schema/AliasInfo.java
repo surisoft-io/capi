@@ -9,6 +9,7 @@ public class AliasInfo {
     private String issuerDN;
     private String subjectDN;
     private String additionalInfo;
+    private String apiId;
 
     public String getAlias() {
         return alias;
@@ -40,5 +41,13 @@ public class AliasInfo {
 
     public void setAdditionalInfo(String additionalInfo) {
         this.additionalInfo = additionalInfo;
+    }
+
+    public String getApiId() {
+        return apiId;
+    }
+
+    public void setApiId(String apiId) {
+        this.apiId = apiId;
     }
 }

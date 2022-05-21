@@ -220,18 +220,13 @@ import org.apache.camel.zipkin.ZipkinTracer;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.core.io.Resource;
-import org.springframework.core.io.ResourceLoader;
 import zipkin2.reporter.AsyncReporter;
 import zipkin2.reporter.okhttp3.OkHttpSender;
 
-import java.io.File;
-import java.io.IOException;
 import java.time.Duration;
 import java.util.HashSet;
 import java.util.Set;
@@ -245,20 +240,8 @@ public class CapiConfiguration {
 
     private static final Logger log = LoggerFactory.getLogger(CapiConfiguration.class);
 
-    @Value("${capi.trust.store.path}")
-    private String capiTrustStorePath;
-
-    @Value("${capi.trust.store.password}")
-    private String capiTrustStorePassword;
-
-    @Value("${capi.trust.store.enabled}")
-    private boolean capiTrustStoreEnabled;
-
     @Value("${capi.zipkin.endpoint}")
     private String zipkinEndpoint;
-
-    @Autowired
-    private ResourceLoader resourceLoader;
 
     @Bean
     @ConditionalOnProperty(prefix = "capi.zipkin", name = "enabled", havingValue = "true")
@@ -311,36 +294,5 @@ public class CapiConfiguration {
                 Clock.SYSTEM,
                 HierarchicalNameMapper.DEFAULT));
         return compositeMeterRegistry;
-    }
-
-    @Bean
-    public void setTrustStore() {
-        if(capiTrustStoreEnabled) {
-            log.info("Custom trust store found, this will be the default trust store.");
-            File filePath = getFile();
-            if(filePath != null) {
-                String absolutePath = filePath.getAbsolutePath();
-                System.setProperty("javax.net.ssl.trustStore", absolutePath);
-                System.setProperty("javax.net.ssl.trustStorePassword", capiTrustStorePassword);
-                System.setProperty("javax.net.ssl.keyStoreType", "JKS");
-            }
-        } else {
-            log.info("No trust store provided, the default Java will be used...");
-        }
-    }
-
-    private File getFile() {
-        File filePath = null;
-        try {
-            if(capiTrustStorePath.startsWith("classpath")) {
-                Resource resource = resourceLoader.getResource(capiTrustStorePath);
-                filePath = resource.getFile();
-            } else {
-                filePath = new File(capiTrustStorePath);
-            }
-        } catch(IOException e) {
-            log.error(e.getMessage(), e);
-        }
-        return filePath;
     }
 }

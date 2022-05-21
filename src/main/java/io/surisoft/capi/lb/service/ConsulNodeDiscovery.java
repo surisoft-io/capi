@@ -153,6 +153,17 @@ public class ConsulNodeDiscovery {
         return false;
     }
 
+    public HttpProtocol getHttpProtocol(String serviceName, String key, ConsulObject[] consulObject) {
+        for(ConsulObject entry : consulObject) {
+            if(entry.getServiceName().equals(serviceName) &&
+                    entry.getServiceTags().contains(Constants.CONSUL_GROUP + key) &&
+                    entry.getServiceTags().contains(Constants.HTTPS_CONSUL_SERVICE_TAG)) {
+                return HttpProtocol.HTTPS;
+            }
+        }
+        return HttpProtocol.HTTP;
+    }
+
     private boolean showZipkinTraceId(String tagName, ConsulObject[] consulObject) {
         for(ConsulObject entry : consulObject) {
             if(entry.getServiceTags().contains(Constants.CONSUL_GROUP + tagName) && entry.getServiceTags().contains(Constants.TRACE_ID_HEADER)) {
@@ -176,6 +187,7 @@ public class ConsulNodeDiscovery {
         incomingApi.setMappingList(mappingList);
         incomingApi.setForwardPrefix(forwardPrefix(key, consulResponse));
         incomingApi.setZipkinShowTraceId(showZipkinTraceId(key, consulResponse));
+        incomingApi.setHttpProtocol(getHttpProtocol(serviceName, key, consulResponse));
         return incomingApi;
     }
 

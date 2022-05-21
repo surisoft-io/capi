@@ -212,6 +212,7 @@ import io.surisoft.capi.lb.processor.MetricsProcessor;
 import io.surisoft.capi.lb.repository.ApiRepository;
 import io.surisoft.capi.lb.schema.Api;
 import io.surisoft.capi.lb.schema.ConsulObject;
+import io.surisoft.capi.lb.schema.HttpProtocol;
 import io.surisoft.capi.lb.schema.Mapping;
 import org.apache.camel.CamelContext;
 import org.cache2k.Cache;

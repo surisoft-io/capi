@@ -216,8 +216,10 @@ import io.surisoft.capi.lb.schema.HttpMethod;
 import io.surisoft.capi.lb.schema.HttpProtocol;
 import io.surisoft.capi.lb.schema.Mapping;
 
+import io.surisoft.capi.lb.service.CapiTrustManager;
 import org.apache.camel.CamelContext;
 import org.apache.camel.Route;
+import org.apache.camel.component.http.HttpComponent;
 import org.apache.camel.model.RouteDefinition;
 import org.apache.camel.zipkin.ZipkinTracer;
 import org.cache2k.Cache;
@@ -252,6 +254,12 @@ public class RouteUtils {
 
     @Autowired(required = false)
     private ZipkinTracer zipkinTracer;
+
+    @Autowired
+    private CamelContext camelContext;
+
+    @Autowired
+    private Cache<String, Api> apiCache;
 
     public void registerMetric(String routeId) {
         meterRegistry.counter(routeId);
@@ -333,6 +341,15 @@ public class RouteUtils {
         return routeIdList;
     }
 
+    public List<String> getAllRouteIdForAGivenApi(String apiId) {
+        List<String> routeIdList = new ArrayList<>();
+        routeIdList.add(apiId + ":" + HttpMethod.DELETE.getMethod());
+        routeIdList.add(apiId + ":" + HttpMethod.PUT.getMethod());
+        routeIdList.add(apiId + ":" + HttpMethod.POST.getMethod());
+        routeIdList.add(apiId + ":" + HttpMethod.GET.getMethod());
+        return routeIdList;
+    }
+
     public String getMethodFromRouteId(String routeId) {
         return routeId.split(":")[2];
     }
@@ -374,6 +391,28 @@ public class RouteUtils {
                     log.error(e.getMessage(), e);
                 }
             }
+        }
+    }
+
+    public void reloadTrustStoreManager(String apiId, boolean undeploy) {
+        try {
+            log.trace("Reloading Trust Store Manager after changes for API: {}", apiId);
+            HttpComponent httpComponent = (HttpComponent) camelContext.getComponent("https");
+            CapiTrustManager capiTrustManager = (CapiTrustManager) httpComponent.getSslContextParameters().getTrustManagers().getTrustManager();
+            capiTrustManager.reloadTrustManager();
+
+            if(undeploy) {
+                List<String> routeIdList = getAllRouteIdForAGivenApi(apiId);
+                for(String routeId : routeIdList) {
+                    camelContext.getRouteController().stopRoute(Constants.CAMEL_REST_PREFIX + routeId);
+                    camelContext.removeRoute(Constants.CAMEL_REST_PREFIX + routeId);
+                    camelContext.getRouteController().stopRoute(routeId);
+                    camelContext.removeRoute(routeId);
+                }
+                apiCache.remove(apiId);
+            }
+        } catch(Exception e) {
+            log.error(e.getMessage(), e);
         }
     }
 }

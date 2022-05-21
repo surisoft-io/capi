@@ -16,8 +16,8 @@ package io.surisoft.capi.lb.controller;
  */
 
 import io.surisoft.capi.lb.schema.AliasInfo;
-import io.surisoft.capi.lb.schema.CertificateRequest;
 import io.surisoft.capi.lb.utils.Constants;
+import io.surisoft.capi.lb.utils.RouteUtils;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -33,9 +33,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import javax.net.ssl.HttpsURLConnection;
 import java.io.*;
-import java.net.URL;
 import java.security.KeyStore;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateFactory;
@@ -62,6 +60,9 @@ public class CertificateController {
 
     @Autowired
     private ResourceLoader resourceLoader;
+
+    @Autowired
+    RouteUtils routeUtils;
 
     @Operation(summary = "Get all certificates")
     @ApiResponses(value = {
@@ -103,8 +104,8 @@ public class CertificateController {
             @ApiResponse(responseCode = "200", description = "Certificate trusted"),
             @ApiResponse(responseCode = "400", description = "Custom Trust store not detected")
     })
-    @PostMapping(path = "/{alias}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<AliasInfo> certificateUpload(@PathVariable String alias, @RequestPart("file") MultipartFile file) {
+    @PostMapping(path = "/{alias}/{apiId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<AliasInfo> certificateUpload(@PathVariable String alias, @PathVariable String apiId, @RequestPart("file") MultipartFile file) {
         AliasInfo aliasInfo = new AliasInfo();
 
         if(!capiTrustStoreEnabled) {
@@ -124,12 +125,14 @@ public class CertificateController {
             aliasInfo.setSubjectDN(x509Object.getSubjectX500Principal().getName());
             aliasInfo.setIssuerDN(x509Object.getIssuerX500Principal().getName());
             aliasInfo.setAlias(alias);
+            aliasInfo.setApiId(apiId);
 
-            keystore.setCertificateEntry(alias, newTrusted);
+            keystore.setCertificateEntry(alias + ":" + apiId, newTrusted);
 
             try(OutputStream storeOutputStream = getOutputStream()) {
                 keystore.store(storeOutputStream, capiTrustStorePassword.toCharArray());
             }
+            routeUtils.reloadTrustStoreManager(apiId, false);
         } catch (Exception e) {
            log.debug(e.getMessage(), e);
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
@@ -143,8 +146,8 @@ public class CertificateController {
             @ApiResponse(responseCode = "200", description = "Certificate removed"),
             @ApiResponse(responseCode = "400", description = "Custom Trust store not detected")
     })
-    @DeleteMapping(path = "/{alias}")
-    public ResponseEntity<AliasInfo> removeFromTrust(@PathVariable String alias) {
+    @DeleteMapping(path = "/{alias}/{apiId}")
+    public ResponseEntity<AliasInfo> removeFromTrust(@PathVariable String alias, @PathVariable String apiId) {
         AliasInfo aliasInfo = new AliasInfo();
 
         if(!capiTrustStoreEnabled) {
@@ -158,101 +161,17 @@ public class CertificateController {
             KeyStore keystore = KeyStore.getInstance(KeyStore.getDefaultType());
             keystore.load(is, capiTrustStorePassword.toCharArray());
 
-            keystore.deleteEntry(alias);
+            keystore.deleteEntry(alias + ":" + apiId);
 
             try(OutputStream storeOutputStream = getOutputStream()) {
                 keystore.store(storeOutputStream, capiTrustStorePassword.toCharArray());
             }
+            routeUtils.reloadTrustStoreManager(apiId, true);
         } catch (Exception e) {
             log.debug(e.getMessage(), e);
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
         return new ResponseEntity<>(aliasInfo, HttpStatus.OK);
-    }
-
-    @Operation(summary = "Extract certificate from URL.")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Certificate removed"),
-            @ApiResponse(responseCode = "400", description = "Custom Trust store not detected")
-    })
-    @PostMapping(path = "/url")
-    public ResponseEntity<AliasInfo> getCertificateFromUrl(@RequestBody CertificateRequest certificateRequest) {
-        AliasInfo aliasInfo = new AliasInfo();
-
-        if(!capiTrustStoreEnabled) {
-            aliasInfo = new AliasInfo();
-            aliasInfo.setAdditionalInfo(Constants.NO_CUSTOM_TRUST_STORE_PROVIDED);
-            return new ResponseEntity<>(aliasInfo, HttpStatus.BAD_REQUEST);
-        }
-
-        String normalizedUrl = normalizeUrl(certificateRequest);
-
-        if(normalizedUrl.isEmpty()) {
-            aliasInfo = new AliasInfo();
-            aliasInfo.setAdditionalInfo(Constants.NO_CUSTOM_TRUST_STORE_PROVIDED);
-            return new ResponseEntity<>(aliasInfo, HttpStatus.BAD_REQUEST);
-        }
-        
-        try {
-            URL destinationURL = new URL(normalizedUrl);
-            HttpsURLConnection conn = (HttpsURLConnection) destinationURL.openConnection();
-            conn.connect();
-            Certificate[] certs = conn.getServerCertificates();
-            for (Certificate cert : certs) {
-                log.info("Certificate is: " + cert);
-                if(cert instanceof X509Certificate) {
-                    log.info("Certificate is active for current date");
-                    aliasInfo = saveCertificateToTrustStore(cert, certificateRequest.getAlias());
-                } else {
-                    log.info("Unknown certificate type: {}", cert);
-                    aliasInfo.setAdditionalInfo("Unknown certificate type: " + cert);
-                }
-            }
-
-        } catch (Exception e) {
-            log.error(e.getMessage(), e);
-
-        }
-        return new ResponseEntity<>(aliasInfo, HttpStatus.OK);
-    }
-
-    private AliasInfo saveCertificateToTrustStore(Certificate newTrusted, String alias) {
-        AliasInfo aliasInfo = new AliasInfo();
-        try(InputStream is = getInputStream()) {
-            KeyStore keystore = KeyStore.getInstance(KeyStore.getDefaultType());
-            keystore.load(is, capiTrustStorePassword.toCharArray());
-
-            X509Certificate x509Object = (X509Certificate) newTrusted;
-            aliasInfo.setSubjectDN(x509Object.getSubjectX500Principal().getName());
-            aliasInfo.setIssuerDN(x509Object.getIssuerX500Principal().getName());
-
-            keystore.setCertificateEntry(alias, newTrusted);
-
-            try(OutputStream storeOutputStream = getOutputStream()) {
-                keystore.store(storeOutputStream, capiTrustStorePassword.toCharArray());
-            }
-            aliasInfo.setAlias(alias);
-
-        } catch (Exception e) {
-            log.debug(e.getMessage(), e);
-            aliasInfo.setAdditionalInfo(e.getMessage());
-        }
-        return aliasInfo;
-    }
-
-    private String normalizeUrl(CertificateRequest certificateRequest) {
-        String formattedUrl = "https://%s:/%s";
-        String url = certificateRequest.getUrl();
-        if(certificateRequest.getUrl().startsWith("https")) {
-            url = certificateRequest.getUrl().substring(certificateRequest.getUrl().indexOf("https://") + 8, certificateRequest.getUrl().length());
-
-        }
-        if(certificateRequest.getUrl().startsWith("http")) {
-            url = certificateRequest.getUrl().substring(certificateRequest.getUrl().indexOf("https://") + 7, certificateRequest.getUrl().length());
-        }
-        url = url.replace("\\", "");
-        url = url.replace("\\/","");
-        return String.format(formattedUrl, url, certificateRequest.getPort());
     }
 
     private InputStream getInputStream() throws IOException {
