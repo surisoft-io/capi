@@ -16,11 +16,29 @@
 * Certificate Manager (using the CAPI Manager API)
 
 ## CAPI support two deployment strategies
-If you enable persistence, you will need to provide a MySQL database instance.
+If you enable persistence, you will need to provide a database instance.
+CAPI supports out of the box MySQL, PostgreSQL and H2
 To enable persistence run CAPI with the following property:
 ```
 capi.persistence.enabled=true
 ```
+
+CAPI will auto discover your DB vendor based on the provided:
+```
+spring.datasource.url
+```
+
+Examples:
+```
+(mysql) jdbc:mysql://localhost:3306/capi
+```
+```
+(postgres) jdbc:postgresql://localhost:5432/capi
+```
+```
+(h2) jdbc:h2:mem:db;DB_CLOSE_DELAY=-1;
+```
+
 With persistence enabled you will be able to deploy new apis using:
 * CAPI Manager endpoint.
 If you scale up CAPI, new instances will read the deployments from the database.

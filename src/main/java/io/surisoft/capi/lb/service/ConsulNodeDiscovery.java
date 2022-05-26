@@ -47,6 +47,7 @@ public class ConsulNodeDiscovery {
     }
 
     public void processInfo() {
+        log.info(camelContext.getName());
         getAllServices();
     }
 

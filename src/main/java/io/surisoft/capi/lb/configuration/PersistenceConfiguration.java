@@ -28,12 +28,6 @@ public class PersistenceConfiguration {
     @Value("${spring.datasource.password}")
     private String datasourcePassword;
 
-    @Value("${spring.jpa.properties.hibernate.dialect}")
-    private String hibernateDialect;
-
-    @Value("${spring.jpa.properties.driver.name}")
-    private String driverName;
-
     @Value("${spring.jpa.hibernate.ddl-auto}")
     private String hibernateDdlAuto;
 
@@ -54,7 +48,7 @@ public class PersistenceConfiguration {
     @ConditionalOnProperty(prefix = "capi.persistence", name = "enabled", havingValue = "true")
     public DataSource dataSource() {
         DriverManagerDataSource dataSource = new DriverManagerDataSource();
-        dataSource.setDriverClassName(driverName);
+        dataSource.setDriverClassName(discoverDriver());
         dataSource.setUsername(datasourceUsername);
         dataSource.setPassword(datasourcePassword);
         dataSource.setUrl(datasourceUrl);
@@ -78,7 +72,31 @@ public class PersistenceConfiguration {
     private Properties additionalProperties() {
         Properties properties = new Properties();
         properties.setProperty("hibernate.hbm2ddl.auto", hibernateDdlAuto);
-        properties.setProperty("hibernate.dialect", hibernateDialect);
+        properties.setProperty("hibernate.dialect", discoverDialect());
         return properties;
+    }
+
+    private String discoverDialect() {
+        if(datasourceUrl.contains("mysql")) {
+            return "org.hibernate.dialect.MySQL55Dialect";
+        } else if(datasourceUrl.contains("h2")) {
+            return "org.hibernate.dialect.H2Dialect";
+        } else if(datasourceUrl.contains("postgres")) {
+            return "org.hibernate.dialect.PostgreSQLDialect";
+        } else {
+            return null;
+        }
+    }
+
+    private String discoverDriver() {
+        if(datasourceUrl.contains("mysql")) {
+            return "com.mysql.cj.jdbc.Driver";
+        } else if(datasourceUrl.contains("h2")) {
+            return "org.h2.Driver";
+        } else if(datasourceUrl.contains("postgres")) {
+            return "org.postgresql.Driver";
+        } else {
+            return null;
+        }
     }
 }
