@@ -1,0 +1,122 @@
+server:
+  port: 8380
+
+capi:
+  #### If you want to disable routes from following redirects ###
+  disable:
+    redirect: true
+  #### Enable Zipkin
+  zipkin:
+    enabled: false
+    endpoint: http://localhost:9411/api/v2/spans
+  #### If you want CAPI to search consul for available APIs to be deployed, enable this feature. ####
+  consul:
+    host: http://localhost:8500
+    discovery:
+      enabled: true
+      timer:
+        interval: 20
+  #### If you want to enable certificate management, please provide a trust store (JKS). ####
+  trust:
+    store:
+      enabled: false
+      path: /Users/rodrigo/ext/gsc/cacerts
+      password: changeit
+  manager:
+    #### Management endpoints security configuration ####
+    ## CAPI Manager endpoints can be secured by enabling this feature, if you enable, you need to provide the JWK endpoint of your OIDC provider.
+    ## If the OIDC Provider listens on HTTPS, it needs to be trusted by CAPI
+    security:
+      enabled: false
+      issuer: http://localhost:8080/auth/realms/master/protocol/openid-connect/certs
+  #### Persistence Management ####
+  persistence:
+    enabled: false
+  db:
+    discovery:
+      timer:
+        interval: 20
+  version: '@project.version@'
+  name: '@project.name@'
+  gateway:
+    error:
+      #### All calls in error will be bridged to this endpoint ####
+      endpoint: localhost:8380/capi-error
+
+#### This is important to disable the default petstore ####
+springdoc:
+  swagger-ui:
+    enabled: true
+    disable.swagger-default-url: true
+
+spring:
+  #### We want persistence to be optional, so we disable autoconfiguration for JPA ####
+  autoconfigure:
+    exclude: org.springframework.boot.autoconfigure.security.servlet.UserDetailsServiceAutoConfiguration, org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration, org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration, org.springframework.boot.autoconfigure.jdbc.DataSourceTransactionManagerAutoConfiguration
+  ## JDBC Properties (default MySQL)
+  jpa:
+    hibernate:
+      ddl-auto: update
+      use-new-id-generator-mappings: false
+  datasource:
+    url: jdbc:mysql://localhost:3306/capi
+    username: root
+    password: root
+  profiles:
+    active: default
+  banner:
+    location: classpath:capi.txt
+  main:
+    allow-bean-definition-overriding: true
+
+camel:
+  component:
+    metrics:
+      enabled: true
+  servlet:
+    mapping:
+      context-path: /capi/*
+  springboot:
+    name: capi-load-balancer
+
+logging:
+  level:
+    io:
+      surisoft:
+        capi:
+          lb: TRACE
+    root: INFO
+
+
+
+#### SSL Configuration ####
+#server.ssl.key-store-type=PKCS12
+#server.ssl.key-store=/Users/rodrigo/ext/gsc/capi-lb.p12
+#server.ssl.key-store-password=capi-lb
+#server.ssl.key-alias=capi-lb
+#server.ssl.enabled=true
+
+
+#### Actuator Metrics Endpoint Configuration ####
+management:
+  security:
+    enabled: false
+  endpoint:
+    camelroutes:
+      enabled: true
+  endpoints:
+    web:
+      base-path: /analytics/
+      exposure:
+        include: '*'
+hawtio:
+  authenticationEnabled: false
+
+
+
+#### Time to live for Sticky Sessions feature ####
+sticky:
+  session:
+    time:
+      to:
+        live: 2
