@@ -43,11 +43,8 @@ public class AuthorizationProcessor implements Processor {
             sendException(exchange, "CAPI was not able to identify your request, please redeploy your Api.");
         }
         Api cachedApi = apiCache.peek(apiId);
-        if(cachedApi == null) {
+        if(cachedApi == null || cachedApi.getAuthorizationEndpointPublicKey() == null) {
             sendException(exchange, "Your API was not detected, please redeploy.");
-        }
-        if(cachedApi.getAuthorizationEndpointPublicKey() == null) {
-            sendException(exchange, "CAPI was not able to identity your Authorization provider, please redeploy.");
         }
         log.trace("Processing authorization for API: {}", apiId);
 
