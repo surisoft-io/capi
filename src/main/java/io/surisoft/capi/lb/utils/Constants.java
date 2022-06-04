@@ -216,6 +216,8 @@ public class Constants {
     public static final String REASON_CODE_HEADER = "error-reason-code";
     public static final String REASON_MESSAGE_HEADER = "error-reason-message";
     public static final String ROUTE_ID_HEADER = "routeID";
+    public static final String API_ID_HEADER = "apiId";
+    public static final String AUTHORIZATION_HEADER = "Authorization";
     public static final String CAPI_INTERNAL_ERROR = "capi-internal-error";
     public static final String CAPI_INTERNAL_ERROR_CLASS_NAME = "capi-internal-error-class-name";
     public static final String HTTP_CONNECT_TIMEOUT = "connectTimeout=";

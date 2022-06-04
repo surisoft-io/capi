@@ -240,4 +240,8 @@ public class HttpUtils {
         }
         return endpoint;
     }
+
+    public String getBearerTokenFromHeader(String authorizationHeader) {
+        return authorizationHeader.substring(authorizationHeader.lastIndexOf("Bearer: "));
+    }
 }

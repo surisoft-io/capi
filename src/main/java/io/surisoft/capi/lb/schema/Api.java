@@ -241,6 +241,7 @@ public class Api implements Serializable {
     private boolean forwardPrefix;
     private boolean zipkinShowTraceId;
     private String zipkinServiceName;
+    private String authorizationEndpointPublicKey;
 
     public String getId() {
         return id;
@@ -416,5 +417,13 @@ public class Api implements Serializable {
 
     public void setZipkinServiceName(String zipkinServiceName) {
         this.zipkinServiceName = zipkinServiceName;
+    }
+
+    public String getAuthorizationEndpointPublicKey() {
+        return authorizationEndpointPublicKey;
+    }
+
+    public void setAuthorizationEndpointPublicKey(String authorizationEndpointPublicKey) {
+        this.authorizationEndpointPublicKey = authorizationEndpointPublicKey;
     }
 }
