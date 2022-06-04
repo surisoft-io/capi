@@ -36,24 +36,22 @@ public class AuthorizationProcessor implements Processor {
         String apiId = exchange.getIn().getHeader(Constants.API_ID_HEADER, String.class);
         String authorizationHeader = exchange.getIn().getHeader(Constants.AUTHORIZATION_HEADER, String.class);
 
-        if(authorizationHeader == null) {
+        if(authorizationHeader != null && apiId != null) {
+            Api cachedApi = apiCache.peek(apiId);
+            if(cachedApi != null && cachedApi.getAuthorizationEndpointPublicKey() != null) {
+                try {
+                    authorizeRequest(cachedApi, authorizationHeader);
+                } catch(AuthorizationException e) {
+                    sendException(exchange, e.getMessage());
+                }
+            } else {
+                sendException(exchange, "Your API was not detected, please redeploy.");
+            }
+
+        } else {
             sendException(exchange, "No authorization header provided");
         }
-        if(apiId == null) {
-            sendException(exchange, "CAPI was not able to identify your request, please redeploy your Api.");
-        }
-        Api cachedApi = apiCache.peek(apiId);
-        if(cachedApi == null || cachedApi.getAuthorizationEndpointPublicKey() == null) {
-            sendException(exchange, "Your API was not detected, please redeploy.");
-        }
         log.trace("Processing authorization for API: {}", apiId);
-
-        try {
-            authorizeRequest(cachedApi, authorizationHeader);
-        } catch(AuthorizationException e) {
-            sendException(exchange, e.getMessage());
-        }
-
     }
 
     private void authorizeRequest(Api cachedApi, String authorizationHeader) throws AuthorizationException {
