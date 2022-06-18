@@ -58,6 +58,11 @@ public class RestDefinitionProcessor extends RouteBuilder {
                         + Constants.MATCH_ON_URI_PREFIX
                         + api.isMatchOnUriPrefix());
                 break;
+            case "patch":
+                restDefinition = rest().patch(routeUtils.buildFrom(api)
+                        + Constants.MATCH_ON_URI_PREFIX
+                        + api.isMatchOnUriPrefix());
+                break;
             default:
                 return null;
         }

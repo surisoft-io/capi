@@ -210,7 +210,8 @@ public enum HttpMethod {
     GET("get"),
     POST("post"),
     PUT("put"),
-    DELETE("delete");
+    DELETE("delete"),
+    PATCH("patch");
 
     private String method;
     HttpMethod(String method) {
