@@ -339,6 +339,7 @@ public class RouteUtils {
         routeIdList.add(api.getId() + ":" + HttpMethod.POST.getMethod());
         routeIdList.add(api.getId() + ":" + HttpMethod.GET.getMethod());
         routeIdList.add(api.getId() + ":" + HttpMethod.PATCH.getMethod());
+        routeIdList.add(api.getId() + ":" + HttpMethod.OPTIONS.getMethod());
         return routeIdList;
     }
 
@@ -349,6 +350,7 @@ public class RouteUtils {
         routeIdList.add(apiId + ":" + HttpMethod.POST.getMethod());
         routeIdList.add(apiId + ":" + HttpMethod.GET.getMethod());
         routeIdList.add(apiId + ":" + HttpMethod.PATCH.getMethod());
+        routeIdList.add(apiId + ":" + HttpMethod.OPTIONS.getMethod());
         return routeIdList;
     }
 

@@ -51,6 +51,7 @@ public class ConsulNodeDiscovery {
     }
 
     private void getAllServices() {
+        log.trace("Querying Consul for new services");
         Request request = new Request.Builder().url(consulHost + GET_ALL_SERVICES).build();
         Call call = client.newCall(request);
         call.enqueue(new Callback() {
@@ -78,6 +79,7 @@ public class ConsulNodeDiscovery {
     }
 
     private void getServiceByName(String serviceName) {
+        log.trace("Processing service name: {}", serviceName);
         Request request = new Request.Builder().url(consulHost + GET_SERVICE_BY_NAME + serviceName).build();
         Call call = client.newCall(request);
         call.enqueue(new Callback() {
