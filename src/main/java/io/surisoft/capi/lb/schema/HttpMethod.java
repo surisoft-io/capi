@@ -211,8 +211,7 @@ public enum HttpMethod {
     POST("post"),
     PUT("put"),
     DELETE("delete"),
-    PATCH("patch"),
-    OPTIONS("options");
+    PATCH("patch");
 
     private String method;
     HttpMethod(String method) {
