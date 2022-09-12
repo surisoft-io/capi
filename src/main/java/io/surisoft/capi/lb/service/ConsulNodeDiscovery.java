@@ -1,15 +1,14 @@
 package io.surisoft.capi.lb.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.surisoft.capi.lb.cache.StickySessionCacheManager;
 import io.surisoft.capi.lb.builder.DirectRouteProcessor;
 import io.surisoft.capi.lb.builder.RestDefinitionProcessor;
+import io.surisoft.capi.lb.cache.StickySessionCacheManager;
 import io.surisoft.capi.lb.processor.MetricsProcessor;
 import io.surisoft.capi.lb.schema.*;
 import io.surisoft.capi.lb.utils.ApiUtils;
 import io.surisoft.capi.lb.utils.Constants;
 import io.surisoft.capi.lb.utils.RouteUtils;
-import okhttp3.*;
 import org.apache.camel.CamelContext;
 import org.apache.camel.Route;
 import org.apache.camel.util.json.JsonObject;
@@ -18,6 +17,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.time.Duration;
 import java.util.*;
 
 public class ConsulNodeDiscovery {
@@ -29,7 +33,7 @@ public class ConsulNodeDiscovery {
     private final RouteUtils routeUtils;
     private final MetricsProcessor metricsProcessor;
     private final StickySessionCacheManager stickySessionCacheManager;
-    private final OkHttpClient client = new OkHttpClient.Builder().build();
+    private final HttpClient client;
     private static final String GET_ALL_SERVICES = "/v1/catalog/services";
     private static final String GET_SERVICE_BY_NAME = "/v1/catalog/service/";
     private String capiContext;
@@ -44,6 +48,11 @@ public class ConsulNodeDiscovery {
         this.stickySessionCacheManager = stickySessionCacheManager;
         this.apiCache = apiCache;
         this.metricsProcessor = metricsProcessor;
+
+        client = HttpClient.newBuilder()
+                .version(HttpClient.Version.HTTP_1_1)
+                .connectTimeout(Duration.ofSeconds(20))
+                .build();
     }
 
     public void processInfo() {
@@ -52,64 +61,58 @@ public class ConsulNodeDiscovery {
 
     private void getAllServices() {
         log.trace("Querying Consul for new services");
-        Request request = new Request.Builder().url(consulHost + GET_ALL_SERVICES).build();
-        Call call = client.newCall(request);
-        call.enqueue(new Callback() {
-            public void onResponse(Call call, Response response) throws IOException {
-                ObjectMapper objectMapper = new ObjectMapper();
-                JsonObject responseObject = objectMapper.readValue(response.body().string(), JsonObject.class);
-                //We want to ignore the consul array for now...
-                responseObject.remove("consul");
-                Set<String> services = responseObject.keySet();
-                try {
-                    apiUtils.removeUnusedApi(camelContext, routeUtils, apiCache, services.stream().toList());
-                } catch (Exception e) {
-                    log.error(e.getMessage(), e);
-                }
-                for(String service : services) {
+        HttpResponse<String> response;
+        try {
+            response = client.send(buildServicesHttpRequest(), HttpResponse.BodyHandlers.ofString());
+            ObjectMapper objectMapper = new ObjectMapper();
+            JsonObject responseObject = objectMapper.readValue(response.body(), JsonObject.class);
+            //We want to ignore the consul array for now...
+            responseObject.remove("consul");
+            Set<String> services = responseObject.keySet();
+            try {
+                apiUtils.removeUnusedApi(camelContext, routeUtils, apiCache, services.stream().toList());
+            } catch (Exception e) {
+                log.error(e.getMessage(), e);
+            }
+            for(String service : services) {
                     getServiceByName(service);
-                }
             }
-
-            public void onFailure(Call call, IOException e) {
-                //TODO
-                log.info(e.getMessage());
-            }
-        });
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private void getServiceByName(String serviceName) {
         log.trace("Processing service name: {}", serviceName);
-        Request request = new Request.Builder().url(consulHost + GET_SERVICE_BY_NAME + serviceName).build();
-        Call call = client.newCall(request);
-        call.enqueue(new Callback() {
-            public void onResponse(Call call, Response response) throws IOException {
-                ObjectMapper objectMapper = new ObjectMapper();
-                ConsulObject[] consulResponse = objectMapper.readValue(response.body().string(), ConsulObject[].class);
-                Map<String, List<Mapping>> servicesStructure = groupByServiceId(consulResponse);
+        try {
+            HttpResponse<String> response = client.send(buildServiceNameHttpRequest(serviceName), HttpResponse.BodyHandlers.ofString());
+            ObjectMapper objectMapper = new ObjectMapper();
+            ConsulObject[] consulResponse = objectMapper.readValue(response.body(), ConsulObject[].class);
+            Map<String, List<Mapping>> servicesStructure = groupByServiceId(consulResponse);
 
-                for (var entry : servicesStructure.entrySet()) {
-                    String apiId = serviceName + ":" + entry.getKey();
-                    Api incomingApi = createApiObject(apiId, serviceName, entry.getKey(), entry.getValue(), consulResponse);
-                    Api existingApi = apiCache.peek(apiId);
-                    if(existingApi == null) {
-                        createRoute(incomingApi);
-                    } else {
-                        apiUtils.updateExistingApi(existingApi, incomingApi, apiCache, routeUtils, metricsProcessor, camelContext, stickySessionCacheManager, capiContext);
-                    }
-                }
-
-                try {
-                    apiUtils.removeUnusedApi(camelContext, routeUtils, apiCache, servicesStructure, serviceName);
-                } catch(Exception e) {
-                    log.error(e.getMessage(), e);
+            for (var entry : servicesStructure.entrySet()) {
+                String apiId = serviceName + ":" + entry.getKey();
+                Api incomingApi = createApiObject(apiId, serviceName, entry.getKey(), entry.getValue(), consulResponse);
+                Api existingApi = apiCache.peek(apiId);
+                if(existingApi == null) {
+                    createRoute(incomingApi);
+                } else {
+                    apiUtils.updateExistingApi(existingApi, incomingApi, apiCache, routeUtils, metricsProcessor, camelContext, stickySessionCacheManager, capiContext);
                 }
             }
 
-            public void onFailure(Call call, IOException e) {
+            try {
+                //apiUtils.removeUnusedApi(camelContext, routeUtils, apiCache, servicesStructure, serviceName);
+            } catch(Exception e) {
                 log.error(e.getMessage(), e);
             }
-        });
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private Map<String, List<Mapping>> groupByServiceId(ConsulObject[] consulService) {
@@ -120,7 +123,7 @@ public class ConsulNodeDiscovery {
             if(serviceNodeGroup != null) {
                 serviceIdList.add(serviceNodeGroup);
             } else {
-                log.trace("Service Tag group not present, service will not be deployed");
+                log.trace("Service {} Tag group not present, service will not be deployed", serviceIdEntry.getServiceName());
             }
         }
         for (String id : serviceIdList) {
@@ -215,5 +218,19 @@ public class ConsulNodeDiscovery {
 
     public void setCapiContext(String capiContext) {
         this.capiContext = capiContext;
+    }
+
+    private HttpRequest buildServicesHttpRequest() {
+        return HttpRequest.newBuilder()
+                .uri(URI.create(consulHost + GET_ALL_SERVICES))
+                .timeout(Duration.ofMinutes(2))
+                .build();
+    }
+
+    private HttpRequest buildServiceNameHttpRequest(String serviceName) {
+        return HttpRequest.newBuilder()
+                .uri(URI.create(consulHost + GET_SERVICE_BY_NAME + serviceName))
+                .timeout(Duration.ofMinutes(2))
+                .build();
     }
 }

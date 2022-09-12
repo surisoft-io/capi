@@ -11,18 +11,20 @@ capi:
     endpoint: http://localhost:9411/api/v2/spans
   #### If you want CAPI to search consul for available APIs to be deployed, enable this feature. ####
   consul:
-    host: http://localhost:8500
+    host:
     discovery:
       enabled: true
       timer:
-        interval: 20
+        interval: 120
   #### If you want to enable certificate management, please provide a trust store (JKS). ####
   trust:
     store:
-      enabled: false
-      path: /Users/rodrigo/ext/gsc/cacerts
-      password: changeit
+      enabled: true
+      path:
+      password:
   manager:
+    cors:
+      host: http://localhost:4200
     #### Management endpoints security configuration ####
     ## CAPI Manager endpoints can be secured by enabling this feature, if you enable, you need to provide the JWK endpoint of your OIDC provider.
     ## If the OIDC Provider listens on HTTPS, it needs to be trusted by CAPI

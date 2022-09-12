@@ -219,6 +219,7 @@ import org.cache2k.CacheEntry;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -267,6 +268,16 @@ public class ApiManager {
             apiList.add(cachedEntryIterator.next().getValue());
         }
         return new ResponseEntity<>(apiList, HttpStatus.OK);
+    }
+
+    @Operation(summary = "Get cached API by Route ID")
+    @GetMapping(path = "/cached/{routeId}", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<Api> getCachedApi(@PathVariable String routeId) {
+        Api api = apiCache.peek(routeId);
+        if(api != null) {
+            return new ResponseEntity<>(api, HttpStatus.OK);
+        }
+        return new ResponseEntity<>(HttpStatus.NOT_FOUND);
     }
 
     @Operation(summary = "Register a node")

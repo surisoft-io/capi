@@ -146,8 +146,8 @@ public class CertificateController {
             @ApiResponse(responseCode = "200", description = "Certificate removed"),
             @ApiResponse(responseCode = "400", description = "Custom Trust store not detected")
     })
-    @DeleteMapping(path = "/{alias}/{apiId}")
-    public ResponseEntity<AliasInfo> removeFromTrust(@PathVariable String alias, @PathVariable String apiId) {
+    @DeleteMapping(path = "/{alias}")
+    public ResponseEntity<AliasInfo> removeFromTrust(@PathVariable String alias) {
         AliasInfo aliasInfo = new AliasInfo();
 
         if(!capiTrustStoreEnabled) {
@@ -161,12 +161,12 @@ public class CertificateController {
             KeyStore keystore = KeyStore.getInstance(KeyStore.getDefaultType());
             keystore.load(is, capiTrustStorePassword.toCharArray());
 
-            keystore.deleteEntry(alias + ":" + apiId);
+            keystore.deleteEntry(alias);
 
             try(OutputStream storeOutputStream = getOutputStream()) {
                 keystore.store(storeOutputStream, capiTrustStorePassword.toCharArray());
             }
-            routeUtils.reloadTrustStoreManager(apiId, true);
+            //routeUtils.reloadTrustStoreManager(apiId, true);
         } catch (Exception e) {
             log.debug(e.getMessage(), e);
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);

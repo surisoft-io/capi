@@ -26,6 +26,8 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.JwtException;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.servlet.config.annotation.CorsRegistry;
 
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -69,7 +71,6 @@ public class ManagerSecurityConfig extends WebSecurityConfigurerAdapter {
                     .and()
                     .authorizeRequests().anyRequest().permitAll();
         }
-
     }
 
     class CapiJWTDecoder implements JwtDecoder {

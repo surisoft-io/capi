@@ -19,7 +19,7 @@ public class SwaggerConfig {
     @Value("${capi.manager.security.enabled}")
     private boolean capiManagerSecurityEnabled;
 
-    @Autowired
+    @Autowired(required = false)
     private BuildProperties buildProperties;
 
     @Bean
@@ -49,10 +49,24 @@ public class SwaggerConfig {
                         )
                 );
         }
-        openAPI.info(new Info().title(buildProperties.getName())
+        openAPI.info(new Info().title(getName())
                 .description("Management endpoint")
-                .version(buildProperties.getVersion())
+                .version(getVersion())
                 .license(new License().name("Apache 2.0")));
         return openAPI;
+    }
+
+    private String getName() {
+        if(buildProperties != null) {
+            return buildProperties.getName() != null ? buildProperties.getName() : "capi";
+        }
+        return "capi";
+    }
+
+    private String getVersion() {
+       if(buildProperties != null) {
+           return buildProperties.getVersion() != null ? buildProperties.getVersion() : "local";
+       }
+       return "local";
     }
 }
