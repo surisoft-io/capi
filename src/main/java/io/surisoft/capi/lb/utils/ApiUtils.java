@@ -263,7 +263,7 @@ public class ApiUtils {
         }
     }
 
-    public void updateExistingApi(Api existingApi, Api incomingApi, Cache<String, Api> apiCache, RouteUtils routeUtils, MetricsProcessor metricsProcessor, CamelContext camelContext, StickySessionCacheManager stickySessionCacheManager, String capiContext) {
+    public void updateExistingApi(Api existingApi, Api incomingApi, Cache<String, Api> apiCache, RouteUtils routeUtils, MetricsProcessor metricsProcessor, CamelContext camelContext, StickySessionCacheManager stickySessionCacheManager, String capiContext, String reverseProxyHost) {
 
         if(isMappingChanged(existingApi.getMappingList(), incomingApi.getMappingList())) {
             log.trace("Changes detected for API: {}, redeploying routes.", existingApi.getId());
@@ -278,7 +278,7 @@ public class ApiUtils {
                     camelContext.getRouteController().stopRoute(Constants.CAMEL_REST_PREFIX + routeId);
                     camelContext.removeRoute(Constants.CAMEL_REST_PREFIX + routeId);
                     camelContext.addRoutes(new RestDefinitionProcessor(camelContext, incomingApi, routeUtils, routeId));
-                    camelContext.addRoutes(new DirectRouteProcessor(camelContext, incomingApi, routeUtils, metricsProcessor, routeId, stickySessionCacheManager, capiContext));
+                    camelContext.addRoutes(new DirectRouteProcessor(camelContext, incomingApi, routeUtils, metricsProcessor, routeId, stickySessionCacheManager, capiContext, reverseProxyHost));
                 }
             } catch (Exception e) {
                 log.error(e.getMessage(), e);

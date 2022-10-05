@@ -38,6 +38,8 @@ public class ConsulNodeDiscovery {
     private static final String GET_SERVICE_BY_NAME = "/v1/catalog/service/";
     private String capiContext;
 
+    private String reverseProxyHost;
+
     private final CamelContext camelContext;
     private final Cache<String, Api> apiCache;
 
@@ -77,9 +79,7 @@ public class ConsulNodeDiscovery {
             for(String service : services) {
                     getServiceByName(service);
             }
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        } catch (InterruptedException e) {
+        } catch (IOException | InterruptedException e) {
             throw new RuntimeException(e);
         }
     }
@@ -99,7 +99,7 @@ public class ConsulNodeDiscovery {
                 if(existingApi == null) {
                     createRoute(incomingApi);
                 } else {
-                    apiUtils.updateExistingApi(existingApi, incomingApi, apiCache, routeUtils, metricsProcessor, camelContext, stickySessionCacheManager, capiContext);
+                    apiUtils.updateExistingApi(existingApi, incomingApi, apiCache, routeUtils, metricsProcessor, camelContext, stickySessionCacheManager, capiContext, reverseProxyHost);
                 }
             }
 
@@ -108,9 +108,7 @@ public class ConsulNodeDiscovery {
             } catch(Exception e) {
                 log.error(e.getMessage(), e);
             }
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        } catch (InterruptedException e) {
+        } catch (IOException | InterruptedException e) {
             throw new RuntimeException(e);
         }
     }
@@ -149,16 +147,7 @@ public class ConsulNodeDiscovery {
         return null;
     }
 
-    private boolean forwardPrefix(String tagName, ConsulObject[] consulObject) {
-        for(ConsulObject entry : consulObject) {
-            if(entry.getServiceTags().contains(Constants.CONSUL_GROUP + tagName) && entry.getServiceTags().contains(Constants.X_FORWARDED_PREFIX)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    public HttpProtocol getHttpProtocol(String serviceName, String key, ConsulObject[] consulObject) {
+    public HttpProtocol getHttpProtocol(ConsulObject[] consulObject) {
         for(ConsulObject entry : consulObject) {
             if(entry.getServiceMeta().getSchema() == null) {
                 return HttpProtocol.HTTP;
@@ -191,9 +180,9 @@ public class ConsulNodeDiscovery {
         incomingApi.setRoundRobinEnabled(true);
         incomingApi.setMatchOnUriPrefix(true);
         incomingApi.setMappingList(mappingList);
-        incomingApi.setForwardPrefix(forwardPrefix(key, consulResponse));
+        incomingApi.setForwardPrefix(reverseProxyHost != null);
         incomingApi.setZipkinShowTraceId(showZipkinTraceId(key, consulResponse));
-        incomingApi.setHttpProtocol(getHttpProtocol(serviceName, key, consulResponse));
+        incomingApi.setHttpProtocol(getHttpProtocol(consulResponse));
         return incomingApi;
     }
 
@@ -205,7 +194,7 @@ public class ConsulNodeDiscovery {
             if(existingRoute == null) {
                 try {
                     camelContext.addRoutes(new RestDefinitionProcessor(camelContext, incomingApi, routeUtils, routeId));
-                    camelContext.addRoutes(new DirectRouteProcessor(camelContext, incomingApi, routeUtils, metricsProcessor, routeId, stickySessionCacheManager, capiContext));
+                    camelContext.addRoutes(new DirectRouteProcessor(camelContext, incomingApi, routeUtils, metricsProcessor, routeId, stickySessionCacheManager, capiContext, reverseProxyHost));
                 } catch (Exception e) {
                     log.error(e.getMessage(), e);
                 }
@@ -233,5 +222,9 @@ public class ConsulNodeDiscovery {
                 .uri(URI.create(consulHost + GET_SERVICE_BY_NAME + serviceName))
                 .timeout(Duration.ofMinutes(2))
                 .build();
+    }
+
+    public void setReverseProxyHost(String reverseProxyHost) {
+        this.reverseProxyHost = reverseProxyHost;
     }
 }

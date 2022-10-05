@@ -380,7 +380,7 @@ public class RouteUtils {
         return routeIdList;
     }
 
-    public void createRoute(Api incomingApi, Cache<String, Api> apiCache, CamelContext camelContext, MetricsProcessor metricsProcessor, StickySessionCacheManager stickySessionCacheManager, String capiContext) {
+    public void createRoute(Api incomingApi, Cache<String, Api> apiCache, CamelContext camelContext, MetricsProcessor metricsProcessor, StickySessionCacheManager stickySessionCacheManager, String capiContext, String reverseProxyHost) {
         apiCache.put(incomingApi.getId(), incomingApi);
         List<String> apiRouteIdList = getAllRouteIdForAGivenApi(incomingApi);
         for(String routeId : apiRouteIdList) {
@@ -388,7 +388,7 @@ public class RouteUtils {
             if(existingRoute == null) {
                 try {
                     camelContext.addRoutes(new RestDefinitionProcessor(camelContext, incomingApi, this, routeId));
-                    camelContext.addRoutes(new DirectRouteProcessor(camelContext, incomingApi, this, metricsProcessor, routeId, stickySessionCacheManager, capiContext));
+                    camelContext.addRoutes(new DirectRouteProcessor(camelContext, incomingApi, this, metricsProcessor, routeId, stickySessionCacheManager, capiContext, reverseProxyHost));
                 } catch (Exception e) {
                     log.error(e.getMessage(), e);
                 }

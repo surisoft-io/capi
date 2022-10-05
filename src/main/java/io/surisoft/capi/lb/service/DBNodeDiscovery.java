@@ -50,9 +50,9 @@ public class DBNodeDiscovery {
         for(Api api : apiList) {
             Api existingApi = apiCache.peek(api.getId());
             if(existingApi == null) {
-                routeUtils.createRoute(api, apiCache, camelContext, metricsProcessor, stickySessionCacheManager, capiContext);
+                routeUtils.createRoute(api, apiCache, camelContext, metricsProcessor, stickySessionCacheManager, capiContext, null);
             } else {
-                apiUtils.updateExistingApi(existingApi, api, apiCache, routeUtils, metricsProcessor, camelContext, stickySessionCacheManager, capiContext);
+                apiUtils.updateExistingApi(existingApi, api, apiCache, routeUtils, metricsProcessor, camelContext, stickySessionCacheManager, capiContext, null);
             }
 
         }

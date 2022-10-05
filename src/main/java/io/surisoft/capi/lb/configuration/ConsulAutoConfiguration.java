@@ -31,12 +31,23 @@ public class ConsulAutoConfiguration {
     @Value("${camel.servlet.mapping.context-path}")
     private String capiContext;
 
+    @Value("${camel.reverse.proxy.enabled}")
+    private boolean reverseProxyEnabled;
+
+    @Value("${camel.reverse.proxy.host}")
+    private String reverseProxyHost;
+
     @Bean(name = "consulNodeDiscovery")
     @ConditionalOnProperty(prefix = "capi.consul.discovery", name = "enabled", havingValue = "true")
     public ConsulNodeDiscovery consulNodeDiscovery(CamelContext camelContext, ApiUtils apiUtils, RouteUtils routeUtils, MetricsProcessor metricsProcessor, HttpUtils httpUtils, StickySessionCacheManager stickySessionCacheManager, Cache<String, Api> apiCache) {
         ConsulNodeDiscovery consulNodeDiscovery = new ConsulNodeDiscovery(camelContext, apiUtils, routeUtils, metricsProcessor, stickySessionCacheManager, apiCache);
         consulNodeDiscovery.setCapiContext(httpUtils.getCapiContext(capiContext));
         consulNodeDiscovery.setConsulHost(capiConsulHost);
+
+        if(reverseProxyEnabled) {
+            consulNodeDiscovery.setReverseProxyHost(reverseProxyHost);
+        }
+
         return consulNodeDiscovery;
     }
 

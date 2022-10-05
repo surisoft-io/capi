@@ -2,6 +2,10 @@ server:
   port: 8380
 
 capi:
+  reverse:
+    proxy:
+      enabled: false
+      host: localhost
   #### If you want to disable routes from following redirects ###
   disable:
     redirect: true

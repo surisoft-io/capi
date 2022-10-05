@@ -19,7 +19,9 @@ public class DirectRouteProcessor extends RouteBuilder {
     private String capiContext;
     private MetricsProcessor metricsProcessor;
 
-    public DirectRouteProcessor(CamelContext camelContext, Api api, RouteUtils routeUtils, MetricsProcessor metricsProcessor, String routeId, StickySessionCacheManager stickySessionCacheManager, String capiContext) {
+    private String reverseProxyHost;
+
+    public DirectRouteProcessor(CamelContext camelContext, Api api, RouteUtils routeUtils, MetricsProcessor metricsProcessor, String routeId, StickySessionCacheManager stickySessionCacheManager, String capiContext, String reverseProxyHost) {
         super(camelContext);
         this.api = api;
         this.routeUtils = routeUtils;
@@ -27,6 +29,7 @@ public class DirectRouteProcessor extends RouteBuilder {
         this.routeId = routeId;
         this.capiContext = capiContext;
         this.metricsProcessor = metricsProcessor;
+        this.reverseProxyHost = reverseProxyHost;
     }
 
     @Override
@@ -38,6 +41,12 @@ public class DirectRouteProcessor extends RouteBuilder {
             routeDefinition
                     .setHeader(Constants.X_FORWARDED_PREFIX, constant(capiContext + api.getContext()));
         }
+
+        if(reverseProxyHost != null) {
+            routeDefinition
+                    .setHeader(Constants.X_FORWARDED_HOST, constant(reverseProxyHost));
+        }
+
         log.trace("Trying to build and deploy route {}", routeId);
         routeUtils.buildOnExceptionDefinition(routeDefinition, api.isZipkinShowTraceId(), false, false, routeId);
         if(api.isFailoverEnabled()) {
