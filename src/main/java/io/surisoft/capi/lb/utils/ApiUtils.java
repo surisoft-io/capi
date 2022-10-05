@@ -238,7 +238,7 @@ public class ApiUtils {
         Mapping mapping = new Mapping();
         mapping.setHostname(host);
         mapping.setPort(port);
-        if(consulObject.getServiceMeta().getRootContext() != null || !consulObject.getServiceMeta().getRootContext().isEmpty()) {
+        if(consulObject.getServiceMeta().getRootContext() != null && !consulObject.getServiceMeta().getRootContext().isEmpty()) {
             mapping.setRootContext("/" + consulObject.getServiceMeta().getRootContext());
         } else {
             mapping.setRootContext("/");
