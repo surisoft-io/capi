@@ -33,7 +33,7 @@ public class RestDefinitionProcessor extends RouteBuilder {
             restDefinition.id(restRouteId);
             routeUtils.registerMetric(restRouteId);
         } else {
-            log.error("Null Rest Definition for routeId {}", routeId);
+            log.warn("Bad definition for service name: {}, please make sure the service context does not contain colons", api.getContext());
         }
     }
 
