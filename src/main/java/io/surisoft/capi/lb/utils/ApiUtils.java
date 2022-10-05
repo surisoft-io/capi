@@ -238,10 +238,10 @@ public class ApiUtils {
         Mapping mapping = new Mapping();
         mapping.setHostname(host);
         mapping.setPort(port);
-        if(consulObject.getServiceTags().contains(Constants.NO_ROOT_CONTEXT)) {
-            mapping.setRootContext("/");
+        if(consulObject.getServiceMeta().getRootContext() != null || !consulObject.getServiceMeta().getRootContext().isEmpty()) {
+            mapping.setRootContext("/" + consulObject.getServiceMeta().getRootContext());
         } else {
-            mapping.setRootContext("/" + consulObject.getServiceName());
+            mapping.setRootContext("/");
         }
 
         mapping.setIngress(true);

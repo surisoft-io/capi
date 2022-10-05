@@ -11,7 +11,7 @@ capi:
     endpoint: http://localhost:9411/api/v2/spans
   #### If you want CAPI to search consul for available APIs to be deployed, enable this feature. ####
   consul:
-    host:
+    host: http://localhost:8500
     discovery:
       enabled: true
       timer:
@@ -20,8 +20,8 @@ capi:
   trust:
     store:
       enabled: true
-      path:
-      password:
+      path: /home/rodrigo/projects/ec/capi-cc-config/client-truststore.jks
+      password: AibCXbW9v1MeuvcK6uMu
   manager:
     cors:
       host: http://localhost:4200

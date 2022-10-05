@@ -160,9 +160,10 @@ public class ConsulNodeDiscovery {
 
     public HttpProtocol getHttpProtocol(String serviceName, String key, ConsulObject[] consulObject) {
         for(ConsulObject entry : consulObject) {
-            if(entry.getServiceName().equals(serviceName) &&
-                    entry.getServiceTags().contains(Constants.CONSUL_GROUP + key) &&
-                    entry.getServiceTags().contains(Constants.HTTPS_CONSUL_SERVICE_TAG)) {
+            if(entry.getServiceMeta().getSchema() == null) {
+                return HttpProtocol.HTTP;
+            }
+            if(entry.getServiceMeta().getSchema().equals(HttpProtocol.HTTPS.getProtocol())) {
                 return HttpProtocol.HTTPS;
             }
         }

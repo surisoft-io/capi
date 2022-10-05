@@ -3,9 +3,13 @@ package io.surisoft.capi.lb.builder;
 import io.surisoft.capi.lb.schema.Api;
 import io.surisoft.capi.lb.utils.Constants;
 import io.surisoft.capi.lb.utils.RouteUtils;
+import org.apache.camel.CamelConfiguration;
 import org.apache.camel.CamelContext;
 import org.apache.camel.builder.RouteBuilder;
+import org.apache.camel.model.rest.GetDefinition;
 import org.apache.camel.model.rest.RestDefinition;
+import org.apache.camel.spi.RestConfiguration;
+import org.apache.camel.spring.boot.CamelContextConfiguration;
 
 public class RestDefinitionProcessor extends RouteBuilder {
 

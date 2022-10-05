@@ -17,6 +17,9 @@ public class ConsulObject {
     @JsonProperty("ServiceTags")
     private List<String> serviceTags;
 
+    @JsonProperty("ServiceMeta")
+    private ServiceMeta serviceMeta;
+
     @JsonProperty("ServiceAddress")
     private String serviceAddress;
 
@@ -61,5 +64,13 @@ public class ConsulObject {
 
     public void setServicePort(int servicePort) {
         this.servicePort = servicePort;
+    }
+
+    public ServiceMeta getServiceMeta() {
+        return serviceMeta;
+    }
+
+    public void setServiceMeta(ServiceMeta serviceMeta) {
+        this.serviceMeta = serviceMeta;
     }
 }
