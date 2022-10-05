@@ -31,10 +31,10 @@ public class ConsulAutoConfiguration {
     @Value("${camel.servlet.mapping.context-path}")
     private String capiContext;
 
-    @Value("${camel.reverse.proxy.enabled}")
+    @Value("${capi.reverse.proxy.enabled}")
     private boolean reverseProxyEnabled;
 
-    @Value("${camel.reverse.proxy.host}")
+    @Value("${capi.reverse.proxy.host}")
     private String reverseProxyHost;
 
     @Bean(name = "consulNodeDiscovery")

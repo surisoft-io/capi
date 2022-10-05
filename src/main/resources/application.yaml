@@ -85,16 +85,6 @@ camel:
   springboot:
     name: capi-load-balancer
 
-logging:
-  level:
-    io:
-      surisoft:
-        capi:
-          lb: TRACE
-    root: INFO
-
-
-
 #### SSL Configuration ####
 #server.ssl.key-store-type=PKCS12
 #server.ssl.key-store=/Users/rodrigo/ext/gsc/capi-lb.p12
@@ -115,10 +105,6 @@ management:
       base-path: /analytics/
       exposure:
         include: '*'
-hawtio:
-  authenticationEnabled: false
-
-
 
 #### Time to live for Sticky Sessions feature ####
 sticky:

@@ -1,40 +1,49 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
     <include resource="org/springframework/boot/logging/logback/defaults.xml" />
-
+    <appender name="FILE-ROLLING" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${log-dir}/capi.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${log-dir}/capi.%d{yyyy-MM-dd}.%i.gz</fileNamePattern>
+            <timeBasedFileNamingAndTriggeringPolicy
+                class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
+                <maxFileSize>10MB</maxFileSize>
+            </timeBasedFileNamingAndTriggeringPolicy>
+            <maxHistory>30</maxHistory>
+        </rollingPolicy>
+        <encoder>
+            <pattern>%d %p %c{1.} [%t] %m%n</pattern>
+        </encoder>
+    </appender>
     <springProfile name="default">
         <include resource="org/springframework/boot/logging/logback/console-appender.xml"/>
-
-        <root level="INFO">
+        <logger name="org.springframework" level="INFO"/>
+        <root level="info">
             <appender-ref ref="CONSOLE"/>
         </root>
+        <logger name="io.surisoft.capi" additivity="false" level="TRACE">
+            <appender-ref ref="CONSOLE"/>
+        </logger>
     </springProfile>
-
-    <springProfile name="prod">
-
-        <appender name="FILE-ROLLING" class="ch.qos.logback.core.rolling.RollingFileAppender">
-            <file>capi.log</file>
-
-            <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
-                <fileNamePattern>logs/archived/capi.%d{yyyy-MM-dd}.%i.log</fileNamePattern>
-                <!-- each archived file, size max 10MB -->
-                <maxFileSize>10MB</maxFileSize>
-                <!-- total size of all archive files, if total size > 20GB, it will delete old archived file -->
-                <totalSizeCap>20GB</totalSizeCap>
-                <!-- 60 days to keep -->
-                <maxHistory>60</maxHistory>
-            </rollingPolicy>
-
-            <encoder>
-                <pattern>%d %p %c{1.} [%t] %m%n</pattern>
-            </encoder>
-        </appender>
-
+    <springProfile name="dev">
+        <include resource="org/springframework/boot/logging/logback/console-appender.xml"/>
         <logger name="org.springframework" level="INFO"/>
-        <logger name="io.surisoft.capi" level="DEBUG"/>
-        <root level="ERROR">
-            <appender-ref ref="FILE-ROLLING"/>
+        <root level="info">
+            <appender-ref ref="FILE-ROLLING" />
+            <appender-ref ref="CONSOLE"/>
         </root>
+        <logger name="io.surisoft.capi" additivity="false" level="TRACE">
+            <appender-ref ref="FILE-ROLLING" />
+            <appender-ref ref="CONSOLE"/>
+        </logger>
     </springProfile>
-
+    <springProfile name="prod">
+        <logger name="org.springframework" level="INFO"/>
+        <root level="info">
+            <appender-ref ref="FILE-ROLLING" />
+        </root>
+        <logger name="io.surisoft.capi" additivity="false" level="INFO">
+            <appender-ref ref="FILE-ROLLING" />
+        </logger>
+    </springProfile>
 </configuration>
