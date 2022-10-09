@@ -9,11 +9,17 @@
 * Optional Spring Security OIDC protected CAPI Manager API.
 * Distributed tracing system (Zipkin)
 * Metrics (Prometheus)
-* Hawtio (JVM management console)
+* CAPI Browser / Jolokia (management console)
 * Load Balancer (Round robin)
 * Failover (With and without Round Robin)
 * Stick Session (Cookies and Headers)
 * Certificate Manager (using the CAPI Manager API)
+
+## Run CAPI behind a reverse proxy? Enable the following:
+```
+capi.reverse.proxy.enable = true
+capi.reverse.proxy.host = https://your.host
+```
 
 ## CAPI support two deployment strategies
 If you enable persistence, you will need to provide a database instance.
