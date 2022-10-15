@@ -257,4 +257,7 @@ public class Constants {
             "/analytics/**",
             "/swagger/**"
     };
+    public static final String CACHE_ROUTE_STOPPED_EVENT = "RouteStoppedEvent";
+    public static final String CACHE_ROUTE_REMOVED_EVENT = "RouteRemovedEvent";
+    public static final String CACHE_EXCHANGE_FAILED_EVENT = "ExchangeFailedEvent";
 }

@@ -208,12 +208,14 @@ package io.surisoft.capi.lb.controller;
 import io.surisoft.capi.lb.repository.ApiRepository;
 import io.surisoft.capi.lb.repository.MappingRepository;
 import io.surisoft.capi.lb.schema.Api;
+import io.surisoft.capi.lb.schema.CapiInfo;
 import io.surisoft.capi.lb.schema.Mapping;
 import io.surisoft.capi.lb.utils.ApiUtils;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.apache.camel.CamelContext;
 import org.cache2k.Cache;
 import org.cache2k.CacheEntry;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -224,7 +226,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 
@@ -245,9 +246,26 @@ public class ApiManager {
     @Autowired
     private Cache<String, Api> apiCache;
 
+    @Autowired
+    private Cache<String, String> startRouteStoppedEventCache;
+
+    @Autowired
+    private Cache<String, String> startRouteRemovedEventCache;
+
+    @Autowired
+    private Cache<String, String> startExchangeFailedEventCache;
 
     @Value("${capi.persistence.enabled}")
     private boolean capiPersistenceEnabled;
+
+    @Value("${capi.version}")
+    private String capiVersion;
+
+    @Value("${capi.spring.version}")
+    private String capiSpringVersion;
+
+    @Autowired
+    private CamelContext camelContext;
 
     @Operation(summary = "Get all configured APIs")
     @GetMapping(path = "/configured")
@@ -263,9 +281,8 @@ public class ApiManager {
     @GetMapping(path = "/cached")
     public ResponseEntity<Iterable<Api>> getCachedApi() {
         List<Api> apiList = new ArrayList<>();
-        Iterator<CacheEntry<String, Api>> cachedEntryIterator = apiCache.entries().iterator();
-        while(cachedEntryIterator.hasNext()) {
-            apiList.add(cachedEntryIterator.next().getValue());
+        for (CacheEntry<String, Api> stringApiCacheEntry : apiCache.entries()) {
+            apiList.add(stringApiCacheEntry.getValue());
         }
         return new ResponseEntity<>(apiList, HttpStatus.OK);
     }
@@ -278,6 +295,24 @@ public class ApiManager {
             return new ResponseEntity<>(api, HttpStatus.OK);
         }
         return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+    }
+
+    @Operation(summary = "Get CAPI General Info")
+    @GetMapping(path = "/info", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<CapiInfo> getInfo() {
+        CapiInfo capiInfo = new CapiInfo();
+        capiInfo.setUptime(camelContext.getUptime());
+        capiInfo.setCamelVersion(camelContext.getVersion());
+        capiInfo.setStartTimestamp(camelContext.getStartDate());
+        capiInfo.setTotalRoutes(camelContext.getRoutesSize());
+        capiInfo.setCapiVersion(capiVersion);
+        capiInfo.setCapiStringVersion(capiSpringVersion);
+
+        capiInfo.setStoppedRouteCount(startRouteStoppedEventCache.keys().size());
+        capiInfo.setRemovedRouteCount(startRouteRemovedEventCache.keys().size());
+        capiInfo.setFailedExchangeCount(startExchangeFailedEventCache.keys().size());
+
+        return new ResponseEntity<>(capiInfo, HttpStatus.OK);
     }
 
     @Operation(summary = "Register a node")

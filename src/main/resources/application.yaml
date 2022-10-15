@@ -23,9 +23,9 @@ capi:
   #### If you want to enable certificate management, please provide a trust store (JKS). ####
   trust:
     store:
-      enabled: true
-      path: /home/rodrigo/projects/ec/capi-cc-config/client-truststore.jks
-      password: AibCXbW9v1MeuvcK6uMu
+      enabled: false
+      path:
+      password:
   manager:
     cors:
       host: http://localhost:4200
@@ -42,8 +42,10 @@ capi:
     discovery:
       timer:
         interval: 20
-  version: '@project.version@'
-  name: '@project.name@'
+  version: ^project.version^
+  name: ^project.name^
+  spring:
+    version: ^project.description^
   gateway:
     error:
       #### All calls in error will be bridged to this endpoint ####
@@ -112,3 +114,9 @@ sticky:
     time:
       to:
         live: 2
+oidc:
+  provider:
+    enabled: false
+    host: http://localhost:8080
+    clientId:
+    clientSecret:

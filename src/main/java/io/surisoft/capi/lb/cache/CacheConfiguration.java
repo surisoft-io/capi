@@ -207,6 +207,7 @@ package io.surisoft.capi.lb.cache;
 
 import io.surisoft.capi.lb.schema.Api;
 import io.surisoft.capi.lb.schema.StickySession;
+import io.surisoft.capi.lb.utils.Constants;
 import org.cache2k.Cache;
 import org.cache2k.Cache2kBuilder;
 import org.slf4j.Logger;
@@ -242,6 +243,36 @@ public class CacheConfiguration {
         return new Cache2kBuilder<String, StickySession>(){}
                 .name("stickySession-" + hashCode())
                 .expireAfterWrite(stickySessionTimeToLive, TimeUnit.HOURS)
+                .entryCapacity(10000)
+                .storeByReference(true)
+                .build();
+    }
+
+    @Bean
+    public Cache<String, String> startRouteStoppedEventCache() {
+        log.debug("Creating RouteStoppedEvent Cache");
+        return new Cache2kBuilder<String, String>(){}
+                .name(Constants.CACHE_ROUTE_STOPPED_EVENT + "-" + hashCode())
+                .entryCapacity(10000)
+                .storeByReference(true)
+                .build();
+    }
+
+    @Bean
+    public Cache<String, Integer> startRouteRemovedEventCache() {
+        log.debug("Creating RouteRemovedEvent Cache");
+        return new Cache2kBuilder<String, Integer>(){}
+                .name(Constants.CACHE_ROUTE_REMOVED_EVENT + "-" + hashCode())
+                .entryCapacity(10000)
+                .storeByReference(true)
+                .build();
+    }
+
+    @Bean
+    public Cache<String, Integer> startExchangeFailedEventCache() {
+        log.debug("Creating ExchangeFailedEvent Cache");
+        return new Cache2kBuilder<String, Integer>(){}
+                .name(Constants.CACHE_EXCHANGE_FAILED_EVENT + "-" + hashCode())
                 .entryCapacity(10000)
                 .storeByReference(true)
                 .build();

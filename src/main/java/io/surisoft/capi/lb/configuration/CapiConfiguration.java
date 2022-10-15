@@ -211,6 +211,7 @@ import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
 import io.micrometer.core.instrument.util.HierarchicalNameMapper;
 import io.micrometer.jmx.JmxMeterRegistry;
 import io.surisoft.capi.lb.utils.Constants;
+import okhttp3.OkHttpClient;
 import org.apache.camel.CamelContext;
 import org.apache.camel.component.http.HttpClientConfigurer;
 import org.apache.camel.component.http.HttpComponent;
@@ -294,5 +295,10 @@ public class CapiConfiguration {
                 Clock.SYSTEM,
                 HierarchicalNameMapper.DEFAULT));
         return compositeMeterRegistry;
+    }
+
+    @Bean
+    public OkHttpClient httpClient() {
+        return new OkHttpClient();
     }
 }
