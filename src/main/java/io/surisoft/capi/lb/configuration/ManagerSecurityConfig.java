@@ -19,15 +19,15 @@ import io.surisoft.capi.lb.utils.Constants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.JwtException;
-import org.springframework.web.cors.CorsConfiguration;
-import org.springframework.web.servlet.config.annotation.CorsRegistry;
+import org.springframework.security.web.SecurityFilterChain;
 
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -35,7 +35,8 @@ import java.text.ParseException;
 import java.util.HashMap;
 
 @Configuration
-public class ManagerSecurityConfig extends WebSecurityConfigurerAdapter {
+@EnableWebSecurity
+public class ManagerSecurityConfig {
 
     private static final Logger log = LoggerFactory.getLogger(ManagerSecurityConfig.class);
 
@@ -45,11 +46,11 @@ public class ManagerSecurityConfig extends WebSecurityConfigurerAdapter {
     @Value("${capi.manager.security.issuer}")
     private String capiManagerSecurityIssuer;
 
-    @Override
-    protected void configure(HttpSecurity http) throws Exception {
+    @Bean
+    protected SecurityFilterChain configure(HttpSecurity http) throws Exception {
         log.debug("Configuring security");
         if(capiManagerSecurityEnabled) {
-            http
+            return http
                     .csrf()
                     .disable()
                     .sessionManagement()
@@ -61,15 +62,16 @@ public class ManagerSecurityConfig extends WebSecurityConfigurerAdapter {
                     .and()
                     .authorizeRequests(authz -> authz
                             .anyRequest().authenticated())
-                    .oauth2ResourceServer(oauth2 -> oauth2.jwt().decoder(new CapiJWTDecoder()));
+                    .oauth2ResourceServer(oauth2 -> oauth2.jwt().decoder(new CapiJWTDecoder()))
+                    .build();
         } else {
-            http
+            return http
                     .csrf()
                     .disable()
                     .sessionManagement()
                     .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                     .and()
-                    .authorizeRequests().anyRequest().permitAll();
+                    .authorizeRequests().anyRequest().permitAll().and().build();
         }
     }
 
