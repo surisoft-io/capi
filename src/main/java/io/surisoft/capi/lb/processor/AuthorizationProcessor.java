@@ -14,6 +14,7 @@ import org.apache.camel.Processor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
@@ -22,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 
 @Component
+@ConditionalOnProperty(prefix = "oidc.provider", name = "enabled", havingValue = "true")
 public class AuthorizationProcessor implements Processor {
     private static final Logger log = LoggerFactory.getLogger(AuthorizationProcessor.class);
     @Autowired

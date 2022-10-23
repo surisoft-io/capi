@@ -158,6 +158,15 @@ public class ConsulNodeDiscovery {
         return HttpProtocol.HTTP;
     }
 
+    public boolean isSecured(String key, ConsulObject[] consulObject) {
+        for(ConsulObject entry : consulObject) {
+            if(Objects.equals(getServiceNodeGroup(entry), key)) {
+                return entry.getServiceMeta().isSecured();
+            }
+        }
+        return false;
+    }
+
     private boolean showZipkinTraceId(String tagName, ConsulObject[] consulObject) {
         for(ConsulObject entry : consulObject) {
             if(entry.getServiceTags().contains(Constants.CONSUL_GROUP + tagName) && entry.getServiceTags().contains(Constants.TRACE_ID_HEADER)) {
@@ -182,6 +191,7 @@ public class ConsulNodeDiscovery {
         incomingApi.setForwardPrefix(reverseProxyHost != null);
         incomingApi.setZipkinShowTraceId(showZipkinTraceId(key, consulResponse));
         incomingApi.setHttpProtocol(getHttpProtocol(key, consulResponse));
+        incomingApi.setSecured(isSecured(key, consulResponse));
         return incomingApi;
     }
 

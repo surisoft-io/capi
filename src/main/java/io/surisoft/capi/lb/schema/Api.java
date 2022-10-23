@@ -243,6 +243,16 @@ public class Api implements Serializable {
     private String zipkinServiceName;
     private String authorizationEndpointPublicKey;
 
+    public boolean isSecured() {
+        return secured;
+    }
+
+    public void setSecured(boolean secured) {
+        this.secured = secured;
+    }
+
+    private boolean secured;
+
     public String getId() {
         return id;
     }

@@ -12,6 +12,17 @@ public class ServiceMeta {
     @JsonProperty("schema")
     private String schema;
 
+    public boolean isSecured() {
+        return secured;
+    }
+
+    public void setSecured(boolean secured) {
+        this.secured = secured;
+    }
+
+    @JsonProperty("secured")
+    private boolean secured;
+
     public String getRootContext() {
         return rootContext;
     }

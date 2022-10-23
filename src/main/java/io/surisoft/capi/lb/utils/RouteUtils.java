@@ -254,7 +254,7 @@ public class RouteUtils {
     private CamelContext camelContext;
     @Autowired
     private Cache<String, Api> apiCache;
-    @Autowired
+    @Autowired(required = false)
     private AuthorizationProcessor authorizationProcessor;
 
     public void registerMetric(String routeId) {
@@ -414,7 +414,11 @@ public class RouteUtils {
         }
     }
 
-    public AuthorizationProcessor authorizationProcessor() {
-        return this.authorizationProcessor;
+    public void enableAuthorization(String apiId, RouteDefinition routeDefinition) {
+        if(this.authorizationProcessor != null) {
+            routeDefinition.process(this.authorizationProcessor);
+        } else {
+            log.warn("The api with id {} is marked to protect but there is no OIDC provider enabled.", apiId);
+        }
     }
 }

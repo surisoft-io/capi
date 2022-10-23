@@ -49,10 +49,12 @@ public class DirectRouteProcessor extends RouteBuilder {
 
         log.trace("Trying to build and deploy route {}", routeId);
         routeUtils.buildOnExceptionDefinition(routeDefinition, api.isZipkinShowTraceId(), false, false, routeId);
+        if(api.isSecured()) {
+            routeUtils.enableAuthorization(api.getId(), routeDefinition);
+        }
         if(api.isFailoverEnabled()) {
             routeDefinition
                     .process(metricsProcessor)
-                    .process(routeUtils.authorizationProcessor())
                     .loadBalance()
                     .failover(1, false, api.isRoundRobinEnabled(), false)
                     .to(routeUtils.buildEndpoints(api))
