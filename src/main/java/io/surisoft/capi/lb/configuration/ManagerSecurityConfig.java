@@ -5,6 +5,8 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.JWSAlgorithm;
+import com.nimbusds.jose.jwk.JWKSet;
+import com.nimbusds.jose.jwk.source.ImmutableJWKSet;
 import com.nimbusds.jose.jwk.source.JWKSource;
 import com.nimbusds.jose.jwk.source.RemoteJWKSet;
 import com.nimbusds.jose.proc.BadJOSEException;
@@ -15,10 +17,12 @@ import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
 import com.nimbusds.jwt.proc.ConfigurableJWTProcessor;
 import com.nimbusds.jwt.proc.DefaultJWTProcessor;
+import io.surisoft.capi.lb.oidc.OIDCConstants;
 import io.surisoft.capi.lb.utils.Constants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -29,6 +33,7 @@ import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.JwtException;
 import org.springframework.security.web.SecurityFilterChain;
 
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.text.ParseException;
@@ -45,6 +50,10 @@ public class ManagerSecurityConfig {
 
     @Value("${capi.manager.security.issuer}")
     private String capiManagerSecurityIssuer;
+
+    @Value("${oidc.provider.host}")
+    private String oidcProviderHost;
+
 
     @Bean
     protected SecurityFilterChain configure(HttpSecurity http) throws Exception {
@@ -73,6 +82,19 @@ public class ManagerSecurityConfig {
                     .and()
                     .authorizeRequests().anyRequest().permitAll().and().build();
         }
+    }
+
+    @Bean
+    @ConditionalOnProperty(prefix = "oidc.provider", name = "enabled", havingValue = "true")
+    public DefaultJWTProcessor<SecurityContext> getJwtProcessor() throws IOException, ParseException {
+        log.trace("Starting CAPI JWT Processor");
+        DefaultJWTProcessor<SecurityContext> jwtProcessor = new DefaultJWTProcessor<>();
+        JWKSet jwkSet = JWKSet.load(new URL(oidcProviderHost + OIDCConstants.CERTS_URI));
+        ImmutableJWKSet<SecurityContext> keySource = new ImmutableJWKSet<>(jwkSet);
+        JWSAlgorithm expectedJWSAlg = JWSAlgorithm.RS256;
+        JWSKeySelector<SecurityContext> keySelector = new JWSVerificationKeySelector<>(expectedJWSAlg, keySource);
+        jwtProcessor.setJWSKeySelector(keySelector);
+        return jwtProcessor;
     }
 
     class CapiJWTDecoder implements JwtDecoder {

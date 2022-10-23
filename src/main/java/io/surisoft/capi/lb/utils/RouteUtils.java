@@ -209,6 +209,7 @@ import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
 import io.surisoft.capi.lb.builder.DirectRouteProcessor;
 import io.surisoft.capi.lb.builder.RestDefinitionProcessor;
 import io.surisoft.capi.lb.cache.StickySessionCacheManager;
+import io.surisoft.capi.lb.processor.AuthorizationProcessor;
 import io.surisoft.capi.lb.processor.HttpErrorProcessor;
 import io.surisoft.capi.lb.processor.MetricsProcessor;
 import io.surisoft.capi.lb.schema.Api;
@@ -239,27 +240,22 @@ import static org.apache.camel.language.constant.ConstantLanguage.constant;
 public class RouteUtils {
 
     private static final Logger log = LoggerFactory.getLogger(RouteUtils.class);
-
     @Value("${capi.gateway.error.endpoint}")
     private String capiGatewayErrorEndpoint;
-
     @Autowired
     private HttpErrorProcessor httpErrorProcessor;
-
     @Autowired
     private HttpUtils httpUtils;
-
     @Autowired
     private CompositeMeterRegistry meterRegistry;
-
     @Autowired(required = false)
     private ZipkinTracer zipkinTracer;
-
     @Autowired
     private CamelContext camelContext;
-
     @Autowired
     private Cache<String, Api> apiCache;
+    @Autowired
+    private AuthorizationProcessor authorizationProcessor;
 
     public void registerMetric(String routeId) {
         meterRegistry.counter(routeId);
@@ -416,5 +412,9 @@ public class RouteUtils {
         } catch(Exception e) {
             log.error(e.getMessage(), e);
         }
+    }
+
+    public AuthorizationProcessor authorizationProcessor() {
+        return this.authorizationProcessor;
     }
 }

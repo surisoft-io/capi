@@ -27,7 +27,6 @@ import java.util.*;
 public class ConsulNodeDiscovery {
 
     private static final Logger log = LoggerFactory.getLogger(ConsulNodeDiscovery.class);
-
     private String consulHost;
     private final ApiUtils apiUtils;
     private final RouteUtils routeUtils;
@@ -37,9 +36,7 @@ public class ConsulNodeDiscovery {
     private static final String GET_ALL_SERVICES = "/v1/catalog/services";
     private static final String GET_SERVICE_BY_NAME = "/v1/catalog/service/";
     private String capiContext;
-
     private String reverseProxyHost;
-
     private final CamelContext camelContext;
     private final Cache<String, Api> apiCache;
 
@@ -80,7 +77,7 @@ public class ConsulNodeDiscovery {
                     getServiceByName(service);
             }
         } catch (IOException | InterruptedException e) {
-            throw new RuntimeException(e);
+            log.error("Error connecting to Consul, will try again...");
         }
     }
 
@@ -109,7 +106,7 @@ public class ConsulNodeDiscovery {
                 log.error(e.getMessage(), e);
             }
         } catch (IOException | InterruptedException e) {
-            throw new RuntimeException(e);
+            log.error("Error connecting to Consul, will try again...");
         }
     }
 
@@ -147,13 +144,15 @@ public class ConsulNodeDiscovery {
         return null;
     }
 
-    public HttpProtocol getHttpProtocol(ConsulObject[] consulObject) {
+    public HttpProtocol getHttpProtocol(String key, ConsulObject[] consulObject) {
         for(ConsulObject entry : consulObject) {
-            if(entry.getServiceMeta().getSchema() == null) {
-                return HttpProtocol.HTTP;
-            }
-            if(entry.getServiceMeta().getSchema().equals(HttpProtocol.HTTPS.getProtocol())) {
-                return HttpProtocol.HTTPS;
+            if(Objects.equals(getServiceNodeGroup(entry), key)) {
+                if(entry.getServiceMeta().getSchema() == null) {
+                    return HttpProtocol.HTTP;
+                }
+                if(entry.getServiceMeta().getSchema().equals(HttpProtocol.HTTPS.getProtocol())) {
+                    return HttpProtocol.HTTPS;
+                }
             }
         }
         return HttpProtocol.HTTP;
@@ -182,7 +181,7 @@ public class ConsulNodeDiscovery {
         incomingApi.setMappingList(mappingList);
         incomingApi.setForwardPrefix(reverseProxyHost != null);
         incomingApi.setZipkinShowTraceId(showZipkinTraceId(key, consulResponse));
-        incomingApi.setHttpProtocol(getHttpProtocol(consulResponse));
+        incomingApi.setHttpProtocol(getHttpProtocol(key, consulResponse));
         return incomingApi;
     }
 

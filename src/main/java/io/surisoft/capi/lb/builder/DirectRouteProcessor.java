@@ -1,6 +1,7 @@
 package io.surisoft.capi.lb.builder;
 
 import io.surisoft.capi.lb.cache.StickySessionCacheManager;
+import io.surisoft.capi.lb.processor.AuthorizationProcessor;
 import io.surisoft.capi.lb.processor.MetricsProcessor;
 import io.surisoft.capi.lb.processor.SessionChecker;
 import io.surisoft.capi.lb.schema.Api;
@@ -12,14 +13,13 @@ import org.apache.camel.model.RouteDefinition;
 
 public class DirectRouteProcessor extends RouteBuilder {
 
-    private RouteUtils routeUtils;
-    private Api api;
-    private StickySessionCacheManager stickySessionCacheManager;
-    private String routeId;
-    private String capiContext;
-    private MetricsProcessor metricsProcessor;
-
-    private String reverseProxyHost;
+    private final RouteUtils routeUtils;
+    private final Api api;
+    private final StickySessionCacheManager stickySessionCacheManager;
+    private final String routeId;
+    private final String capiContext;
+    private final MetricsProcessor metricsProcessor;
+    private final String reverseProxyHost;
 
     public DirectRouteProcessor(CamelContext camelContext, Api api, RouteUtils routeUtils, MetricsProcessor metricsProcessor, String routeId, StickySessionCacheManager stickySessionCacheManager, String capiContext, String reverseProxyHost) {
         super(camelContext);
@@ -52,6 +52,7 @@ public class DirectRouteProcessor extends RouteBuilder {
         if(api.isFailoverEnabled()) {
             routeDefinition
                     .process(metricsProcessor)
+                    .process(routeUtils.authorizationProcessor())
                     .loadBalance()
                     .failover(1, false, api.isRoundRobinEnabled(), false)
                     .to(routeUtils.buildEndpoints(api))

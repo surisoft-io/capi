@@ -34,7 +34,7 @@ capi:
     ## If the OIDC Provider listens on HTTPS, it needs to be trusted by CAPI
     security:
       enabled: false
-      issuer: http://localhost:8080/auth/realms/master/protocol/openid-connect/certs
+      issuer: http://localhost:8080/realms/master/protocol/openid-connect/certs
   #### Persistence Management ####
   persistence:
     enabled: false

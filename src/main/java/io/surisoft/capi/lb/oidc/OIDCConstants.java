@@ -21,4 +21,8 @@ public class OIDCConstants {
     public static final String CLIENTS_URI = "/admin/realms/master/clients";
     public static final String CLIENT_REGISTRATION_URI = "/realms/master/clients-registrations/openid-connect";
     public static final String TOKEN_URI = "/realms/master/protocol/openid-connect/token";
+    public static final String CERTS_URI = "/realms/master/protocol/openid-connect/certs";
+    public static final String REALMS_CLAIM = "realm_access";
+    public static final String ROLES_CLAIM = "roles";
+    public static final String CAMEL_SERVLET_CONTEXT_PATH = "CamelServletContextPath";
 }

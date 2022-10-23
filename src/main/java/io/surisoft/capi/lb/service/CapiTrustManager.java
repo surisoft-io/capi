@@ -15,7 +15,6 @@ import java.security.cert.X509Certificate;
 public final class CapiTrustManager implements X509TrustManager {
 
     private static final Logger log = LoggerFactory.getLogger(CapiTrustManager.class);
-
     private final String capiTrustStorePassword;
     private final String capiTrustStorePath;
     private X509TrustManager trustManager;
