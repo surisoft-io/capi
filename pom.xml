@@ -238,7 +238,7 @@
     <sonar.dynamicAnalysis>reuseReports</sonar.dynamicAnalysis>
     <sonar.jacoco.reportPath>${project.basedir}/../target/jacoco.exec</sonar.jacoco.reportPath>
     <cache2k-version>2.6.1.Final</cache2k-version>
-    <org.postgresql-version>42.5.0</org.postgresql-version>
+    <org.postgresql-version>42.5.1</org.postgresql-version>
     <jackson-dataformat-xml.version>2.13.4</jackson-dataformat-xml.version>
   </properties>
 
