@@ -76,8 +76,12 @@ public class ConsulNodeDiscovery {
             for(String service : services) {
                     getServiceByName(service);
             }
-        } catch (IOException | InterruptedException e) {
+        } catch (IOException e) {
             log.error("Error connecting to Consul, will try again...");
+        } catch (InterruptedException e) {
+            log.error("Error connecting to Consul, will try again...");
+            Thread.currentThread().interrupt();
+
         }
     }
 
@@ -100,13 +104,13 @@ public class ConsulNodeDiscovery {
                 }
             }
 
-            try {
-                //apiUtils.removeUnusedApi(camelContext, routeUtils, apiCache, servicesStructure, serviceName);
-            } catch(Exception e) {
-                log.error(e.getMessage(), e);
-            }
-        } catch (IOException | InterruptedException e) {
+            //apiUtils.removeUnusedApi(camelContext, routeUtils, apiCache, servicesStructure, serviceName);
+
+        } catch (IOException e) {
             log.error("Error connecting to Consul, will try again...");
+        } catch (InterruptedException e) {
+            log.error("Error connecting to Consul, will try again...");
+            Thread.currentThread().interrupt();
         }
     }
 
