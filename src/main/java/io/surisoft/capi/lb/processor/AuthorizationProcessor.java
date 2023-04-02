@@ -9,6 +9,7 @@ import com.nimbusds.jwt.proc.DefaultJWTProcessor;
 import io.surisoft.capi.lb.exception.AuthorizationException;
 import io.surisoft.capi.lb.oidc.OIDCConstants;
 import io.surisoft.capi.lb.utils.Constants;
+import io.surisoft.capi.lb.utils.HttpUtils;
 import org.apache.camel.Exchange;
 import org.apache.camel.Processor;
 import org.slf4j.Logger;
@@ -27,7 +28,7 @@ import java.util.Map;
 public class AuthorizationProcessor implements Processor {
     private static final Logger log = LoggerFactory.getLogger(AuthorizationProcessor.class);
     @Autowired
-    private DefaultJWTProcessor<SecurityContext> jwtProcessor;
+    private HttpUtils httpUtils;
 
     @Override
     public void process(Exchange exchange) {
@@ -36,7 +37,7 @@ public class AuthorizationProcessor implements Processor {
 
         if(authorizationHeader != null) {
             try {
-                JWTClaimsSet jwtClaimsSet = authorizeRequest(authorizationHeader);
+                JWTClaimsSet jwtClaimsSet = httpUtils.authorizeRequest(authorizationHeader);
                 if(!isApiSubscribed(jwtClaimsSet, contextToRole(contextPath))) {
                     sendException(exchange, "Not subscribed");
                 }
@@ -47,10 +48,6 @@ public class AuthorizationProcessor implements Processor {
         } else {
             sendException(exchange, "No authorization header provided");
         }
-    }
-
-    private JWTClaimsSet authorizeRequest(String authorizationHeader) throws AuthorizationException, BadJOSEException, ParseException, JOSEException, IOException {
-        return jwtProcessor.process(getBearerTokenFromHeader(authorizationHeader), null);
     }
 
     private void sendException(Exchange exchange, String message) {
@@ -69,10 +66,6 @@ public class AuthorizationProcessor implements Processor {
             }
         }
         return false;
-    }
-
-    private String getBearerTokenFromHeader(String authorizationHeader) {
-        return authorizationHeader.substring(7);
     }
 
     private String contextToRole(String context) {

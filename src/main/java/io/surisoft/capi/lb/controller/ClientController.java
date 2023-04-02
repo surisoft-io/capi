@@ -7,6 +7,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.apache.camel.util.json.JsonArray;
 import org.apache.camel.util.json.JsonObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,6 +18,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
+import java.util.List;
 
 @RestController
 @ConditionalOnProperty(prefix = "oidc.provider", name = "enabled", havingValue = "true")
@@ -53,6 +55,21 @@ public class ClientController {
         try {
             oidcClientManager.assignServiceAccountRole(apiId, clientId);
             return new ResponseEntity<>(HttpStatus.CREATED);
+        } catch (IOException | OIDCException e) {
+            log.error(e.getMessage(), e);
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    @Operation(summary = "Get all CAPI clients")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "All CAPI Clients"),
+            @ApiResponse(responseCode = "400", description = "Bad request")
+    })
+    @GetMapping
+    public ResponseEntity<JsonArray> getAllCapiClients() {
+        try {
+            return new ResponseEntity<>(oidcClientManager.getCapiClients(), HttpStatus.OK);
         } catch (IOException | OIDCException e) {
             log.error(e.getMessage(), e);
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);

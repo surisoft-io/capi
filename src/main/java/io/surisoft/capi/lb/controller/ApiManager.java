@@ -207,15 +207,16 @@ package io.surisoft.capi.lb.controller;
 
 import io.surisoft.capi.lb.repository.ApiRepository;
 import io.surisoft.capi.lb.repository.MappingRepository;
-import io.surisoft.capi.lb.schema.Api;
-import io.surisoft.capi.lb.schema.CapiInfo;
 import io.surisoft.capi.lb.schema.Mapping;
+import io.surisoft.capi.lb.schema.*;
 import io.surisoft.capi.lb.utils.ApiUtils;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.apache.camel.CamelContext;
+import org.apache.camel.console.DevConsoleRegistry;
+import org.apache.camel.health.HealthCheckRegistry;
 import org.cache2k.Cache;
 import org.cache2k.CacheEntry;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -230,8 +231,8 @@ import java.util.List;
 import java.util.Optional;
 
 @RestController
-@RequestMapping("/manager/api")
-@Tag(name="API Manager", description = "Node and API management endpoint")
+@RequestMapping("/manager")
+@Tag(name="CAPI Manager", description = "Management endpoint")
 public class ApiManager {
 
     @Autowired
@@ -267,7 +268,7 @@ public class ApiManager {
     @Autowired
     private CamelContext camelContext;
 
-    @Operation(summary = "Get all configured APIs")
+    @Operation(summary = "Get all configured APIs (Only if Database persistence is available)")
     @GetMapping(path = "/configured")
     public ResponseEntity<Iterable<Api>> getAllApi() {
         if(capiPersistenceEnabled) {
@@ -277,7 +278,7 @@ public class ApiManager {
         }
     }
 
-    @Operation(summary = "Get all cached APIs")
+    @Operation(summary = "Get all cached APIs (Running APIs)")
     @GetMapping(path = "/cached")
     public ResponseEntity<Iterable<Api>> getCachedApi() {
         List<Api> apiList = new ArrayList<>();
@@ -297,7 +298,7 @@ public class ApiManager {
         return new ResponseEntity<>(HttpStatus.NOT_FOUND);
     }
 
-    @Operation(summary = "Get CAPI General Info")
+    @Operation(summary = "Get CAPI General Server Info")
     @GetMapping(path = "/info", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<CapiInfo> getInfo() {
         CapiInfo capiInfo = new CapiInfo();
@@ -312,10 +313,29 @@ public class ApiManager {
         capiInfo.setRemovedRouteCount(startRouteRemovedEventCache.keys().size());
         capiInfo.setFailedExchangeCount(startExchangeFailedEventCache.keys().size());
 
+
+
         return new ResponseEntity<>(capiInfo, HttpStatus.OK);
     }
 
-    @Operation(summary = "Register a node")
+    @Operation(summary = "Get Running Routes Statistics")
+    @GetMapping(path = "/stats/routes", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<List<RouteDetailsEndpointInfo>> getAllRoutesInfo() {
+        List<RouteDetailsEndpointInfo> detailInfoList = new ArrayList<>();
+        List<RouteEndpointInfo> routeEndpointInfoList = camelContext.getRoutes().stream()
+                                                                .map(RouteEndpointInfo::new)
+                                                                .toList();
+        for(RouteEndpointInfo routeEndpointInfo : routeEndpointInfoList) {
+            if(!routeEndpointInfo.getId().startsWith("rd_"))  {
+                if(!routeEndpointInfo.getId().startsWith("consul-")) {
+                    detailInfoList.add(new RouteDetailsEndpointInfo(camelContext, camelContext.getRoute(routeEndpointInfo.getId())));
+                }
+            }
+        }
+        return new ResponseEntity<>(detailInfoList, HttpStatus.OK);
+    }
+
+    @Operation(summary = "Register a node (Only if Database persistence is available)")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "201", description = "Node added"),
             @ApiResponse(responseCode = "400", description = "Bad request")
@@ -345,7 +365,7 @@ public class ApiManager {
         return new ResponseEntity<>(api, HttpStatus.OK);
     }
 
-    @Operation(summary = "Unregister a node, with the option of removing the entire API.")
+    @Operation(summary = "Unregister a node, with the option of removing the entire API. (Only if Database persistence is available)")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Node/API removed"),
             @ApiResponse(responseCode = "400", description = "Bad request")
@@ -380,9 +400,7 @@ public class ApiManager {
     }
 
     private void deleteAllRoutes(Optional<Api> existingApi) {
-        if(existingApi.isPresent()) {
-            apiRepository.delete(existingApi.get());
-        }
+        existingApi.ifPresent(api -> apiRepository.delete(api));
     }
 
     private void deleteMappingAndUpdate(Api api, Optional<Api> existingApi) {

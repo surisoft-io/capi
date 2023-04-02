@@ -243,7 +243,7 @@ public class SessionChecker extends LoadBalancerSupport implements Traceable, Ca
     @Override
     public boolean process(Exchange exchange, AsyncCallback callback) {
         AsyncProcessor[] processors = doGetProcessors();
-        exchange.getContext().adapt(ExtendedCamelContext.class).getReactiveExecutor()
+        exchange.getContext().getExtension(ExtendedCamelContext.class).getReactiveExecutor()
                 .schedule(new SessionChecker.State(exchange, callback, processors)::run);
         return false;
     }
@@ -309,7 +309,7 @@ public class SessionChecker extends LoadBalancerSupport implements Traceable, Ca
     }
 
     private boolean isDone(Exchange exchange) {
-        ExtendedExchange ee = (ExtendedExchange) exchange;
+        /*ExchangeExtension ee = (ExtendedExchange) exchange;
         if (ee.isInterrupted()) {
             // mark the exchange to stop continue routing when interrupted
             // as we do not want to continue routing (for example a task has been cancelled)
@@ -329,8 +329,8 @@ public class SessionChecker extends LoadBalancerSupport implements Traceable, Ca
 
         if (log.isTraceEnabled()) {
             log.trace("Is exchangeId: {} done? {}", exchange.getExchangeId(), answer);
-        }
-        return answer;
+        }*/
+        return true; //answer;
     }
 
     protected class State {
@@ -434,7 +434,7 @@ public class SessionChecker extends LoadBalancerSupport implements Traceable, Ca
 
             // process the exchange
             log.debug("Processing failover at attempt {} for {}", attempts, copy);
-            processor.process(copy, doneSync -> exchange.getContext().adapt(ExtendedCamelContext.class).getReactiveExecutor()
+            processor.process(copy, doneSync -> exchange.getContext().getExtension(ExtendedCamelContext.class).getReactiveExecutor()
                     .schedule(this::run));
         }
     }

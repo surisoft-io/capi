@@ -6,7 +6,8 @@ import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.info.License;
 import io.swagger.v3.oas.models.security.SecurityRequirement;
 import io.swagger.v3.oas.models.security.SecurityScheme;
-import org.springdoc.core.GroupedOpenApi;
+;
+import org.springdoc.core.models.GroupedOpenApi;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.info.BuildProperties;
@@ -32,7 +33,7 @@ public class SwaggerConfig {
     }
 
     @Bean
-    public OpenAPI springShopOpenAPI() {
+    public OpenAPI generateOpenAPI() {
         final String securitySchemeName = "bearerAuth";
         OpenAPI openAPI = new OpenAPI();
         if(capiManagerSecurityEnabled) {

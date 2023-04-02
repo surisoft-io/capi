@@ -205,14 +205,27 @@
 
 package io.surisoft.capi.lb.utils;
 
+import com.nimbusds.jose.JOSEException;
+import com.nimbusds.jose.proc.BadJOSEException;
+import com.nimbusds.jose.proc.SecurityContext;
+import com.nimbusds.jwt.JWTClaimsSet;
+import com.nimbusds.jwt.proc.DefaultJWTProcessor;
+import io.surisoft.capi.lb.exception.AuthorizationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+
+import java.io.IOException;
+import java.text.ParseException;
 
 @Component
 public class HttpUtils {
 
     private static final Logger log = LoggerFactory.getLogger(HttpUtils.class);
+
+    @Autowired(required = false)
+    private DefaultJWTProcessor<SecurityContext> jwtProcessor;
 
     public String setHttpConnectTimeout(String endpoint, int timeout) {
         return prepareEndpoint(endpoint) + Constants.HTTP_CONNECT_TIMEOUT + timeout;
@@ -241,8 +254,11 @@ public class HttpUtils {
         return endpoint;
     }
 
-    private String getBearerTokenFromHeader(String authorizationHeader) {
-        String accessToken = authorizationHeader.substring(7);
-        return accessToken;
+    public String getBearerTokenFromHeader(String authorizationHeader) {
+        return authorizationHeader.substring(7);
+    }
+
+    public JWTClaimsSet authorizeRequest(String authorizationHeader) throws AuthorizationException, BadJOSEException, ParseException, JOSEException, IOException {
+        return jwtProcessor.process(getBearerTokenFromHeader(authorizationHeader), null);
     }
 }

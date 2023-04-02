@@ -207,11 +207,10 @@ package io.surisoft.capi.lb.controller;
 
 import io.surisoft.capi.lb.schema.CapiRestError;
 import io.surisoft.capi.lb.utils.Constants;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import javax.servlet.http.HttpServletRequest;
 
 @RestController
 public class ErrorController {

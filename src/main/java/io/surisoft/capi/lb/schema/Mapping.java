@@ -206,10 +206,10 @@
 package io.surisoft.capi.lb.schema;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.IdClass;
 
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.IdClass;
 import java.io.Serializable;
 import java.util.Objects;
 
@@ -225,6 +225,8 @@ public class Mapping implements Serializable {
     @Id
     private int port = -1;
     private boolean ingress;
+
+    private String tenandId;
 
     public String getRootContext() {
         return rootContext;
@@ -270,5 +272,13 @@ public class Mapping implements Serializable {
     @Override
     public int hashCode() {
         return Objects.hash(rootContext, hostname, port);
+    }
+
+    public String getTenandId() {
+        return tenandId;
+    }
+
+    public void setTenandId(String tenandId) {
+        this.tenandId = tenandId;
     }
 }

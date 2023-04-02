@@ -205,7 +205,8 @@
 
 package io.surisoft.capi.lb.schema;
 
-import javax.persistence.Id;
+import jakarta.persistence.Id;
+
 import java.io.Serializable;
 
 public class CapiNode implements Serializable {

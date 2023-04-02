@@ -82,7 +82,7 @@ class TestLoadBalancer {
         deployedNode2.stubFor(get(urlEqualTo("/node")).willReturn(aResponse().withBody(NODE_2_RESPONSE)));
 
 
-        mockMvc.perform(MockMvcRequestBuilders.post("/manager/api/register/node").content(THE_GOOD_API)
+        mockMvc.perform(MockMvcRequestBuilders.post("/manager/register/node").content(THE_GOOD_API)
                         .contentType(MediaType.APPLICATION_JSON_VALUE)
                         .accept(MediaType.APPLICATION_JSON_VALUE))
                 .andExpect(status().isOk());
@@ -115,7 +115,7 @@ class TestLoadBalancer {
         deployedNode1.stubFor(get(urlEqualTo("/node")).willReturn(aResponse().withBody(NODE_1_RESPONSE)));
 
 
-        mockMvc.perform(MockMvcRequestBuilders.post("/manager/api/register/node").content(THE_GOOD_API)
+        mockMvc.perform(MockMvcRequestBuilders.post("/manager/register/node").content(THE_GOOD_API)
                         .contentType(MediaType.APPLICATION_JSON_VALUE)
                         .accept(MediaType.APPLICATION_JSON_VALUE))
                 .andExpect(status().isOk());
@@ -143,7 +143,7 @@ class TestLoadBalancer {
         deployedNode2.stubFor(get(urlEqualTo("/node")).willReturn(aResponse().withBody(NODE_2_RESPONSE)));
 
 
-        mockMvc.perform(MockMvcRequestBuilders.post("/manager/api/register/node").content(THE_GOOD_API)
+        mockMvc.perform(MockMvcRequestBuilders.post("/manager/register/node").content(THE_GOOD_API)
                         .contentType(MediaType.APPLICATION_JSON_VALUE)
                         .accept(MediaType.APPLICATION_JSON_VALUE))
                 .andExpect(status().isOk());

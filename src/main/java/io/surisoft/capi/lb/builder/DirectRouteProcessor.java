@@ -1,9 +1,9 @@
 package io.surisoft.capi.lb.builder;
 
 import io.surisoft.capi.lb.cache.StickySessionCacheManager;
-import io.surisoft.capi.lb.processor.AuthorizationProcessor;
 import io.surisoft.capi.lb.processor.MetricsProcessor;
 import io.surisoft.capi.lb.processor.SessionChecker;
+import io.surisoft.capi.lb.processor.TenantAwareLoadBalancer;
 import io.surisoft.capi.lb.schema.Api;
 import io.surisoft.capi.lb.utils.Constants;
 import io.surisoft.capi.lb.utils.RouteUtils;
@@ -48,10 +48,11 @@ public class DirectRouteProcessor extends RouteBuilder {
         }
 
         log.trace("Trying to build and deploy route {}", routeId);
-        routeUtils.buildOnExceptionDefinition(routeDefinition, api.isZipkinShowTraceId(), false, false, routeId);
+        routeUtils.buildOnExceptionDefinition(routeDefinition, api.isZipkinShowTraceId(), true, false, routeId);
         if(api.isSecured()) {
             routeUtils.enableAuthorization(api.getId(), routeDefinition);
         }
+
         if(api.isFailoverEnabled()) {
             routeDefinition
                     .process(metricsProcessor)
@@ -64,6 +65,13 @@ public class DirectRouteProcessor extends RouteBuilder {
             routeDefinition
                     .process(metricsProcessor)
                     .loadBalance(new SessionChecker(stickySessionCacheManager, api.getStickySessionParam(), api.isStickySessionParamInCookie()))
+                    .to(routeUtils.buildEndpoints(api))
+                    .end()
+                    .routeId(routeId);
+        } else if(api.isTenantAware()) {
+            routeDefinition
+                    .process(metricsProcessor)
+                    .loadBalance(new TenantAwareLoadBalancer())
                     .to(routeUtils.buildEndpoints(api))
                     .end()
                     .routeId(routeId);

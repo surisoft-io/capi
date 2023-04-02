@@ -12,6 +12,15 @@ public class ServiceMeta {
     @JsonProperty("schema")
     private String schema;
 
+    @JsonProperty("secured")
+    private boolean secured;
+
+    @JsonProperty("tenant_aware")
+    private boolean tenantAware;
+
+    @JsonProperty("tenant_id")
+    private String tenantId;
+
     public boolean isSecured() {
         return secured;
     }
@@ -19,9 +28,6 @@ public class ServiceMeta {
     public void setSecured(boolean secured) {
         this.secured = secured;
     }
-
-    @JsonProperty("secured")
-    private boolean secured;
 
     public String getRootContext() {
         return rootContext;
@@ -37,5 +43,21 @@ public class ServiceMeta {
 
     public void setSchema(String schema) {
         this.schema = schema;
+    }
+
+    public boolean isTenantAware() {
+        return tenantAware;
+    }
+
+    public void setTenantAware(boolean tenantAware) {
+        this.tenantAware = tenantAware;
+    }
+
+    public String getTenantId() {
+        return tenantId;
+    }
+
+    public void setTenantId(String tenantId) {
+        this.tenantId = tenantId;
     }
 }

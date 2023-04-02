@@ -1,6 +1,5 @@
 server:
   port: 8380
-
 capi:
   reverse:
     proxy:
@@ -17,7 +16,7 @@ capi:
   consul:
     host: http://localhost:8500
     discovery:
-      enabled: true
+      enabled: false
       timer:
         interval: 120
   #### If you want to enable certificate management, please provide a trust store (JKS). ####
@@ -56,7 +55,6 @@ springdoc:
   swagger-ui:
     enabled: true
     disable.swagger-default-url: true
-
 spring:
   #### We want persistence to be optional, so we disable autoconfiguration for JPA ####
   autoconfigure:
@@ -76,7 +74,6 @@ spring:
     location: classpath:capi.txt
   main:
     allow-bean-definition-overriding: true
-
 camel:
   component:
     metrics:
@@ -106,7 +103,7 @@ management:
     web:
       base-path: /analytics/
       exposure:
-        include: '*'
+        include: 'health,prometheus'
 
 #### Time to live for Sticky Sessions feature ####
 sticky:

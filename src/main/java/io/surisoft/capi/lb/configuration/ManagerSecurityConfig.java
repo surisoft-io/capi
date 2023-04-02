@@ -65,13 +65,15 @@ public class ManagerSecurityConfig {
                     .sessionManagement()
                     .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                     .and()
-                    .authorizeRequests()
-                    .antMatchers(Constants.CAPI_WHITELISTED_PATHS)
+                    .authorizeHttpRequests().requestMatchers(Constants.CAPI_WHITELISTED_PATHS)
+                    //.antMatchers(Constants.CAPI_WHITELISTED_PATHS)
                     .permitAll()
                     .and()
-                    .authorizeRequests(authz -> authz
+                    .authorizeHttpRequests(authz -> authz
                             .anyRequest().authenticated())
                     .oauth2ResourceServer(oauth2 -> oauth2.jwt().decoder(new CapiJWTDecoder()))
+                    .cors()
+                    .and()
                     .build();
         } else {
             return http
@@ -80,7 +82,7 @@ public class ManagerSecurityConfig {
                     .sessionManagement()
                     .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                     .and()
-                    .authorizeRequests().anyRequest().permitAll().and().build();
+                    .authorizeHttpRequests().anyRequest().permitAll().and().build();
         }
     }
 

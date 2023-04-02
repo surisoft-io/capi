@@ -1,5 +1,5 @@
 FROM openjdk:17-jdk
-ARG CAPI_VERSION=0
+ARG CAPI_VERSION=3.0.20
 
 RUN mkdir /capi
 RUN mkdir /capi/logs

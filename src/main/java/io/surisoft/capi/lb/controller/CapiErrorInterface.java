@@ -206,6 +206,8 @@
 package io.surisoft.capi.lb.controller;
 
 import io.surisoft.capi.lb.utils.Constants;
+import jakarta.servlet.RequestDispatcher;
+import jakarta.servlet.http.HttpServletRequest;
 import org.apache.camel.util.json.JsonObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -215,8 +217,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 
-import javax.servlet.RequestDispatcher;
-import javax.servlet.http.HttpServletRequest;
 
 @Controller
 public class CapiErrorInterface implements ErrorController {

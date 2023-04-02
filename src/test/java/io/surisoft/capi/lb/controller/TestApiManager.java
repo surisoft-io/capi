@@ -82,7 +82,7 @@ class TestApiManager {
     @Test
     @Order(1)
     void testGetEmptyApi() throws Exception {
-        MvcResult getResult = mockMvc.perform(MockMvcRequestBuilders.get("/manager/api/configured")
+        MvcResult getResult = mockMvc.perform(MockMvcRequestBuilders.get("/manager/configured")
                         .accept(MediaType.APPLICATION_JSON_VALUE))
                 .andExpect(status().isOk())
                 .andReturn();
@@ -98,7 +98,7 @@ class TestApiManager {
         api.setName("unit-test");
         api.setContext("/unit-test");
 
-        mockMvc.perform(MockMvcRequestBuilders.post("/manager/api/register/node", objectMapper.writeValueAsString(api))
+        mockMvc.perform(MockMvcRequestBuilders.post("/manager/register/node", objectMapper.writeValueAsString(api))
                         .accept(MediaType.APPLICATION_JSON_VALUE))
                 .andExpect(status().isBadRequest());
     }
@@ -106,7 +106,7 @@ class TestApiManager {
     @Test
     @Order(3)
     void testRegisterNodeWithSuccess() throws Exception {
-        mockMvc.perform(MockMvcRequestBuilders.post("/manager/api/register/node").content(GOOD_API)
+        mockMvc.perform(MockMvcRequestBuilders.post("/manager/register/node").content(GOOD_API)
                         .contentType(MediaType.APPLICATION_JSON_VALUE)
                         .accept(MediaType.APPLICATION_JSON_VALUE))
                 .andExpect(status().isOk());
@@ -115,7 +115,7 @@ class TestApiManager {
     @Test
     @Order(4)
     void testGetConfiguredApi() throws Exception {
-        MvcResult getResult = mockMvc.perform(MockMvcRequestBuilders.get("/manager/api/configured")
+        MvcResult getResult = mockMvc.perform(MockMvcRequestBuilders.get("/manager/configured")
                         .accept(MediaType.APPLICATION_JSON_VALUE))
                 .andExpect(status().isOk())
                 .andReturn();
@@ -128,7 +128,7 @@ class TestApiManager {
     @Test
     @Order(5)
     void testRegisterNodeForSameApiWithSuccess() throws Exception {
-        mockMvc.perform(MockMvcRequestBuilders.post("/manager/api/register/node").content(GOOD_API_NEW_MAPPING)
+        mockMvc.perform(MockMvcRequestBuilders.post("/manager/register/node").content(GOOD_API_NEW_MAPPING)
                         .contentType(MediaType.APPLICATION_JSON_VALUE)
                         .accept(MediaType.APPLICATION_JSON_VALUE))
                 .andExpect(status().isOk());
@@ -137,7 +137,7 @@ class TestApiManager {
     @Test
     @Order(6)
     void testGetConfiguredApiWithNewMapping() throws Exception {
-        MvcResult getResult = mockMvc.perform(MockMvcRequestBuilders.get("/manager/api/configured")
+        MvcResult getResult = mockMvc.perform(MockMvcRequestBuilders.get("/manager/configured")
                         .accept(MediaType.APPLICATION_JSON_VALUE))
                 .andExpect(status().isOk())
                 .andReturn();
@@ -150,7 +150,7 @@ class TestApiManager {
     @Test
     @Order(7)
     void removeDeplyedApi() throws Exception {
-        mockMvc.perform(MockMvcRequestBuilders.post("/manager/api/unregister/node").content(GOOD_API_NEW_MAPPING)
+        mockMvc.perform(MockMvcRequestBuilders.post("/manager/unregister/node").content(GOOD_API_NEW_MAPPING)
                         .contentType(MediaType.APPLICATION_JSON_VALUE)
                         .accept(MediaType.APPLICATION_JSON_VALUE))
                 .andExpect(status().isOk());
@@ -159,7 +159,7 @@ class TestApiManager {
     @Test
     @Order(8)
     void testEmptyResultAfterUndeploy() throws Exception {
-        MvcResult getResult = mockMvc.perform(MockMvcRequestBuilders.get("/manager/api/configured")
+        MvcResult getResult = mockMvc.perform(MockMvcRequestBuilders.get("/manager/configured")
                         .accept(MediaType.APPLICATION_JSON_VALUE))
                 .andExpect(status().isOk())
                 .andReturn();

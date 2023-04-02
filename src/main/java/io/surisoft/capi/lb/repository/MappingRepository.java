@@ -1,12 +1,13 @@
 package io.surisoft.capi.lb.repository;
 
 import io.surisoft.capi.lb.schema.Mapping;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.TypedQuery;
+import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import javax.persistence.EntityManager;
-import javax.persistence.TypedQuery;
-import javax.transaction.Transactional;
+
 import java.util.Optional;
 
 @Component

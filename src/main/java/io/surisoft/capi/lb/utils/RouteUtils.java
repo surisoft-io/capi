@@ -210,6 +210,7 @@ import io.surisoft.capi.lb.builder.DirectRouteProcessor;
 import io.surisoft.capi.lb.builder.RestDefinitionProcessor;
 import io.surisoft.capi.lb.cache.StickySessionCacheManager;
 import io.surisoft.capi.lb.processor.AuthorizationProcessor;
+import io.surisoft.capi.lb.zipkin.CapiZipkinTracer;
 import io.surisoft.capi.lb.processor.HttpErrorProcessor;
 import io.surisoft.capi.lb.processor.MetricsProcessor;
 import io.surisoft.capi.lb.schema.Api;
@@ -222,7 +223,6 @@ import org.apache.camel.CamelContext;
 import org.apache.camel.Route;
 import org.apache.camel.component.http.HttpComponent;
 import org.apache.camel.model.RouteDefinition;
-import org.apache.camel.zipkin.ZipkinTracer;
 import org.cache2k.Cache;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -249,7 +249,7 @@ public class RouteUtils {
     @Autowired
     private CompositeMeterRegistry meterRegistry;
     @Autowired(required = false)
-    private ZipkinTracer zipkinTracer;
+    private CapiZipkinTracer capiZipkinTracer;
     @Autowired
     private CamelContext camelContext;
     @Autowired
@@ -262,9 +262,9 @@ public class RouteUtils {
     }
 
     public void registerTracer(Api api) {
-        if (zipkinTracer != null) {
+        if (capiZipkinTracer != null) {
             log.debug("Adding API to Zipkin tracer as {}", api.getRouteId());
-            zipkinTracer.addServerServiceMapping(api.getRouteId(), api.getZipkinServiceName() != null ? api.getZipkinServiceName() : api.getRouteId());
+            capiZipkinTracer.addServerServiceMapping(api.getRouteId(), api.getZipkinServiceName() != null ? api.getZipkinServiceName() : api.getRouteId());
         }
     }
 
@@ -312,6 +312,11 @@ public class RouteUtils {
             if(mapping.isIngress()) {
                 endpoint = httpUtils.setIngressEndpoint(endpoint, mapping.getHostname());
             }
+
+            if(api.isTenantAware()) {
+                endpoint = endpoint + "&tenantId=" + mapping.getTenandId();
+            }
+
             transformedEndpointList.add(endpoint);
         }
         return transformedEndpointList.toArray(String[]::new);

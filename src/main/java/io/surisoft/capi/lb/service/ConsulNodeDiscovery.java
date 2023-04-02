@@ -176,6 +176,15 @@ public class ConsulNodeDiscovery {
         return false;
     }
 
+    public boolean isTenantAware(String key, ConsulObject[] consulObject) {
+        for(ConsulObject entry : consulObject) {
+            if(Objects.equals(getServiceNodeGroup(entry), key)) {
+                return entry.getServiceMeta().isTenantAware();
+            }
+        }
+        return false;
+    }
+
     private Api createApiObject(String apiId, String serviceName, String key, List<Mapping> mappingList, ConsulObject[] consulResponse) {
         Api incomingApi = new Api();
         incomingApi.setId(apiId);
@@ -184,14 +193,18 @@ public class ConsulNodeDiscovery {
         incomingApi.setHttpMethod(HttpMethod.ALL);
         incomingApi.setPublished(true);
         incomingApi.setMappingList(new ArrayList<>());
-        incomingApi.setFailoverEnabled(true);
-        incomingApi.setRoundRobinEnabled(true);
         incomingApi.setMatchOnUriPrefix(true);
         incomingApi.setMappingList(mappingList);
         incomingApi.setForwardPrefix(reverseProxyHost != null);
         incomingApi.setZipkinShowTraceId(showZipkinTraceId(key, consulResponse));
         incomingApi.setHttpProtocol(getHttpProtocol(key, consulResponse));
         incomingApi.setSecured(isSecured(key, consulResponse));
+        incomingApi.setTenantAware(isTenantAware(key, consulResponse));
+
+        if(!incomingApi.isTenantAware()) {
+            incomingApi.setRoundRobinEnabled(true);
+            incomingApi.setFailoverEnabled(true);
+        }
         return incomingApi;
     }
 

@@ -1,10 +1,7 @@
 package io.surisoft.capi.lb.controller;
 
 import io.surisoft.capi.lb.repository.ApiRepository;
-import io.surisoft.capi.lb.schema.Api;
-import io.surisoft.capi.lb.schema.ConsulObject;
-import io.surisoft.capi.lb.schema.HttpProtocol;
-import io.surisoft.capi.lb.schema.Mapping;
+import io.surisoft.capi.lb.schema.*;
 import io.surisoft.capi.lb.utils.ApiUtils;
 import io.surisoft.capi.lb.utils.RouteUtils;
 import org.apache.camel.model.RouteDefinition;
@@ -49,10 +46,8 @@ class TestApiUtils {
         consulObject1.setServiceAddress("localhost");
         consulObject1.setServicePort(9999);
         consulObject1.setServiceName("unit-test");
-        List<String> serviceTags1 = new ArrayList<>();
-        serviceTags1.add("test=unit");
-        serviceTags1.add("no-root-context");
-        consulObject1.setServiceTags(serviceTags1);
+        ServiceMeta serviceMeta = new ServiceMeta();
+        consulObject1.setServiceMeta(serviceMeta);
 
         Mapping mapping1 = apiUtils.consulObjectToMapping(consulObject1);
         Assertions.assertEquals(mapping1.getHostname(), "localhost");
@@ -63,9 +58,9 @@ class TestApiUtils {
         consulObject2.setServiceAddress("localhost");
         consulObject2.setServicePort(8888);
         consulObject2.setServiceName("unit-test");
-        List<String> serviceTags2 = new ArrayList<>();
-        serviceTags2.add("test=unit");
-        consulObject2.setServiceTags(serviceTags2);
+        ServiceMeta serviceMeta2 = new ServiceMeta();
+        serviceMeta2.setRootContext("unit-test");
+        consulObject2.setServiceMeta(serviceMeta2);
 
         Mapping mapping2 = apiUtils.consulObjectToMapping(consulObject2);
         Assertions.assertEquals(mapping2.getHostname(), "localhost");

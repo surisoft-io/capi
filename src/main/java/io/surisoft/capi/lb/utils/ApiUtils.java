@@ -243,7 +243,7 @@ public class ApiUtils {
         } else {
             mapping.setRootContext("/");
         }
-
+        mapping.setTenandId(consulObject.getServiceMeta().getTenantId() != null ? consulObject.getServiceMeta().getTenantId() : null);
         mapping.setIngress(true);
         return mapping;
     }

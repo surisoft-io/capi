@@ -179,4 +179,20 @@ public class OIDCClientManager {
             }
         }
     }
+
+    public JsonArray getCapiClients() throws IOException, OIDCException {
+        String accessToken = getAccessToken();
+        Request getAllCapiClientsRequest = new Request.Builder()
+                .addHeader(OIDCConstants.AUTHORIZATION_HEADER, OIDCConstants.BEARER_AUTHORIZATION_ATTRIBUTE + accessToken)
+                .url(oidcProviderHost + "/admin/realms/master/clients/")
+                .get()
+                .build();
+        try (Response getAllCapiClientsResponse = httpClient.newCall(getAllCapiClientsRequest).execute()) {
+            if (!getAllCapiClientsResponse.isSuccessful()) {
+                throw new OIDCException("Problem subscribing to service, return code " + getAllCapiClientsResponse.code());
+            }
+            assert getAllCapiClientsResponse.body() != null;
+            return objectMapper.readValue(getAllCapiClientsResponse.body().string(), JsonArray.class);
+        }
+    }
 }

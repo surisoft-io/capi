@@ -206,8 +206,8 @@
 package io.surisoft.capi.lb.schema;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.persistence.*;
 
-import javax.persistence.*;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
@@ -242,6 +242,8 @@ public class Api implements Serializable {
     private boolean zipkinShowTraceId;
     private String zipkinServiceName;
     private String authorizationEndpointPublicKey;
+
+    private boolean tenantAware;
 
     public boolean isSecured() {
         return secured;
@@ -435,5 +437,13 @@ public class Api implements Serializable {
 
     public void setAuthorizationEndpointPublicKey(String authorizationEndpointPublicKey) {
         this.authorizationEndpointPublicKey = authorizationEndpointPublicKey;
+    }
+
+    public boolean isTenantAware() {
+        return tenantAware;
+    }
+
+    public void setTenantAware(boolean tenantAware) {
+        this.tenantAware = tenantAware;
     }
 }
