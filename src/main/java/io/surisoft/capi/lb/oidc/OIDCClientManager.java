@@ -115,7 +115,7 @@ public class OIDCClientManager {
         String accessToken = getAccessToken();
         Request getApiRoleRequest = new Request.Builder()
                 .addHeader("Authorization", "Bearer " + accessToken)
-                .url("http://localhost:8080/admin/realms/master/roles/" + apiId)
+                .url(oidcProviderHost + "/admin/realms/master/roles/" + apiId)
                 .get()
                 .build();
         try (Response getApiRoleResponse = httpClient.newCall(getApiRoleRequest).execute()) {
@@ -140,7 +140,7 @@ public class OIDCClientManager {
         String accessToken = getAccessToken();
         Request getServiceAccountRequest = new Request.Builder()
                 .addHeader("Authorization", "Bearer " + accessToken)
-                .url("http://localhost:8080/admin/realms/master/clients/" + clientId + "/service-account-user")
+                .url(oidcProviderHost + "/admin/realms/master/clients/" + clientId + "/service-account-user")
                 .get()
                 .build();
         try (Response getServiceAccountResponse = httpClient.newCall(getServiceAccountRequest).execute()) {
