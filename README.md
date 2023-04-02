@@ -9,11 +9,14 @@
 * Optional Spring Security OIDC protected CAPI Manager API.
 * Distributed tracing system (Zipkin)
 * Metrics (Prometheus)
-* CAPI Browser / Jolokia (management console)
+* CAPI Browser user interface for route management.
+* Rest API for Route management.
 * Load Balancer (Round robin)
 * Failover (With and without Round Robin)
+* Tenant support (Headers)
 * Stick Session (Cookies and Headers)
 * Certificate Manager (using the CAPI Manager API)
+* Supports running with no DB, using Consul for service discovery
 
 ## Run CAPI behind a reverse proxy? Enable the following:
 ```
@@ -161,7 +164,7 @@ version: "3"
 services:
   capi:
     container_name: capi
-    image: surisoft/capi-lb:2.1.17
+    image: surisoft/capi-lb:3.0.20
     ports:
       - "8380:8380"
     environment:
