@@ -1,5 +1,6 @@
 package io.surisoft.capi.lb.processor;
 
+import io.surisoft.capi.lb.schema.RunningTenant;
 import io.surisoft.capi.lb.utils.Constants;
 import org.apache.camel.*;
 import org.apache.camel.processor.loadbalancer.ExceptionFailureStatistics;
@@ -8,6 +9,9 @@ import org.apache.camel.support.ExchangeHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
 import java.util.concurrent.RejectedExecutionException;
 
 public class TenantAwareLoadBalancer extends LoadBalancerSupport implements Traceable, CamelContextAware {
@@ -48,11 +52,19 @@ public class TenantAwareLoadBalancer extends LoadBalancerSupport implements Trac
             if(exchange.getIn().getHeader("tenant") != null) {
                 //For tenant, it will always get the value from a header
                 tenant = exchange.getIn().getHeader("tenant", String.class);
-                log.info(tenant);
+                List<RunningTenant> runningTenantList = new ArrayList<>();
                 for(int i = 0; i < processors.length; i++) {
                     if(processors[i].toString().contains("tenantId=" + tenant)) {
-                        index = i;
+                        //index = i;
+                        log.info(processors[i].toString());
+                        runningTenantList.add(new RunningTenant(tenant, i));
                     }
+                }
+                if(runningTenantList.size() == 1) {
+                    index = runningTenantList.get(0).getNodeIndex();
+                } else if(runningTenantList.size() > 1) {
+                    Random random = new Random();
+                    index = runningTenantList.get(random.nextInt(0, runningTenantList.size())).getNodeIndex();
                 }
 
             }

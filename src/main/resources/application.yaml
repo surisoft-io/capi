@@ -16,9 +16,9 @@ capi:
   consul:
     host: http://localhost:8500
     discovery:
-      enabled: false
+      enabled: true
       timer:
-        interval: 120
+        interval: 5
   #### If you want to enable certificate management, please provide a trust store (JKS). ####
   trust:
     store:
