@@ -84,6 +84,11 @@ class TestApiManager {
                 .andReturn();
 
         List<Api> apiList = objectMapper.readValue(getResult.getResponse().getContentAsString(), objectMapper.getTypeFactory().constructCollectionType(List.class, Api.class));
+        if(!apiList.isEmpty()) {
+            System.out.println("-------------------------------------------------------");
+            System.out.println(apiList.get(0).getId());
+            System.out.println("-------------------------------------------------------");
+        }
         Assertions.assertTrue(apiList.isEmpty());
     }
 
