@@ -28,12 +28,12 @@ class TestApiManager {
                  "name": "unit-test-api",
                  "context": "test",
                  "mappingList": [
-                        {
-                            "hostname": "localhost",
-                            "port": 8080,
-                            "rootContext": "/",
-                            "ingress": false
-                        }
+                    {
+                        "hostname": "localhost",
+                        "port": 8080,
+                        "rootContext": "/",
+                        "ingress": false
+                    }
                  ],
                  "roundRobinEnabled": true,
                  "failoverEnabled": true,
@@ -48,12 +48,12 @@ class TestApiManager {
                  "name": "unit-test-api",
                  "context": "test",
                  "mappingList": [
-                        {
-                            "hostname": "localhost",
-                            "port": 8081,
-                            "rootContext": "/",
-                            "ingress": false
-                        }
+                    {
+                        "hostname": "localhost",
+                        "port": 8081,
+                        "rootContext": "/",
+                        "ingress": false
+                    }
                  ],
                  "roundRobinEnabled": true,
                  "failoverEnabled": true,
