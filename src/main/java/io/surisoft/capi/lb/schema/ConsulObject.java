@@ -3,8 +3,6 @@ package io.surisoft.capi.lb.schema;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import java.util.List;
-
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class ConsulObject {
 
@@ -13,9 +11,6 @@ public class ConsulObject {
 
     @JsonProperty("ServiceName")
     private String serviceName;
-
-    //@JsonProperty("ServiceTags")
-    //private List<String> serviceTags;
 
     @JsonProperty("ServiceMeta")
     private ServiceMeta serviceMeta;
@@ -41,14 +36,6 @@ public class ConsulObject {
     public void setServiceName(String serviceName) {
         this.serviceName = serviceName;
     }
-
-    //public List<String> getServiceTags() {
-    //    return serviceTags;
-    //}
-
-    //public void setServiceTags(List<String> serviceTags) {
-    //    this.serviceTags = serviceTags;
-    //}
 
     public String getServiceAddress() {
         return serviceAddress;
