@@ -24,7 +24,7 @@
     <io.zipkin.reporter2-version>2.16.3</io.zipkin.reporter2-version>
     <wiremock.version>3.0.0-beta-7</wiremock.version>
     <org.bouncycastle.version>1.70</org.bouncycastle.version>
-    <org.junit.jupiter.version>5.9.0</org.junit.jupiter.version>
+    <org.junit.jupiter.version>5.9.3</org.junit.jupiter.version>
     <jacoco.version>0.8.8</jacoco.version>
     <sonar.organization>surisoft-io</sonar.organization>
     <sonar.host.url>https://sonarcloud.io</sonar.host.url>
