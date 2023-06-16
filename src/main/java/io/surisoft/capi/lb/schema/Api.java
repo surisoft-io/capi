@@ -232,8 +232,6 @@ public class Api implements Serializable {
     private HttpMethod httpMethod;
     private HttpProtocol httpProtocol;
     private String swaggerEndpoint;
-    //private int connectTimeout;
-    //private int socketTimeout;
     private int maximumFailoverAttempts;
     private boolean stickySession;
     private String stickySessionParam;
@@ -344,22 +342,6 @@ public class Api implements Serializable {
     public void setSwaggerEndpoint(String swaggerEndpoint) {
         this.swaggerEndpoint = swaggerEndpoint;
     }
-
-    //public int getConnectTimeout() {
-        //return connectTimeout;
-    //}
-
-    //public void setConnectTimeout(int connectTimeout) {
-    //    this.connectTimeout = connectTimeout;
-    //}
-
-    //public int getSocketTimeout() {
-    //    return socketTimeout;
-    //}
-
-    //public void setSocketTimeout(int socketTimeout) {
-    //    this.socketTimeout = socketTimeout;
-    //}
 
     public int getMaximumFailoverAttempts() {
         return maximumFailoverAttempts;

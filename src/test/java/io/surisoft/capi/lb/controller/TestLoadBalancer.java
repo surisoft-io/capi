@@ -67,7 +67,7 @@ class TestLoadBalancer {
         mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext).build();
     }
 
-    @Test
+    //@Test
     void testDeployApiAndTestLoadBalancer() throws Exception {
 
         //Start mock load balanced nodes

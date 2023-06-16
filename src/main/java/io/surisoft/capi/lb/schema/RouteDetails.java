@@ -2,11 +2,14 @@ package io.surisoft.capi.lb.schema;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import org.apache.camel.api.management.mbean.ManagedRouteMBean;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Date;
 
 @JsonInclude(JsonInclude.Include.NON_EMPTY)
 public class RouteDetails {
+    private static final Logger LOG = LoggerFactory.getLogger(RouteDetails.class);
     private long deltaProcessingTime;
     private long exchangesInflight;
     private long exchangesTotal;
@@ -32,6 +35,10 @@ public class RouteDetails {
     private long redeliveries;
     private long totalProcessingTime;
     private boolean hasRouteController;
+
+    public RouteDetails() {
+        LOG.info("Used for unit test");
+    }
 
     public RouteDetails(ManagedRouteMBean managedRoute) {
         try {
@@ -60,9 +67,9 @@ public class RouteDetails {
             this.redeliveries = managedRoute.getRedeliveries();
             this.totalProcessingTime = managedRoute.getTotalProcessingTime();
             this.hasRouteController = managedRoute.getHasRouteController();
-        } catch (Exception var3) {
+        } catch (Exception e) {
+            LOG.error(e.getMessage(), e);
         }
-
     }
 
     public long getDeltaProcessingTime() {
