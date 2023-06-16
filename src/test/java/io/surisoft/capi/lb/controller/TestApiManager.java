@@ -89,6 +89,7 @@ class TestApiManager {
             System.out.println(apiList.get(0).getId());
             System.out.println("-------------------------------------------------------");
         }
+        
         Assertions.assertTrue(apiList.isEmpty());
     }
 
