@@ -84,12 +84,6 @@ class TestApiManager {
                 .andReturn();
 
         List<Api> apiList = objectMapper.readValue(getResult.getResponse().getContentAsString(), objectMapper.getTypeFactory().constructCollectionType(List.class, Api.class));
-        if(!apiList.isEmpty()) {
-            System.out.println("-------------------------------------------------------");
-            System.out.println(apiList.get(0).getId());
-            System.out.println("-------------------------------------------------------");
-        }
-
         Assertions.assertTrue(apiList.isEmpty());
     }
 
@@ -112,20 +106,11 @@ class TestApiManager {
                         .contentType(MediaType.APPLICATION_JSON_VALUE)
                         .accept(MediaType.APPLICATION_JSON_VALUE))
                 .andExpect(status().isOk());
-        mockMvc.perform(MockMvcRequestBuilders.post("/manager/unregister/node").content(GOOD_API)
-                        .contentType(MediaType.APPLICATION_JSON_VALUE)
-                        .accept(MediaType.APPLICATION_JSON_VALUE))
-                .andExpect(status().isOk());
     }
 
     @Test
     @Order(4)
     void testGetConfiguredApi() throws Exception {
-        mockMvc.perform(MockMvcRequestBuilders.post("/manager/register/node").content(GOOD_API)
-                        .contentType(MediaType.APPLICATION_JSON_VALUE)
-                        .accept(MediaType.APPLICATION_JSON_VALUE))
-                .andExpect(status().isOk());
-
         MvcResult getResult = mockMvc.perform(MockMvcRequestBuilders.get("/manager/configured")
                         .accept(MediaType.APPLICATION_JSON_VALUE))
                 .andExpect(status().isOk())
@@ -134,35 +119,20 @@ class TestApiManager {
         List<Api> apiList = objectMapper.readValue(getResult.getResponse().getContentAsString(), objectMapper.getTypeFactory().constructCollectionType(List.class, Api.class));
         Assertions.assertEquals(1, apiList.size());
         Assertions.assertEquals(1, apiList.get(0).getMappingList().size());
-
-        mockMvc.perform(MockMvcRequestBuilders.post("/manager/unregister/node").content(GOOD_API)
-                        .contentType(MediaType.APPLICATION_JSON_VALUE)
-                        .accept(MediaType.APPLICATION_JSON_VALUE))
-                .andExpect(status().isOk());
     }
 
-    /*@Test
+    @Test
     @Order(5)
     void testRegisterNodeForSameApiWithSuccess() throws Exception {
         mockMvc.perform(MockMvcRequestBuilders.post("/manager/register/node").content(GOOD_API_NEW_MAPPING)
                         .contentType(MediaType.APPLICATION_JSON_VALUE)
                         .accept(MediaType.APPLICATION_JSON_VALUE))
                 .andExpect(status().isOk());
-    }*/
+    }
 
     @Test
     @Order(6)
     void testGetConfiguredApiWithNewMapping() throws Exception {
-        mockMvc.perform(MockMvcRequestBuilders.post("/manager/register/node").content(GOOD_API)
-                        .contentType(MediaType.APPLICATION_JSON_VALUE)
-                        .accept(MediaType.APPLICATION_JSON_VALUE))
-                .andExpect(status().isOk());
-
-        mockMvc.perform(MockMvcRequestBuilders.post("/manager/register/node").content(GOOD_API_NEW_MAPPING)
-                        .contentType(MediaType.APPLICATION_JSON_VALUE)
-                        .accept(MediaType.APPLICATION_JSON_VALUE))
-                .andExpect(status().isOk());
-
         MvcResult getResult = mockMvc.perform(MockMvcRequestBuilders.get("/manager/configured")
                         .accept(MediaType.APPLICATION_JSON_VALUE))
                 .andExpect(status().isOk())
@@ -173,20 +143,18 @@ class TestApiManager {
         Assertions.assertEquals(2, apiList.get(0).getMappingList().size());
     }
 
-    /*@Test
+    @Test
     @Order(7)
     void removeDeplyedApi() throws Exception {
         mockMvc.perform(MockMvcRequestBuilders.post("/manager/unregister/node").content(GOOD_API_NEW_MAPPING)
                         .contentType(MediaType.APPLICATION_JSON_VALUE)
                         .accept(MediaType.APPLICATION_JSON_VALUE))
                 .andExpect(status().isOk());
-    }*/
+    }
 
-    /*@Test
+    @Test
     @Order(8)
     void testEmptyResultAfterUndeploy() throws Exception {
-
-
         MvcResult getResult = mockMvc.perform(MockMvcRequestBuilders.get("/manager/configured")
                         .accept(MediaType.APPLICATION_JSON_VALUE))
                 .andExpect(status().isOk())
@@ -194,5 +162,5 @@ class TestApiManager {
 
         List<Api> apiList = objectMapper.readValue(getResult.getResponse().getContentAsString(), objectMapper.getTypeFactory().constructCollectionType(List.class, Api.class));
         Assertions.assertEquals(0, apiList.size());
-    }*/
+    }
 }
