@@ -243,7 +243,10 @@ public class SessionChecker extends LoadBalancerSupport implements Traceable, Ca
     @Override
     public boolean process(Exchange exchange, AsyncCallback callback) {
         AsyncProcessor[] processors = doGetProcessors();
-        exchange.getContext().getExtension(ExtendedCamelContext.class).getReactiveExecutor()
+        exchange
+                .getContext()
+                .getCamelContextExtension()
+                .getReactiveExecutor()
                 .schedule(new SessionChecker.State(exchange, callback, processors)::run);
         return false;
     }
@@ -434,7 +437,7 @@ public class SessionChecker extends LoadBalancerSupport implements Traceable, Ca
 
             // process the exchange
             log.debug("Processing failover at attempt {} for {}", attempts, copy);
-            processor.process(copy, doneSync -> exchange.getContext().getExtension(ExtendedCamelContext.class).getReactiveExecutor()
+            processor.process(copy, doneSync -> exchange.getContext().getCamelContextExtension().getReactiveExecutor()
                     .schedule(this::run));
         }
     }

@@ -19,14 +19,11 @@ import java.io.IOException;
 @Configuration
 @ConditionalOnProperty(prefix = "capi.trust.store", name = "enabled", havingValue = "true")
 public class CapiSslConfiguration {
-
     private static final Logger log = LoggerFactory.getLogger(CapiSslConfiguration.class);
-
-    private String capiTrustStorePath;
-    private String capiTrustStorePassword;
-
-    private ResourceLoader resourceLoader;
-    private CamelContext camelContext;
+    private final String capiTrustStorePath;
+    private final String capiTrustStorePassword;
+    private final ResourceLoader resourceLoader;
+    private final CamelContext camelContext;
 
     public CapiSslConfiguration(CamelContext camelContext, ResourceLoader resourceLoader, @Value("${capi.trust.store.path}") String capiTrustStorePath, @Value("${capi.trust.store.password}") String capiTrustStorePassword) {
         this.camelContext = camelContext;

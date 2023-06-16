@@ -198,7 +198,7 @@ public class CapiZipkinTracer extends ServiceSupport implements RoutePolicyFacto
                 String host = ServiceHostFunction.apply(ZIPKIN_COLLECTOR_HTTP_SERVICE);
                 String port = ServicePortFunction.apply(ZIPKIN_COLLECTOR_HTTP_SERVICE);
                 if (ObjectHelper.isNotEmpty(host) && ObjectHelper.isNotEmpty(port)) {
-                    LOG.info("Auto-configuring Zipkin URLConnectionSender using host: {} and port: {}", host, port);
+                    LOG.trace("Auto-configuring Zipkin URLConnectionSender using host: {} and port: {}", host, port);
                     int num = camelContext.getTypeConverter().mandatoryConvertTo(Integer.class, port);
                     String implicitEndpoint = "http://" + host + ":" + num + "/api/v2/spans";
                     spanReporter = AsyncReporter.create(URLConnectionSender.create(implicitEndpoint));
@@ -206,7 +206,7 @@ public class CapiZipkinTracer extends ServiceSupport implements RoutePolicyFacto
                     host = ServiceHostFunction.apply(ZIPKIN_COLLECTOR_THRIFT_SERVICE);
                     port = ServicePortFunction.apply(ZIPKIN_COLLECTOR_THRIFT_SERVICE);
                     if (ObjectHelper.isNotEmpty(host) && ObjectHelper.isNotEmpty(port)) {
-                        LOG.info("Auto-configuring Zipkin ScribeSpanCollector using host: {} and port: {}", host, port);
+                        LOG.trace("Auto-configuring Zipkin ScribeSpanCollector using host: {} and port: {}", host, port);
                         int num = camelContext.getTypeConverter().mandatoryConvertTo(Integer.class, port);
                         LibthriftSender sender = LibthriftSender.newBuilder().host(host).port(num).build();
                         spanReporter = AsyncReporter.create(sender);
@@ -600,7 +600,7 @@ public class CapiZipkinTracer extends ServiceSupport implements RoutePolicyFacto
             String serviceName = getServiceName(exchange, route.getEndpoint(), true, false);
             Tracing brave = getTracing(serviceName);
             if (brave != null && isIncluded(serviceName)) {
-                LOG.info("Exchange BEGIN: " + serviceName);
+                LOG.trace("Exchange BEGIN: " + serviceName);
                 serverRequest(brave, serviceName, exchange);
             }
 
@@ -613,7 +613,7 @@ public class CapiZipkinTracer extends ServiceSupport implements RoutePolicyFacto
             String serviceName = getServiceName(exchange, route.getEndpoint(), true, false);
             Tracing brave = getTracing(serviceName);
             if (brave != null && isIncluded(serviceName)) {
-                LOG.info("Exchange DONE: " + serviceName);
+                LOG.trace("Exchange DONE: " + serviceName);
                 serverResponse(serviceName, exchange);
             }
         }

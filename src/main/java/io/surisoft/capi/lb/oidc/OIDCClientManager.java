@@ -14,6 +14,9 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Objects;
 
 @Component
@@ -31,6 +34,9 @@ public class OIDCClientManager {
     @Value("${oidc.provider.host}")
     private String oidcProviderHost;
 
+    @Value("${oidc.provider.realm}")
+    private String oidcProviderRealm;
+
     private String getAccessToken() throws IOException, OIDCException {
         RequestBody requestBody = new FormBody.Builder()
                 .add(OIDCConstants.CLIENT_ID, clientId)
@@ -38,7 +44,7 @@ public class OIDCClientManager {
                 .add(OIDCConstants.GRANT_TYPE, OIDCConstants.CLIENT_CREDENTIALS_GRANT_TYPE)
                 .build();
         Request accessTokenRequest = new Request.Builder()
-                .url(oidcProviderHost + OIDCConstants.TOKEN_URI)
+                .url(oidcProviderHost + oidcProviderRealm + OIDCConstants.TOKEN_URI)
                 .post(requestBody)
                 .build();
         try (Response clientRegistrationResponse = httpClient.newCall(accessTokenRequest).execute()) {
@@ -62,7 +68,7 @@ public class OIDCClientManager {
             //Register the client to get ID and Secret
             Request clientRegistrationRequest = new Request.Builder()
                     .addHeader(OIDCConstants.AUTHORIZATION_HEADER, OIDCConstants.BEARER_AUTHORIZATION_ATTRIBUTE + accessToken)
-                    .url(oidcProviderHost + OIDCConstants.CLIENT_REGISTRATION_URI)
+                    .url(oidcProviderHost + oidcProviderRealm + OIDCConstants.CLIENT_REGISTRATION_URI)
                     .post(okhttp3.RequestBody.create(clientRegistrationJson.toJson(), OIDCConstants.JSON_TYPE))
                     .build();
             try (Response clientRegistrationResponse = httpClient.newCall(clientRegistrationRequest).execute()) {
@@ -72,7 +78,7 @@ public class OIDCClientManager {
                     jsonObject.put(OIDCConstants.SERVICE_ACCOUNT_ENABLE, true);
                     Request enableServiceAccountRequest = new Request.Builder()
                             .addHeader(OIDCConstants.AUTHORIZATION_HEADER,OIDCConstants.BEARER_AUTHORIZATION_ATTRIBUTE + accessToken)
-                            .url(oidcProviderHost + OIDCConstants.CLIENTS_URI + "/" +oidcClient.getClientId())
+                            .url(oidcProviderHost + "/admin" + oidcProviderRealm + OIDCConstants.CLIENTS_URI + "/" +oidcClient.getClientId())
                             .put(RequestBody.create(jsonObject.toJson(), OIDCConstants.JSON_TYPE))
                             .build();
                     try (Response enableServiceAccountResponse = httpClient.newCall(enableServiceAccountRequest).execute()) {
@@ -99,11 +105,11 @@ public class OIDCClientManager {
 
         Request createApiRoleRequest = new Request.Builder()
                 .addHeader(OIDCConstants.AUTHORIZATION_HEADER, OIDCConstants.BEARER_AUTHORIZATION_ATTRIBUTE + accessToken)
-                .url(oidcProviderHost + OIDCConstants.ROLES_URI)
+                .url(oidcProviderHost + "/admin" + oidcProviderRealm + OIDCConstants.ROLES_URI)
                 .post(RequestBody.create(apiRole.toJson(), OIDCConstants.JSON_TYPE))
                 .build();
         try (Response createApiRoleResponse = httpClient.newCall(createApiRoleRequest).execute()) {
-            if (createApiRoleResponse.isSuccessful()) {
+            if (createApiRoleResponse.isSuccessful() || createApiRoleResponse.code() == 409) {
                 return getApiIdRole(apiId, false);
             } else {
                 throw new OIDCException("Problem creating role for Api ID: " + apiId);
@@ -115,7 +121,7 @@ public class OIDCClientManager {
         String accessToken = getAccessToken();
         Request getApiRoleRequest = new Request.Builder()
                 .addHeader("Authorization", "Bearer " + accessToken)
-                .url(oidcProviderHost + "/admin/realms/master/roles/" + apiId)
+                .url(oidcProviderHost + "/admin" + oidcProviderRealm + OIDCConstants.ROLES_URI + "/" + apiId)
                 .get()
                 .build();
         try (Response getApiRoleResponse = httpClient.newCall(getApiRoleRequest).execute()) {
@@ -140,7 +146,7 @@ public class OIDCClientManager {
         String accessToken = getAccessToken();
         Request getServiceAccountRequest = new Request.Builder()
                 .addHeader("Authorization", "Bearer " + accessToken)
-                .url(oidcProviderHost + "/admin/realms/master/clients/" + clientId + "/service-account-user")
+                .url(oidcProviderHost + "/admin" + oidcProviderRealm + OIDCConstants.CLIENTS_URI + "/" + clientId + "/service-account-user")
                 .get()
                 .build();
         try (Response getServiceAccountResponse = httpClient.newCall(getServiceAccountRequest).execute()) {
@@ -170,7 +176,7 @@ public class OIDCClientManager {
         String accessToken = getAccessToken();
         Request assignServiceAccountRoleRequest = new Request.Builder()
                 .addHeader(OIDCConstants.AUTHORIZATION_HEADER, OIDCConstants.BEARER_AUTHORIZATION_ATTRIBUTE + accessToken)
-                .url(oidcProviderHost + OIDCConstants.USERS_URI + serviceAccount + OIDCConstants.ROLE_MAPPING_URI)
+                .url(oidcProviderHost + "/admin" + oidcProviderRealm + OIDCConstants.USERS_URI + serviceAccount + OIDCConstants.ROLE_MAPPING_URI)
                 .post(RequestBody.create(assignServiceAccountJsonArray.toJson(), OIDCConstants.JSON_TYPE))
                 .build();
         try (Response assignServiceAccountRoleResponse = httpClient.newCall(assignServiceAccountRoleRequest).execute()) {
@@ -180,11 +186,12 @@ public class OIDCClientManager {
         }
     }
 
-    public JsonArray getCapiClients() throws IOException, OIDCException {
+    public List<OIDCClient> getCapiClients() throws IOException, OIDCException {
+        List<OIDCClient> oidcClients = new ArrayList<>();
         String accessToken = getAccessToken();
         Request getAllCapiClientsRequest = new Request.Builder()
                 .addHeader(OIDCConstants.AUTHORIZATION_HEADER, OIDCConstants.BEARER_AUTHORIZATION_ATTRIBUTE + accessToken)
-                .url(oidcProviderHost + "/admin/realms/master/clients/")
+                .url(oidcProviderHost + "/admin" + oidcProviderRealm + "/clients/")
                 .get()
                 .build();
         try (Response getAllCapiClientsResponse = httpClient.newCall(getAllCapiClientsRequest).execute()) {
@@ -192,7 +199,19 @@ public class OIDCClientManager {
                 throw new OIDCException("Problem subscribing to service, return code " + getAllCapiClientsResponse.code());
             }
             assert getAllCapiClientsResponse.body() != null;
-            return objectMapper.readValue(getAllCapiClientsResponse.body().string(), JsonArray.class);
+            JsonArray jsonArray = objectMapper.readValue(getAllCapiClientsResponse.body().string(), JsonArray.class);
+            for(Object o : jsonArray) {
+                if(o instanceof LinkedHashMap<?, ?> clientHashMap) {
+                    if(clientHashMap.get("name").toString().startsWith("capi-")) {
+                        OIDCClient oidcClient = new OIDCClient();
+                        oidcClient.setClientId(clientHashMap.get("clientId").toString());
+                        oidcClient.setName(clientHashMap.get("name").toString());
+                        oidcClient.setServiceAccountsEnabled(true);
+                        oidcClients.add(oidcClient);
+                    }
+                }
+            }
+            return oidcClients;
         }
     }
 }

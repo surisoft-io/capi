@@ -219,7 +219,6 @@ public class MetricsProcessor implements Processor {
     @Autowired
     private CompositeMeterRegistry meterRegistry;
 
-
     @Override
     public void process(Exchange exchange) {
         if(exchange.getFromRouteId() != null) {

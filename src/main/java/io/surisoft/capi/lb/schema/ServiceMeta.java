@@ -21,6 +21,15 @@ public class ServiceMeta {
     @JsonProperty("tenant_id")
     private String tenantId;
 
+    @JsonProperty("group")
+    private String group;
+
+    @JsonProperty("X-B3-TraceId")
+    private boolean b3TraceId;
+
+    @JsonProperty("ingress")
+    private String ingress;
+
     public boolean isSecured() {
         return secured;
     }
@@ -59,5 +68,29 @@ public class ServiceMeta {
 
     public void setTenantId(String tenantId) {
         this.tenantId = tenantId;
+    }
+
+    public String getGroup() {
+        return group;
+    }
+
+    public void setGroup(String group) {
+        this.group = group;
+    }
+
+    public boolean isB3TraceId() {
+        return b3TraceId;
+    }
+
+    public void setB3TraceId(boolean b3TraceId) {
+        this.b3TraceId = b3TraceId;
+    }
+
+    public String getIngress() {
+        return ingress;
+    }
+
+    public void setIngress(String ingress) {
+        this.ingress = ingress;
     }
 }

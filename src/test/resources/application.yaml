@@ -36,7 +36,7 @@ capi:
       issuer:
   #### Persistence Management ####
   persistence:
-    enabled: false
+    enabled: true
   db:
     discovery:
       timer:
@@ -50,22 +50,17 @@ capi:
       #### All calls in error will be bridged to this endpoint ####
       endpoint: localhost:8380/capi-error
 
-#### This is important to disable the default petstore ####
-springdoc:
-  swagger-ui:
-    enabled: true
-    disable.swagger-default-url: true
 spring:
   #### We want persistence to be optional, so we disable autoconfiguration for JPA ####
   autoconfigure:
     exclude: org.springframework.boot.autoconfigure.security.servlet.UserDetailsServiceAutoConfiguration, org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration, org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration, org.springframework.boot.autoconfigure.jdbc.DataSourceTransactionManagerAutoConfiguration
-  ## JDBC Properties (default MySQL)
+  ## JDBC Properties (default H2)
   jpa:
     hibernate:
       ddl-auto: update
       use-new-id-generator-mappings: false
   datasource:
-    url: jdbc:mysql://localhost:3306/capi
+    url: jdbc:h2:mem:db;DB_CLOSE_DELAY=-1
     username: root
     password: root
   profiles:

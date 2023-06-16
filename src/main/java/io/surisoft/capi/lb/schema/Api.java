@@ -210,7 +210,9 @@ import jakarta.persistence.*;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @Entity
 @Schema(hidden = true)
@@ -222,7 +224,7 @@ public class Api implements Serializable {
     private String context;
 
     @OneToMany(targetEntity = Mapping.class, cascade = CascadeType.ALL, fetch = FetchType.EAGER)
-    private List<Mapping> mappingList = new ArrayList<>();
+    private Set<Mapping> mappingList = new HashSet<>();
 
     private boolean roundRobinEnabled;
     private boolean failoverEnabled;
@@ -230,8 +232,8 @@ public class Api implements Serializable {
     private HttpMethod httpMethod;
     private HttpProtocol httpProtocol;
     private String swaggerEndpoint;
-    private int connectTimeout;
-    private int socketTimeout;
+    //private int connectTimeout;
+    //private int socketTimeout;
     private int maximumFailoverAttempts;
     private boolean stickySession;
     private String stickySessionParam;
@@ -287,11 +289,11 @@ public class Api implements Serializable {
         this.context = context;
     }
 
-    public List<Mapping> getMappingList() {
+    public Set<Mapping> getMappingList() {
         return mappingList;
     }
 
-    public void setMappingList(List<Mapping> mappingList) {
+    public void setMappingList(Set<Mapping> mappingList) {
         this.mappingList = mappingList;
     }
 
@@ -343,21 +345,21 @@ public class Api implements Serializable {
         this.swaggerEndpoint = swaggerEndpoint;
     }
 
-    public int getConnectTimeout() {
-        return connectTimeout;
-    }
+    //public int getConnectTimeout() {
+        //return connectTimeout;
+    //}
 
-    public void setConnectTimeout(int connectTimeout) {
-        this.connectTimeout = connectTimeout;
-    }
+    //public void setConnectTimeout(int connectTimeout) {
+    //    this.connectTimeout = connectTimeout;
+    //}
 
-    public int getSocketTimeout() {
-        return socketTimeout;
-    }
+    //public int getSocketTimeout() {
+    //    return socketTimeout;
+    //}
 
-    public void setSocketTimeout(int socketTimeout) {
-        this.socketTimeout = socketTimeout;
-    }
+    //public void setSocketTimeout(int socketTimeout) {
+    //    this.socketTimeout = socketTimeout;
+    //}
 
     public int getMaximumFailoverAttempts() {
         return maximumFailoverAttempts;

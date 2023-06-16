@@ -12,7 +12,6 @@ import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.model.RouteDefinition;
 
 public class DirectRouteProcessor extends RouteBuilder {
-
     private final RouteUtils routeUtils;
     private final Api api;
     private final StickySessionCacheManager stickySessionCacheManager;
@@ -34,17 +33,12 @@ public class DirectRouteProcessor extends RouteBuilder {
 
     @Override
     public void configure() {
-
-        RouteDefinition routeDefinition = from("direct:" + routeId);
-
-        if(api.isForwardPrefix()) {
-            routeDefinition
-                    .setHeader(Constants.X_FORWARDED_PREFIX, constant(capiContext + api.getContext()));
-        }
-
+        RouteDefinition routeDefinition = from(Constants.CAMEL_DIRECT + routeId);
         if(reverseProxyHost != null) {
             routeDefinition
                     .setHeader(Constants.X_FORWARDED_HOST, constant(reverseProxyHost));
+            routeDefinition
+                    .setHeader(Constants.X_FORWARDED_PREFIX, constant(capiContext + api.getContext()));
         }
 
         log.trace("Trying to build and deploy route {}", routeId);
@@ -60,6 +54,8 @@ public class DirectRouteProcessor extends RouteBuilder {
                     .failover(1, false, api.isRoundRobinEnabled(), false)
                     .to(routeUtils.buildEndpoints(api))
                     .end()
+                    .removeHeader(Constants.X_FORWARDED_HOST)
+                    .removeHeader(Constants.X_FORWARDED_PREFIX)
                     .routeId(routeId);
         } else if(api.isStickySession()) {
             routeDefinition
@@ -67,6 +63,8 @@ public class DirectRouteProcessor extends RouteBuilder {
                     .loadBalance(new SessionChecker(stickySessionCacheManager, api.getStickySessionParam(), api.isStickySessionParamInCookie()))
                     .to(routeUtils.buildEndpoints(api))
                     .end()
+                    .removeHeader(Constants.X_FORWARDED_HOST)
+                    .removeHeader(Constants.X_FORWARDED_PREFIX)
                     .routeId(routeId);
         } else if(api.isTenantAware()) {
             routeDefinition
@@ -74,14 +72,16 @@ public class DirectRouteProcessor extends RouteBuilder {
                     .loadBalance(new TenantAwareLoadBalancer())
                     .to(routeUtils.buildEndpoints(api))
                     .end()
+                    .removeHeader(Constants.X_FORWARDED_HOST)
+                    .removeHeader(Constants.X_FORWARDED_PREFIX)
                     .routeId(routeId);
         } else {
             routeDefinition
                     .process(metricsProcessor)
-                    .loadBalance()
-                    .roundRobin()
                     .to(routeUtils.buildEndpoints(api))
                     .end()
+                    .removeHeader(Constants.X_FORWARDED_HOST)
+                    .removeHeader(Constants.X_FORWARDED_PREFIX)
                     .routeId(routeId);
         }
         routeUtils.registerMetric(routeId);

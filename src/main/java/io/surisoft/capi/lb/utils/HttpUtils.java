@@ -261,4 +261,18 @@ public class HttpUtils {
     public JWTClaimsSet authorizeRequest(String authorizationHeader) throws AuthorizationException, BadJOSEException, ParseException, JOSEException, IOException {
         return jwtProcessor.process(getBearerTokenFromHeader(authorizationHeader), null);
     }
+
+    public String normalizeHttpEndpoint(String httpEndpoint) {
+        if(httpEndpoint.contains("http://")) {
+            return httpEndpoint.replace("http://", "");
+        }
+        if(httpEndpoint.contains("https://")) {
+            return httpEndpoint.replace("https://", "");
+        }
+        return httpEndpoint;
+    }
+
+    public boolean isEndpointSecure(String httpEndpoint) {
+        return httpEndpoint.contains("https://");
+    }
 }

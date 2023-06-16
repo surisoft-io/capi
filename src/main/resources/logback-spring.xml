@@ -12,7 +12,7 @@
             <maxHistory>30</maxHistory>
         </rollingPolicy>
         <encoder>
-            <pattern>%d %p %c{1.} [%t] %m%n</pattern>
+            <pattern>%-4relative [%thread] %-5level %logger{35} -%kvp- %msg%n</pattern>
         </encoder>
     </appender>
     <springProfile name="default">

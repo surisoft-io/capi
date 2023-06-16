@@ -11,16 +11,10 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 @ExtendWith(SpringExtension.class)
 @SpringBootTest
-@TestPropertySource(
-      locations = "classpath:test-persistence-application.properties"
-)
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class TestApiRepository {
 
@@ -89,7 +83,7 @@ class TestApiRepository {
         Assertions.assertTrue(apiToUpdate.isPresent());
         Assertions.assertTrue(apiToUpdate.get().getMappingList().isEmpty());
 
-        List<Mapping> mappingList = new ArrayList<>();
+        Set<Mapping> mappingList = new HashSet<>();
         Mapping mapping = new Mapping();
         mapping.setHostname("localhost");
         mapping.setPort(80);

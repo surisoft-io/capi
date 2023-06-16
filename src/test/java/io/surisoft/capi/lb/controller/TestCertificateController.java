@@ -40,7 +40,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @ExtendWith(SpringExtension.class)
 @SpringBootTest
 @TestPropertySource(
-      locations = "classpath:test-application.properties"
+        locations = "classpath:test-cert-application.properties"
 )
 class TestCertificateController {
 
@@ -99,15 +99,16 @@ class TestCertificateController {
         api.setContext("context");
         String apiId = apiUtils.getApiId(api);
 
-        FileInputStream inputStream = new FileInputStream(capiUnitTestCer);
-        MvcResult postResult  = mockMvc.perform(MockMvcRequestBuilders
-                        .multipart("/manager/certificate/capi-unit-test/" + apiId).file("file", inputStream.readAllBytes()))
-                .andExpect(status().isOk())
-                .andReturn();
-        AliasInfo aliasInfo = objectMapper.readValue(postResult.getResponse().getContentAsString(), AliasInfo.class);
-        System.out.println(postResult.getResponse().getContentAsString());
-        Assertions.assertEquals("capi-unit-test", aliasInfo.getAlias());
-        Assertions.assertEquals(apiId, aliasInfo.getApiId());
+        try(FileInputStream inputStream = new FileInputStream(capiUnitTestCer)) {
+            MvcResult postResult  = mockMvc.perform(MockMvcRequestBuilders
+                            .multipart("/manager/certificate/capi-unit-test/" + apiId).file("file", inputStream.readAllBytes()))
+                    .andExpect(status().isOk())
+                    .andReturn();
+            AliasInfo aliasInfo = objectMapper.readValue(postResult.getResponse().getContentAsString(), AliasInfo.class);
+            Assertions.assertEquals("capi-unit-test", aliasInfo.getAlias());
+            Assertions.assertEquals(apiId, aliasInfo.getApiId());
+        }
+
     }
 
     private File createTestCertificate() throws Exception {

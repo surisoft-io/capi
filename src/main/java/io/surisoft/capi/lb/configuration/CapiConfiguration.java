@@ -14,7 +14,7 @@ import org.apache.camel.component.http.HttpClientConfigurer;
 import org.apache.camel.component.http.HttpComponent;
 import org.apache.camel.component.micrometer.CamelJmxConfig;
 import org.apache.camel.component.micrometer.DistributionStatisticConfigFilter;
-import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.hc.client5.http.impl.classic.HttpClientBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -73,6 +73,7 @@ public class CapiConfiguration {
 
     @Bean
     public CompositeMeterRegistry metrics() {
+
         DistributionStatisticConfigFilter timerMeterFilter = new DistributionStatisticConfigFilter()
                 .andAppliesTo(ROUTE_POLICIES)
                 .orAppliesTo(MESSAGE_HISTORIES)
@@ -103,4 +104,5 @@ public class CapiConfiguration {
     public OkHttpClient httpClient() {
         return new OkHttpClient();
     }
+
 }

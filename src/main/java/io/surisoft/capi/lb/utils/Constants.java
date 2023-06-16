@@ -232,9 +232,8 @@ public class Constants {
     public static final String CAPI_URL_IN_ERROR = "HTTP_URL";
     public static final String CAPI_URI_IN_ERROR = "HTTP_URI";
     public static final String MATCH_ON_URI_PREFIX = "?matchOnUriPrefix=";
-    public static final String X_FORWARDED_PREFIX = "x-forwarded-prefix";
+    public static final String X_FORWARDED_PREFIX = "X-Forwarded-Prefix";
     public static final String X_FORWARDED_HOST = "X-Forwarded-Host";
-    public static final String CONSUL_GROUP = "group=";
     public static final String CAMEL_DIRECT = "direct:";
     public static final String CAMEL_REST_PREFIX = "rd_";
     public static final String ERROR_MESSAGE = "errorMessage";
@@ -278,4 +277,8 @@ public class Constants {
     public static final String CAPI_REQUEST_CONTENT_LENGTH = "capi.request.content.length";
     public static final String CAPI_SERVER_EXCHANGE_MESSAGE_RESPONSE_CODE = "camel.server.exchange.message.response.code";
     public static final String CONTENT_TYPE = "Content-Type";
+
+    public static final int HTTPS_PORT = 443;
+    public static final int HTTP_PORT = 80;
+
 }

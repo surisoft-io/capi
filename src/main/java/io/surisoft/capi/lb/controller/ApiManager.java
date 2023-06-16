@@ -215,8 +215,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.apache.camel.CamelContext;
-import org.apache.camel.console.DevConsoleRegistry;
-import org.apache.camel.health.HealthCheckRegistry;
 import org.cache2k.Cache;
 import org.cache2k.CacheEntry;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -404,7 +402,7 @@ public class ApiManager {
     }
 
     private void deleteMappingAndUpdate(Api api, Optional<Api> existingApi) {
-        Mapping mapping = api.getMappingList().get(0);
+        Mapping mapping = api.getMappingList().stream().toList().get(0);
         if(existingApi.isPresent()) {
             if(existingApi.get().getMappingList().contains(mapping)) {
                 existingApi.get().getMappingList().remove(mapping);

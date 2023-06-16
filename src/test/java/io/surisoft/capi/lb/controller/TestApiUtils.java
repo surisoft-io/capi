@@ -1,26 +1,23 @@
 package io.surisoft.capi.lb.controller;
 
 import io.surisoft.capi.lb.repository.ApiRepository;
-import io.surisoft.capi.lb.schema.*;
+import io.surisoft.capi.lb.schema.Api;
+import io.surisoft.capi.lb.schema.ConsulObject;
+import io.surisoft.capi.lb.schema.Mapping;
+import io.surisoft.capi.lb.schema.ServiceMeta;
 import io.surisoft.capi.lb.utils.ApiUtils;
-import io.surisoft.capi.lb.utils.RouteUtils;
-import org.apache.camel.model.RouteDefinition;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashSet;
 import java.util.Optional;
+import java.util.Set;
 
 @ExtendWith(SpringExtension.class)
 @SpringBootTest
-@TestPropertySource(
-      locations = "classpath:test-persistence-application.properties"
-)
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class TestApiUtils {
 
@@ -118,8 +115,8 @@ class TestApiUtils {
         apiRepository.delete(persistedApi);
     }
 
-    private List<Mapping> getMappingList(int howManyMapping, String hostname) {
-        List<Mapping> mappingList = new ArrayList<>();
+    private Set<Mapping> getMappingList(int howManyMapping, String hostname) {
+        Set<Mapping> mappingList = new HashSet<>();
         for(int i = 0; i < howManyMapping; i++) {
            Mapping mapping = new Mapping();
            mapping.setHostname(hostname + i);
@@ -129,11 +126,4 @@ class TestApiUtils {
         }
         return mappingList;
     }
-
-    private List<Mapping> changeMapping(List<Mapping> mappingList) {
-        Mapping mapping = mappingList.get(0);
-        mapping.setHostname("new.domain");
-        return mappingList;
-    }
-
 }

@@ -67,7 +67,7 @@ public class ClientController {
             @ApiResponse(responseCode = "400", description = "Bad request")
     })
     @GetMapping
-    public ResponseEntity<JsonArray> getAllCapiClients() {
+    public ResponseEntity<List<OIDCClient>> getAllCapiClients() {
         try {
             return new ResponseEntity<>(oidcClientManager.getCapiClients(), HttpStatus.OK);
         } catch (IOException | OIDCException e) {

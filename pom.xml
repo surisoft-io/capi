@@ -7,17 +7,16 @@
   <groupId>io.surisoft.capi</groupId>
   <artifactId>capi-lb</artifactId>
   <packaging>jar</packaging>
-  <version>3.0.20</version>
+  <version>3.0.22</version>
   <description>${spring.boot-version}</description>
   <name>CAPI Load Balancer</name>
 
   <properties>
-    <org.apache.camel.springboot-version>4.0.0-M2</org.apache.camel.springboot-version>
-    <spring.boot-version>3.0.5</spring.boot-version>
+    <org.apache.camel.springboot-version>4.0.0-M3</org.apache.camel.springboot-version>
+    <spring.boot-version>3.0.6</spring.boot-version>
 
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-    <io.hawt.version>2.15.1</io.hawt.version>
     <io.micrometer-version>1.9.3</io.micrometer-version>
     <org.springdoc-verion>2.0.4</org.springdoc-verion>
     <nimbus-jose-jwt-version>9.25.4</nimbus-jose-jwt-version>
@@ -40,7 +39,7 @@
   <parent>
     <groupId>org.springframework.boot</groupId>
     <artifactId>spring-boot-starter-parent</artifactId>
-    <version>3.0.5</version>
+    <version>3.0.6</version>
     <relativePath/>
   </parent>
   <dependencyManagement>
@@ -48,7 +47,7 @@
       <dependency>
         <groupId>org.apache.camel.springboot</groupId>
         <artifactId>camel-spring-boot-dependencies</artifactId>
-        <version>4.0.0-M2</version>
+        <version>4.0.0-M3</version>
         <type>pom</type>
         <scope>import</scope>
       </dependency>
@@ -242,6 +241,11 @@
       <groupId>com.github.tomakehurst</groupId>
       <artifactId>wiremock</artifactId>
       <version>${wiremock.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.hibernate.validator</groupId>
+      <artifactId>hibernate-validator</artifactId>
       <scope>test</scope>
     </dependency>
     <dependency>

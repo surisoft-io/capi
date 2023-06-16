@@ -1,14 +1,11 @@
 package io.surisoft.capi.lb.controller;
 
-import com.github.tomakehurst.wiremock.WireMockServer;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import com.github.tomakehurst.wiremock.junit.WireMockRule;
+import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.TestPropertySource;
@@ -18,14 +15,14 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 
+import java.util.Objects;
+
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
+import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @ExtendWith(SpringExtension.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@TestPropertySource(
-      locations = "classpath:test-persistence-application.properties"
-)
 class TestLoadBalancer {
 
     private static final String THE_GOOD_API = """
@@ -35,13 +32,13 @@ class TestLoadBalancer {
                  "mappingList": [
                         {
                             "hostname": "localhost",
-                            "port": 8881,
+                            "port": 1,
                             "rootContext": "/",
                             "ingress": false
                         },
                         {
                             "hostname": "localhost",
-                            "port": 8882,
+                            "port": 2,
                             "rootContext": "/",
                             "ingress": false
                         }
@@ -74,15 +71,19 @@ class TestLoadBalancer {
     void testDeployApiAndTestLoadBalancer() throws Exception {
 
         //Start mock load balanced nodes
-        WireMockServer deployedNode1 = new WireMockServer(8881);
-        WireMockServer deployedNode2 = new WireMockServer(8882);
+        WireMockRule deployedNode1 = new WireMockRule(wireMockConfig().dynamicPort());
+        WireMockRule deployedNode2 = new WireMockRule(wireMockConfig().dynamicPort());
+
         deployedNode1.start();
         deployedNode2.start();
+
         deployedNode1.stubFor(get(urlEqualTo("/node")).willReturn(aResponse().withBody(NODE_1_RESPONSE)));
         deployedNode2.stubFor(get(urlEqualTo("/node")).willReturn(aResponse().withBody(NODE_2_RESPONSE)));
 
+        String apiDefinition = THE_GOOD_API.replace("1", String.valueOf(deployedNode1.port()));
+        apiDefinition = apiDefinition.replace("2", String.valueOf(deployedNode2.port()));
 
-        mockMvc.perform(MockMvcRequestBuilders.post("/manager/register/node").content(THE_GOOD_API)
+        mockMvc.perform(MockMvcRequestBuilders.post("/manager/register/node").content(apiDefinition)
                         .contentType(MediaType.APPLICATION_JSON_VALUE)
                         .accept(MediaType.APPLICATION_JSON_VALUE))
                 .andExpect(status().isOk());
@@ -91,74 +92,30 @@ class TestLoadBalancer {
         Thread.sleep(5000);
 
         ResponseEntity<String> responseFromNode1 = restTemplate.getForEntity("/capi/test/node", String.class);
-        Assertions.assertEquals(responseFromNode1.getStatusCode(), HttpStatus.OK);
-        Assertions.assertTrue(responseFromNode1.getBody().equals(NODE_1_RESPONSE) || responseFromNode1.getBody().equals(NODE_2_RESPONSE));
+        Assertions.assertTrue(responseFromNode1.getStatusCode().is2xxSuccessful());
+        Assertions.assertTrue(Objects.equals(responseFromNode1.getBody(), NODE_1_RESPONSE) || Objects.equals(responseFromNode1.getBody(), NODE_2_RESPONSE));
 
         String firstResponse = responseFromNode1.getBody();
 
         ResponseEntity<String> responseFromNode2 = restTemplate.getForEntity("/capi/test/node", String.class);
-        Assertions.assertEquals(responseFromNode2.getStatusCode(), HttpStatus.OK);
+        Assertions.assertTrue(responseFromNode2.getStatusCode().is2xxSuccessful());
 
         //If the API is correctly load balanced the response should be different
         Assertions.assertNotEquals(responseFromNode2.getBody(), firstResponse);
 
-        deployedNode1.stop();
+        //Stopping Node 2 to test the fail-over
         deployedNode2.stop();
-    }
 
-    @Test
-    void testDeployApiAndTestLoadBalancerFailOverNode2() throws Exception {
+        ResponseEntity<String> failOverResponse1 = restTemplate.getForEntity("/capi/test/node", String.class);
+        Assertions.assertTrue(failOverResponse1.getStatusCode().is2xxSuccessful());
+        Assertions.assertEquals(failOverResponse1.getBody(), NODE_1_RESPONSE);
 
-        //Start mock load balanced nodes
-        WireMockServer deployedNode1 = new WireMockServer(8881);
-        deployedNode1.start();
-        deployedNode1.stubFor(get(urlEqualTo("/node")).willReturn(aResponse().withBody(NODE_1_RESPONSE)));
+        ResponseEntity<String> failOverResponse2 = restTemplate.getForEntity("/capi/test/node", String.class);
+        Assertions.assertTrue(failOverResponse2.getStatusCode().is2xxSuccessful());
+        Assertions.assertEquals(failOverResponse2.getBody(), NODE_1_RESPONSE);
 
-
-        mockMvc.perform(MockMvcRequestBuilders.post("/manager/register/node").content(THE_GOOD_API)
-                        .contentType(MediaType.APPLICATION_JSON_VALUE)
-                        .accept(MediaType.APPLICATION_JSON_VALUE))
-                .andExpect(status().isOk());
-
-        //Wait for API do be deployed
-        Thread.sleep(5000);
-
-        ResponseEntity<String> responseFromNode1 = restTemplate.getForEntity("/capi/test/node", String.class);
-        Assertions.assertEquals(responseFromNode1.getStatusCode(), HttpStatus.OK);
-        Assertions.assertEquals(responseFromNode1.getBody(), NODE_1_RESPONSE);
-
-        ResponseEntity<String> responseFromNode2 = restTemplate.getForEntity("/capi/test/node", String.class);
-        Assertions.assertEquals(responseFromNode2.getStatusCode(), HttpStatus.OK);
-        Assertions.assertEquals(responseFromNode2.getBody(), NODE_1_RESPONSE);
-
-        deployedNode1.stop();
-    }
-
-    @Test
-    void testDeployApiAndTestLoadBalancerFailOverNode1() throws Exception {
-
-        //Start mock load balanced nodes
-        WireMockServer deployedNode2 = new WireMockServer(8882);
-        deployedNode2.start();
-        deployedNode2.stubFor(get(urlEqualTo("/node")).willReturn(aResponse().withBody(NODE_2_RESPONSE)));
-
-
-        mockMvc.perform(MockMvcRequestBuilders.post("/manager/register/node").content(THE_GOOD_API)
-                        .contentType(MediaType.APPLICATION_JSON_VALUE)
-                        .accept(MediaType.APPLICATION_JSON_VALUE))
-                .andExpect(status().isOk());
-
-        //Wait for API do be deployed
-        Thread.sleep(5000);
-
-        ResponseEntity<String> responseFromNode1 = restTemplate.getForEntity("/capi/test/node", String.class);
-        Assertions.assertEquals(responseFromNode1.getStatusCode(), HttpStatus.OK);
-        Assertions.assertEquals(responseFromNode1.getBody(), NODE_2_RESPONSE);
-
-        ResponseEntity<String> responseFromNode2 = restTemplate.getForEntity("/capi/test/node", String.class);
-        Assertions.assertEquals(responseFromNode2.getStatusCode(), HttpStatus.OK);
-        Assertions.assertEquals(responseFromNode2.getBody(), NODE_2_RESPONSE);
-
+        //Stopping mocks
         deployedNode2.stop();
+        deployedNode1.stop();
     }
 }

@@ -14,8 +14,8 @@ public class ConsulObject {
     @JsonProperty("ServiceName")
     private String serviceName;
 
-    @JsonProperty("ServiceTags")
-    private List<String> serviceTags;
+    //@JsonProperty("ServiceTags")
+    //private List<String> serviceTags;
 
     @JsonProperty("ServiceMeta")
     private ServiceMeta serviceMeta;
@@ -42,13 +42,13 @@ public class ConsulObject {
         this.serviceName = serviceName;
     }
 
-    public List<String> getServiceTags() {
-        return serviceTags;
-    }
+    //public List<String> getServiceTags() {
+    //    return serviceTags;
+    //}
 
-    public void setServiceTags(List<String> serviceTags) {
-        this.serviceTags = serviceTags;
-    }
+    //public void setServiceTags(List<String> serviceTags) {
+    //    this.serviceTags = serviceTags;
+    //}
 
     public String getServiceAddress() {
         return serviceAddress;

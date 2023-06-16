@@ -42,20 +42,15 @@ class TestConsulNodeDiscovery {
                 "ServiceKind": "",
                 "ServiceID": "dev-1",
                 "ServiceName": "dummy",
-                "ServiceTags": [
-                  "capi",
-                  "service-call",
-                  "group=dev",
-                  "x-forwarded-prefix",
-                  "X-B3-TraceId",
-                  "no-root-context"
-                ],
+                "ServiceTags": [],
                 "ServiceAddress": "localhost",
                 "ServiceWeights": {
                   "Passing": 1,
                   "Warning": 1
                 },
-                "ServiceMeta": {},
+                "ServiceMeta": {
+                   "group": "dev"
+                },
                 "ServicePort": 8081,
                 "ServiceSocketPath": "",
                 "ServiceEnableTagOverride": false

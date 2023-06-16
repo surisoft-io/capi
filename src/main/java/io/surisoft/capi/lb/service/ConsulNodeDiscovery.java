@@ -7,7 +7,6 @@ import io.surisoft.capi.lb.cache.StickySessionCacheManager;
 import io.surisoft.capi.lb.processor.MetricsProcessor;
 import io.surisoft.capi.lb.schema.*;
 import io.surisoft.capi.lb.utils.ApiUtils;
-import io.surisoft.capi.lb.utils.Constants;
 import io.surisoft.capi.lb.utils.RouteUtils;
 import org.apache.camel.CamelContext;
 import org.apache.camel.Route;
@@ -65,7 +64,7 @@ public class ConsulNodeDiscovery {
             response = client.send(buildServicesHttpRequest(), HttpResponse.BodyHandlers.ofString());
             ObjectMapper objectMapper = new ObjectMapper();
             JsonObject responseObject = objectMapper.readValue(response.body(), JsonObject.class);
-            //We want to ignore the consul array for now...
+            //We want to ignore the consul array
             responseObject.remove("consul");
             Set<String> services = responseObject.keySet();
             try {
@@ -91,7 +90,7 @@ public class ConsulNodeDiscovery {
             HttpResponse<String> response = client.send(buildServiceNameHttpRequest(serviceName), HttpResponse.BodyHandlers.ofString());
             ObjectMapper objectMapper = new ObjectMapper();
             ConsulObject[] consulResponse = objectMapper.readValue(response.body(), ConsulObject[].class);
-            Map<String, List<Mapping>> servicesStructure = groupByServiceId(consulResponse);
+            Map<String, Set<Mapping>> servicesStructure = groupByServiceId(consulResponse);
 
             for (var entry : servicesStructure.entrySet()) {
                 String apiId = serviceName + ":" + entry.getKey();
@@ -103,9 +102,6 @@ public class ConsulNodeDiscovery {
                     apiUtils.updateExistingApi(existingApi, incomingApi, apiCache, routeUtils, metricsProcessor, camelContext, stickySessionCacheManager, capiContext, reverseProxyHost);
                 }
             }
-
-            //apiUtils.removeUnusedApi(camelContext, routeUtils, apiCache, servicesStructure, serviceName);
-
         } catch (IOException e) {
             log.error("Error connecting to Consul, will try again...");
         } catch (InterruptedException e) {
@@ -114,19 +110,19 @@ public class ConsulNodeDiscovery {
         }
     }
 
-    private Map<String, List<Mapping>> groupByServiceId(ConsulObject[] consulService) {
-        Map<String, List<Mapping>> groupedService = new HashMap<>();
+    private Map<String, Set<Mapping>> groupByServiceId(ConsulObject[] consulService) {
+        Map<String, Set<Mapping>> groupedService = new HashMap<>();
         Set<String> serviceIdList = new HashSet<>();
         for(ConsulObject serviceIdEntry : consulService) {
             String serviceNodeGroup = getServiceNodeGroup(serviceIdEntry);
             if(serviceNodeGroup != null) {
                 serviceIdList.add(serviceNodeGroup);
             } else {
-                log.trace("Service {} Tag group not present, service will not be deployed", serviceIdEntry.getServiceName());
+                log.trace("Meta data {} group not present, service will not be deployed", serviceIdEntry.getServiceName());
             }
         }
         for (String id : serviceIdList) {
-            List<Mapping> mappingList = new ArrayList<>();
+            Set<Mapping> mappingList = new HashSet<>();
             for (ConsulObject serviceIdToProcess : consulService) {
                 String serviceNodeGroup = getServiceNodeGroup(serviceIdToProcess);
                 if (id.equals(serviceNodeGroup)) {
@@ -140,10 +136,8 @@ public class ConsulNodeDiscovery {
     }
 
     private String getServiceNodeGroup(ConsulObject consulObject) {
-        for(String serviceTag : consulObject.getServiceTags()) {
-            if(serviceTag.contains(Constants.CONSUL_GROUP)) {
-                return serviceTag.substring(serviceTag.lastIndexOf("=") + 1);
-            }
+        if(consulObject.getServiceMeta() != null && consulObject.getServiceMeta().getGroup() != null) {
+            return consulObject.getServiceMeta().getGroup();
         }
         return null;
     }
@@ -173,8 +167,10 @@ public class ConsulNodeDiscovery {
 
     private boolean showZipkinTraceId(String tagName, ConsulObject[] consulObject) {
         for(ConsulObject entry : consulObject) {
-            if(entry.getServiceTags().contains(Constants.CONSUL_GROUP + tagName) && entry.getServiceTags().contains(Constants.TRACE_ID_HEADER)) {
-                return true;
+            if(entry.getServiceMeta() != null) {
+                if(entry.getServiceMeta().getGroup() != null && entry.getServiceMeta().getGroup().equals(tagName) && entry.getServiceMeta().isB3TraceId()) {
+                    return true;
+                }
             }
         }
         return false;
@@ -189,14 +185,13 @@ public class ConsulNodeDiscovery {
         return false;
     }
 
-    private Api createApiObject(String apiId, String serviceName, String key, List<Mapping> mappingList, ConsulObject[] consulResponse) {
+    private Api createApiObject(String apiId, String serviceName, String key, Set<Mapping> mappingList, ConsulObject[] consulResponse) {
         Api incomingApi = new Api();
         incomingApi.setId(apiId);
         incomingApi.setName(serviceName);
         incomingApi.setContext("/" + serviceName + "/" + key);
         incomingApi.setHttpMethod(HttpMethod.ALL);
         incomingApi.setPublished(true);
-        incomingApi.setMappingList(new ArrayList<>());
         incomingApi.setMatchOnUriPrefix(true);
         incomingApi.setMappingList(mappingList);
         incomingApi.setForwardPrefix(reverseProxyHost != null);
@@ -205,10 +200,9 @@ public class ConsulNodeDiscovery {
         incomingApi.setSecured(isSecured(key, consulResponse));
         incomingApi.setTenantAware(isTenantAware(key, consulResponse));
 
-        if(!incomingApi.isTenantAware()) {
-            incomingApi.setRoundRobinEnabled(true);
-            incomingApi.setFailoverEnabled(true);
-        }
+        incomingApi.setRoundRobinEnabled(true);
+        incomingApi.setFailoverEnabled(true);
+
         return incomingApi;
     }
 
@@ -219,6 +213,10 @@ public class ConsulNodeDiscovery {
             Route existingRoute = camelContext.getRoute(routeId);
             if(existingRoute == null) {
                 try {
+                    if(incomingApi.getMappingList().size() == 1 || incomingApi.isTenantAware()) {
+                        incomingApi.setRoundRobinEnabled(false);
+                        incomingApi.setFailoverEnabled(false);
+                    }
                     camelContext.addRoutes(new RestDefinitionProcessor(camelContext, incomingApi, routeUtils, routeId));
                     camelContext.addRoutes(new DirectRouteProcessor(camelContext, incomingApi, routeUtils, metricsProcessor, routeId, stickySessionCacheManager, capiContext, reverseProxyHost));
                 } catch (Exception e) {
