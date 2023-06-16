@@ -72,7 +72,6 @@ class TestApiManager {
     @BeforeEach
     public void initialize() {
         mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext).build();
-        
         objectMapper = new ObjectMapper();
     }
 
