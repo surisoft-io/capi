@@ -1,3 +1,5 @@
+[![CAPI](https://capi.surisoft.io/capi_horizontal.svg)](https://capi.surisoft.io/capi_horizontal.svg)
+
 [![CAPI-LB](https://github.com/rodrigoserracoelho/capi-lb/actions/workflows/main.yml/badge.svg)](https://github.com/rodrigoserracoelho/capi-lb/actions/workflows/main.yml)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 ![Docker Image Version (latest by date)](https://img.shields.io/docker/v/surisoft/capi-lb)
