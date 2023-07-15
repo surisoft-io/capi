@@ -117,5 +117,5 @@ oidc:
     enabled: false
     host: http://localhost:8080
     realm: /realms/apigw
-    clientId:
-    clientSecret:
+    clientId: apim
+    clientSecret: EtesrcFDUe8yPqlpGeTM90pXQ1RfLZYK
