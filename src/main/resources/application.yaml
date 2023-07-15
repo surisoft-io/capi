@@ -1,6 +1,7 @@
 server:
   port: 8380
 capi:
+  kubernetes: false
   reverse:
     proxy:
       enabled: false
@@ -11,7 +12,7 @@ capi:
   #### Enable Zipkin
   zipkin:
     enabled: false
-    endpoint: https://localhost:9411/api/v2/spans
+    endpoint: http://localhost:9411/api/v2/spans
   #### If you want CAPI to search consul for available APIs to be deployed, enable this feature. ####
   consul:
     host: http://localhost:8500
@@ -115,6 +116,6 @@ oidc:
   provider:
     enabled: false
     host: http://localhost:8080
-    realm: /realms/
+    realm: /realms/apigw
     clientId:
     clientSecret:

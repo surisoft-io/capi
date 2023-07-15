@@ -265,17 +265,16 @@ public class Constants {
     public static final String CACHE_ROUTE_STOPPED_EVENT = "RouteStoppedEvent";
     public static final String CACHE_ROUTE_REMOVED_EVENT = "RouteRemovedEvent";
     public static final String CACHE_EXCHANGE_FAILED_EVENT = "ExchangeFailedEvent";
-    public static final String CAMEL_CLIENT_ENDPOINT_URL = "camel.client.endpoint.url";
-    public static final String CAMEL_SERVER_ENDPOINT_URL = "camel.server.endpoint.url";
-    public static final String CAMEL_SERVER_EXCHANGE_ID = "camel.server.exchange.id";
-    public static final String CAMEL_CLIENT_EXCHANGE_ID = "camel.client.exchange.id";
-    public static final String CAMEL_SERVER_EXCHANGE_PATTERN = "camel.server.exchange.pattern";
+    public static final String CAMEL_CLIENT_ENDPOINT_URL = "capi.client.endpoint.url";
+    public static final String CAMEL_SERVER_ENDPOINT_URL = "capi.server.endpoint.url";
+    public static final String CAMEL_SERVER_EXCHANGE_ID = "capi.server.exchange.id";
+    public static final String CAMEL_CLIENT_EXCHANGE_ID = "capi.client.exchange.id";
     public static final String CAMEL_SERVER_EXCHANGE_FAILURE = "camel.server.exchange.failure";
-    public static final String CAPI_EXCHANGE_REQUESTER_ID = "capi.exchange.requester.id";
+    public static final String CAPI_EXCHANGE_REQUESTER_ID = "capi.requester.id";
     public static final String CAPI_REQUEST_METHOD = "capi.request.method";
     public static final String CAPI_REQUEST_CONTENT_TYPE = "capi.request.content.type";
     public static final String CAPI_REQUEST_CONTENT_LENGTH = "capi.request.content.length";
-    public static final String CAPI_SERVER_EXCHANGE_MESSAGE_RESPONSE_CODE = "camel.server.exchange.message.response.code";
+    public static final String CAPI_SERVER_EXCHANGE_MESSAGE_RESPONSE_CODE = "capi.server.exchange.message.response.code";
     public static final String CONTENT_TYPE = "Content-Type";
 
     public static final int HTTPS_PORT = 443;

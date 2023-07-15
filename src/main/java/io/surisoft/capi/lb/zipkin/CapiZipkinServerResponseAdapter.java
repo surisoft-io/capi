@@ -7,13 +7,10 @@ import com.nimbusds.jwt.JWTClaimsSet;
 import io.surisoft.capi.lb.exception.AuthorizationException;
 import io.surisoft.capi.lb.utils.Constants;
 import jakarta.servlet.http.HttpServletRequest;
-import org.apache.camel.Endpoint;
 import org.apache.camel.Exchange;
 import org.apache.camel.util.ObjectHelper;
-import org.apache.camel.util.URISupport;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 
 import java.io.IOException;
 import java.text.ParseException;
@@ -22,19 +19,16 @@ public class CapiZipkinServerResponseAdapter {
     private static final Logger LOG = LoggerFactory.getLogger(CapiZipkinServerResponseAdapter.class);
     private final CapiZipkinTracer capiZipkinEventNotifier;
     private final String url;
-    public CapiZipkinServerResponseAdapter(CapiZipkinTracer capiZipkinEventNotifier, Exchange exchange) {
+    public CapiZipkinServerResponseAdapter(CapiZipkinTracer capiZipkinEventNotifier, String url) {
         this.capiZipkinEventNotifier = capiZipkinEventNotifier;
-        Endpoint endpoint = exchange.getFromEndpoint();
-        this.url = URISupport.sanitizeUri(endpoint.getEndpointUri());
+        this.url = url;
     }
 
     public void onResponse(Exchange exchange, SpanCustomizer span) {
         String exchangeId = exchange.getExchangeId();
-        String pattern = exchange.getPattern().name();
 
         span.tag(Constants.CAMEL_CLIENT_ENDPOINT_URL, url);
         span.tag(Constants.CAMEL_SERVER_EXCHANGE_ID, exchangeId);
-        span.tag(Constants.CAMEL_SERVER_EXCHANGE_PATTERN, pattern);
 
         if (exchange.getException() != null) {
             String message = ObjectHelper.isEmpty(exchange.getException().getMessage()) ? exchange.getException().getClass().getName() : exchange.getException().getMessage();
@@ -47,6 +41,14 @@ public class CapiZipkinServerResponseAdapter {
                 String authorizedParty = jwtClaimsSet.getStringClaim(Constants.AUTHORIZED_PARTY);
                 if(authorizedParty != null) {
                     span.tag(Constants.CAPI_EXCHANGE_REQUESTER_ID, authorizedParty);
+                }
+                String clientHost = jwtClaimsSet.getStringClaim("clientHost");
+                if(clientHost != null) {
+                    span.tag("capi.requester.host", clientHost);
+                }
+                String iss = jwtClaimsSet.getStringClaim("iss");
+                if(iss != null) {
+                    span.tag("capi.requester.token.issuer", iss);
                 }
             } catch (AuthorizationException | BadJOSEException | ParseException | JOSEException | IOException e) {
                 LOG.trace("No Authorization header detected, or access token invalid");

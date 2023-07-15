@@ -12,16 +12,15 @@ public class CapiZipkinServerRequestAdapter {
     private final String spanName;
     private final String url;
 
-    public CapiZipkinServerRequestAdapter(Exchange exchange) {
+    public CapiZipkinServerRequestAdapter(Exchange exchange, String serviceName) {
         Endpoint endpoint = exchange.getFromEndpoint();
         this.spanName = URISupport.sanitizeUri(endpoint.getEndpointKey()).toLowerCase(Locale.ROOT);
-        this.url = URISupport.sanitizeUri(endpoint.getEndpointUri());
+        this.url = serviceName;
     }
 
     public void onRequest(Exchange exchange, SpanCustomizer span) {
         span.name(spanName);
         span.tag(Constants.CAMEL_SERVER_ENDPOINT_URL, url);
         span.tag(Constants.CAMEL_SERVER_EXCHANGE_ID, exchange.getExchangeId());
-        span.tag(Constants.CAMEL_SERVER_EXCHANGE_PATTERN, exchange.getPattern().name());
     }
 }

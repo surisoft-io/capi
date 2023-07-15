@@ -303,8 +303,8 @@ public class ApiUtils {
                         incomingApi.setFailoverEnabled(true);
                     }
 
-                    camelContext.addRoutes(new RestDefinitionProcessor(camelContext, incomingApi, routeUtils, routeId));
                     camelContext.addRoutes(new DirectRouteProcessor(camelContext, incomingApi, routeUtils, metricsProcessor, routeId, stickySessionCacheManager, capiContext, reverseProxyHost));
+                    camelContext.addRoutes(new RestDefinitionProcessor(camelContext, incomingApi, routeUtils, routeId));
 
                     existingApi.setMappingList(incomingApi.getMappingList());
                     apiCache.put(existingApi.getId(), existingApi);

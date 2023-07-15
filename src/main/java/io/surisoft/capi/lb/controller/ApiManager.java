@@ -245,14 +245,14 @@ public class ApiManager {
     @Autowired
     private Cache<String, Api> apiCache;
 
-    @Autowired
-    private Cache<String, String> startRouteStoppedEventCache;
+    //@Autowired
+    //private Cache<String, String> startRouteStoppedEventCache;
 
-    @Autowired
-    private Cache<String, String> startRouteRemovedEventCache;
+    //@Autowired
+    //private Cache<String, String> startRouteRemovedEventCache;
 
-    @Autowired
-    private Cache<String, String> startExchangeFailedEventCache;
+    //@Autowired
+    //private Cache<String, String> startExchangeFailedEventCache;
 
     @Value("${capi.persistence.enabled}")
     private boolean capiPersistenceEnabled;
@@ -307,9 +307,9 @@ public class ApiManager {
         capiInfo.setCapiVersion(capiVersion);
         capiInfo.setCapiStringVersion(capiSpringVersion);
 
-        capiInfo.setStoppedRouteCount(startRouteStoppedEventCache.keys().size());
-        capiInfo.setRemovedRouteCount(startRouteRemovedEventCache.keys().size());
-        capiInfo.setFailedExchangeCount(startExchangeFailedEventCache.keys().size());
+        //capiInfo.setStoppedRouteCount(startRouteStoppedEventCache.keys().size());
+        //capiInfo.setRemovedRouteCount(startRouteRemovedEventCache.keys().size());
+        //capiInfo.setFailedExchangeCount(startExchangeFailedEventCache.keys().size());
 
 
 

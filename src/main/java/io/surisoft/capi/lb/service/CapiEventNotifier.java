@@ -11,7 +11,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.UUID;
 
-@Component
+//@Component
 public class CapiEventNotifier extends EventNotifierSupport {
     @Autowired
     private Cache<String, String> startRouteStoppedEventCache;

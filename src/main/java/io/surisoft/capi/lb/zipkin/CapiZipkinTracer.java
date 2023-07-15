@@ -31,9 +31,15 @@ import zipkin2.reporter.urlconnection.URLConnectionSender;
 import java.io.Closeable;
 import java.util.*;
 
+import static org.apache.camel.util.URISupport.sanitizeUri;
+
 @ManagedResource(description = "CapiZipkinTracer")
 public class CapiZipkinTracer extends ServiceSupport implements RoutePolicyFactory, StaticService, CamelContextAware {
     private final HttpUtils httpUtils;
+
+    //CAPI Only cares about rest routes
+    private static final String REST_ROUTE = "rest://";
+
     private static final Logger LOG = LoggerFactory.getLogger(CapiZipkinTracer.class);
     private static final String ZIPKIN_COLLECTOR_HTTP_SERVICE = "zipkin-collector-http";
     private static final String ZIPKIN_COLLECTOR_THRIFT_SERVICE = "zipkin-collector-thrift";
@@ -47,7 +53,7 @@ public class CapiZipkinTracer extends ServiceSupport implements RoutePolicyFacto
     private CamelContext camelContext;
     private String endpoint;
     private int port;
-    private Reporter<zipkin2.Span> spanReporter;
+    private Reporter spanReporter;
     private final Map<String, String> clientServiceMappings = new HashMap<>();
     private final Map<String, String> serverServiceMappings = new HashMap<>();
     private Set<String> excludePatterns = new HashSet<>();
@@ -193,8 +199,6 @@ public class CapiZipkinTracer extends ServiceSupport implements RoutePolicyFacto
                 LOG.info("Configuring Zipkin URLConnectionSender using endpoint: {}", endpoint);
                 spanReporter = AsyncReporter.create(URLConnectionSender.create(endpoint));
             } else {
-                // is there a zipkin service setup as ENV variable to auto
-                // register a span reporter
                 String host = ServiceHostFunction.apply(ZIPKIN_COLLECTOR_HTTP_SERVICE);
                 String port = ServicePortFunction.apply(ZIPKIN_COLLECTOR_HTTP_SERVICE);
                 if (ObjectHelper.isNotEmpty(host) && ObjectHelper.isNotEmpty(port)) {
@@ -216,8 +220,6 @@ public class CapiZipkinTracer extends ServiceSupport implements RoutePolicyFacto
         }
 
         if (spanReporter == null) {
-            // Try to lookup the span reporter from the registry if only one
-            // instance is present
             Set<Reporter> reporters = camelContext.getRegistry().findByType(Reporter.class);
             if (reporters.size() == 1) {
                 spanReporter = reporters.iterator().next();
@@ -266,100 +268,29 @@ public class CapiZipkinTracer extends ServiceSupport implements RoutePolicyFacto
 
     private String getServiceName(Exchange exchange, Endpoint endpoint, boolean server, boolean client) {
         if (client) {
-            return getServiceName(exchange, endpoint, clientServiceMappings);
+            return getServiceName(exchange, endpoint);
         } else if (server) {
-            return getServiceName(exchange, endpoint, serverServiceMappings);
+            return getServiceName(exchange, endpoint);
         } else {
             return null;
         }
     }
 
-    private String getServiceName(Exchange exchange, Endpoint endpoint, Map<String, String> serviceMappings) {
-        String answer = null;
-
-        // endpoint takes precedence over route
+    private String getServiceName(Exchange exchange, Endpoint endpoint) {
+        String serviceName = null;
         if (endpoint != null) {
-            String url = endpoint.getEndpointUri();
-            if (url != null) {
-                // exclude patterns take precedence
-                for (String pattern : excludePatterns) {
-                    if (EndpointHelper.matchEndpoint(exchange.getContext(), url, pattern)) {
-                        return null;
-                    }
-                }
-                for (Map.Entry<String, String> entry : serviceMappings.entrySet()) {
-                    String pattern = entry.getKey();
-                    if (EndpointHelper.matchEndpoint(exchange.getContext(), url, pattern)) {
-                        answer = entry.getValue();
-                        break;
-                    }
-                }
+            serviceName = endpoint.getEndpointKey();
+        } else if (exchange.getFromEndpoint() != null) {
+            serviceName = exchange.getFromEndpoint().getEndpointKey();
+        }
+        String sanitizedServiceName = sanitizeUri(serviceName);
+        if (sanitizedServiceName != null) {
+            if(sanitizedServiceName.startsWith(REST_ROUTE)) {
+                sanitizedServiceName = normalizeServiceName(sanitizedServiceName);
+                LOG.trace("Using serviceName: {}", sanitizedServiceName);
             }
         }
-
-        // route
-        if (answer == null) {
-            String id = routeIdExpression().evaluate(exchange, String.class);
-            if (id != null) {
-                // exclude patterns take precedence
-                for (String pattern : excludePatterns) {
-                    if (PatternHelper.matchPattern(id, pattern)) {
-                        return null;
-                    }
-                }
-                for (Map.Entry<String, String> entry : serviceMappings.entrySet()) {
-                    String pattern = entry.getKey();
-                    if (PatternHelper.matchPattern(id, pattern)) {
-                        answer = entry.getValue();
-                        break;
-                    }
-                }
-            }
-        }
-
-        if (answer == null) {
-            String id = exchange.getFromRouteId();
-            if (id != null) {
-                // exclude patterns take precedence
-                for (String pattern : excludePatterns) {
-                    if (PatternHelper.matchPattern(id, pattern)) {
-                        return null;
-                    }
-                }
-                for (Map.Entry<String, String> entry : serviceMappings.entrySet()) {
-                    String pattern = entry.getKey();
-                    if (PatternHelper.matchPattern(id, pattern)) {
-                        answer = entry.getValue();
-                        break;
-                    }
-                }
-            }
-        }
-
-        if (answer == null && useFallbackServiceNames) {
-            String key = null;
-            if (endpoint != null) {
-                key = endpoint.getEndpointKey();
-            } else if (exchange.getFromEndpoint() != null) {
-                key = exchange.getFromEndpoint().getEndpointKey();
-            }
-            // exclude patterns take precedence
-            for (String pattern : excludePatterns) {
-                if (PatternHelper.matchPattern(key, pattern)) {
-                    return null;
-                }
-            }
-            String sanitizedKey = URISupport.sanitizeUri(key);
-            if (LOG.isTraceEnabled() && sanitizedKey != null) {
-                LOG.trace("Using serviceName: {} as fallback", sanitizedKey);
-            }
-            return sanitizedKey;
-        } else {
-            if (LOG.isTraceEnabled() && answer != null) {
-                LOG.trace("Using serviceName: {}", answer);
-            }
-            return answer;
-        }
+        return sanitizedServiceName;
     }
 
     private void createTracingForService(String pattern, String serviceName) {
@@ -389,20 +320,18 @@ public class CapiZipkinTracer extends ServiceSupport implements RoutePolicyFacto
         Tracing brave = null;
         if (serviceName != null) {
             brave = braves.get(serviceName);
-
-            if (brave == null && useFallbackServiceNames) {
-                LOG.debug("Creating Tracing assigned to serviceName: {} as fallback", serviceName);
+            if (brave == null) {
+                LOG.debug("Creating Tracing assigned to serviceName: {}", serviceName);
                 brave = newTracing(serviceName);
                 braves.put(serviceName, brave);
             }
         }
-
         return brave;
     }
 
     private void clientRequest(Tracing brave, CamelEvent.ExchangeSendingEvent event) {
         // reuse existing span if we do multiple requests from the same
-        ExchangeExtension exchange = event.getExchange().getExchangeExtension(); //.adapt(ExtendedExchange.class);
+        ExchangeExtension exchange = event.getExchange().getExchangeExtension();
         ZipkinState state = exchange.getSafeCopyProperty(ZipkinState.KEY, ZipkinState.class);
         if (state == null) {
             state = new ZipkinState();
@@ -421,7 +350,7 @@ public class CapiZipkinTracer extends ServiceSupport implements RoutePolicyFacto
         Span.Kind spanKind = getProducerComponentSpanKind(event.getEndpoint());
         span.kind(spanKind).start();
 
-        CapiZipkinClientRequestAdapter parser = new CapiZipkinClientRequestAdapter(event.getEndpoint());
+        CapiZipkinClientRequestAdapter parser = new CapiZipkinClientRequestAdapter(event.getEndpoint(), normalizeClientEndpoint(event.getEndpoint()));
         CamelRequest request = new CamelRequest(event.getExchange().getIn(), spanKind);
         INJECTOR.inject(span.context(), request);
         parser.onRequest(event.getExchange(), span.customizer());
@@ -454,13 +383,13 @@ public class CapiZipkinTracer extends ServiceSupport implements RoutePolicyFacto
         }
 
         if (span != null) {
-            CapiZipkinClientResponseAdapter parser = new CapiZipkinClientResponseAdapter(this, event.getEndpoint());
+            CapiZipkinClientResponseAdapter parser = new CapiZipkinClientResponseAdapter(this);
             parser.onResponse(event.getExchange(), span.customizer());
             span.finish();
             TraceContext context = span.context();
             String traceId = context.traceIdString();
             String spanId = Long.toString(context.spanId());
-            String parentId = context.parentId() != null ? "" + context.parentId() : null;
+            String parentId = context.parentId() != null ? String.valueOf(context.parentId()) : null;
             if (camelContext.isUseMDCLogging()) {
                 MDC.put("traceId", traceId);
                 MDC.put("spanId", spanId);
@@ -469,7 +398,7 @@ public class CapiZipkinTracer extends ServiceSupport implements RoutePolicyFacto
         }
     }
 
-    private Span serverRequest(Tracing brave, String serviceName, Exchange exchange) {
+    private Span serverRequest(Tracing brave, Exchange exchange, String serviceName) {
         // reuse existing span if we do multiple requests from the same
         ExchangeExtension extendedExchange = exchange.getExchangeExtension(); //.adapt(ExtendedExchange.class);
         ZipkinState state = extendedExchange.getSafeCopyProperty(ZipkinState.KEY, ZipkinState.class);
@@ -487,16 +416,16 @@ public class CapiZipkinTracer extends ServiceSupport implements RoutePolicyFacto
             span = brave.tracer().nextSpan(sampleFlag);
         }
         span.kind(spanKind).start();
-        CapiZipkinServerRequestAdapter parser = new CapiZipkinServerRequestAdapter(exchange);
+        CapiZipkinServerRequestAdapter parser = new CapiZipkinServerRequestAdapter(exchange, serviceName);
         parser.onRequest(exchange, span.customizer());
         INJECTOR.inject(span.context(), camelRequest);
 
         // store span after request
         state.pushServerSpan(span);
         TraceContext context = span.context();
-        String traceId = "" + context.traceIdString();
-        String spanId = "" + context.spanId();
-        String parentId = context.parentId() != null ? "" + context.parentId() : null;
+        String traceId = context.traceIdString();
+        String spanId = String.valueOf(context.spanId());
+        String parentId = context.parentId() != null ? String.valueOf(context.parentId()) : null;
         if (camelContext.isUseMDCLogging()) {
             MDC.put("traceId", traceId);
             MDC.put("spanId", spanId);
@@ -514,7 +443,7 @@ public class CapiZipkinTracer extends ServiceSupport implements RoutePolicyFacto
 
         if(!exchange.getFromRouteId().startsWith("timer://")) {
             Span span = null;
-            ExchangeExtension extendedExchange = exchange.getExchangeExtension(); //.adapt(ExtendedExchange.class);
+            ExchangeExtension extendedExchange = exchange.getExchangeExtension();
             ZipkinState state = extendedExchange.getSafeCopyProperty(ZipkinState.KEY, ZipkinState.class);
             if (state != null) {
                 // only process if it was a zipkin server event
@@ -522,7 +451,7 @@ public class CapiZipkinTracer extends ServiceSupport implements RoutePolicyFacto
             }
 
             if (span != null) {
-                CapiZipkinServerResponseAdapter parser = new CapiZipkinServerResponseAdapter(this, exchange);
+                CapiZipkinServerResponseAdapter parser = new CapiZipkinServerResponseAdapter(this, serviceName);
                 parser.onResponse(exchange, span.customizer());
                 span.finish();
                 TraceContext context = span.context();
@@ -561,12 +490,14 @@ public class CapiZipkinTracer extends ServiceSupport implements RoutePolicyFacto
 
             // client events
             if (camelEvent instanceof CamelEvent.ExchangeSendingEvent exchangeSendingEvent) {
+                LOG.trace("NOTIFY CamelEvent.ExchangeSendingEvent");
                 String serviceName = getServiceName(exchangeSendingEvent.getExchange(), exchangeSendingEvent.getEndpoint(), false, true);
                 Tracing brave = getTracing(serviceName);
                 if (brave != null && isIncluded(serviceName)) {
                     clientRequest(brave, exchangeSendingEvent);
                 }
             } else if (camelEvent instanceof CamelEvent.ExchangeSentEvent exchangeSentEvent) {
+                LOG.trace("NOTIFY CamelEvent.ExchangeSentEvent");
                 String serviceName = getServiceName(exchangeSentEvent.getExchange(), exchangeSentEvent.getEndpoint(), false, true);
                 Tracing brave = getTracing(serviceName);
                 if (brave != null && isIncluded(serviceName)) {
@@ -601,7 +532,7 @@ public class CapiZipkinTracer extends ServiceSupport implements RoutePolicyFacto
             Tracing brave = getTracing(serviceName);
             if (brave != null && isIncluded(serviceName)) {
                 LOG.trace("Exchange BEGIN: " + serviceName);
-                serverRequest(brave, serviceName, exchange);
+                serverRequest(brave, exchange, serviceName);
             }
 
         }
@@ -609,7 +540,6 @@ public class CapiZipkinTracer extends ServiceSupport implements RoutePolicyFacto
         // Report Server send after route has completed processing of the exchange.
         @Override
         public void onExchangeDone(Route route, Exchange exchange) {
-
             String serviceName = getServiceName(exchange, route.getEndpoint(), true, false);
             Tracing brave = getTracing(serviceName);
             if (brave != null && isIncluded(serviceName)) {
@@ -638,5 +568,23 @@ public class CapiZipkinTracer extends ServiceSupport implements RoutePolicyFacto
             }
         }
         return true;
+    }
+
+    private String normalizeServiceName(String key) {
+        key = key.replaceAll("rest://", "");
+        String[] keyParts = key.split(":");
+        if(keyParts.length > 1) {
+            return keyParts[1];
+        } else {
+            return key;
+        }
+    }
+
+    private String normalizeClientEndpoint(Endpoint endpoint) {
+        String sanitizeEndpoint = URISupport.sanitizeUri(endpoint.getEndpointUri());
+        if(sanitizeEndpoint.contains("?")) {
+            return sanitizeEndpoint.substring(0, sanitizeEndpoint.indexOf("?"));
+        }
+        return sanitizeEndpoint;
     }
 }

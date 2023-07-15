@@ -30,6 +30,16 @@ public class ServiceMeta {
     @JsonProperty("ingress")
     private String ingress;
 
+    @JsonProperty("sticky_session_enabled")
+    private boolean stickySession;
+
+    @JsonProperty("sticky_session_type")
+    private String stickySessionType;
+
+    @JsonProperty("sticky_session_key")
+    private String stickySessionKey;
+
+
     public boolean isSecured() {
         return secured;
     }
@@ -92,5 +102,29 @@ public class ServiceMeta {
 
     public void setIngress(String ingress) {
         this.ingress = ingress;
+    }
+
+    public boolean isStickySession() {
+        return stickySession;
+    }
+
+    public void setStickySession(boolean stickySession) {
+        this.stickySession = stickySession;
+    }
+
+    public String getStickySessionType() {
+        return stickySessionType;
+    }
+
+    public void setStickySessionType(String stickySessionType) {
+        this.stickySessionType = stickySessionType;
+    }
+
+    public String getStickySessionKey() {
+        return stickySessionKey;
+    }
+
+    public void setStickySessionKey(String stickySessionKey) {
+        this.stickySessionKey = stickySessionKey;
     }
 }

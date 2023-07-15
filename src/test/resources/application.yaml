@@ -1,6 +1,7 @@
 server:
   port: 8380
 capi:
+  kubernetes: false
   reverse:
     proxy:
       enabled: false

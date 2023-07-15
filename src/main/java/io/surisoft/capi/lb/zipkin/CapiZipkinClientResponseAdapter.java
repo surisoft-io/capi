@@ -23,16 +23,13 @@ public class CapiZipkinClientResponseAdapter {
 
     private static final Logger LOG = LoggerFactory.getLogger(CapiZipkinClientResponseAdapter.class);
     private final CapiZipkinTracer eventNotifier;
-    private final String url;
 
-    public CapiZipkinClientResponseAdapter(CapiZipkinTracer eventNotifier, Endpoint endpoint) {
+    public CapiZipkinClientResponseAdapter(CapiZipkinTracer eventNotifier) {
         this.eventNotifier = eventNotifier;
-        this.url = URISupport.sanitizeUri(endpoint.getEndpointUri());
     }
 
     void onResponse(Exchange exchange, SpanCustomizer span) {
-        span.tag("camel.client.endpoint.url", normalizeCamelUrl(url));
-        span.tag("camel.client.exchange.id", exchange.getExchangeId());
+
 
         if(exchange.getIn().getHeader(Constants.AUTHORIZATION_HEADER, String.class) != null) {
             try {
@@ -72,12 +69,5 @@ public class CapiZipkinClientResponseAdapter {
         if (responseCode != null) {
             span.tag("camel.client.exchange.message.response.code", responseCode);
         }
-    }
-
-    private String normalizeCamelUrl(String url) {
-        if(url.contains("?")) {
-            return url.substring(0, url.indexOf("?"));
-        }
-         return url;
     }
 }

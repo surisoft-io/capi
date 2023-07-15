@@ -1,9 +1,10 @@
 package io.surisoft.capi.lb.configuration;
 
+import com.hazelcast.map.IMap;
 import io.surisoft.capi.lb.schema.Api;
 import io.surisoft.capi.lb.schema.StickySession;
-import org.apache.camel.CamelContext;
 import org.cache2k.Cache;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,10 +22,10 @@ public class CapiApplicationListener implements ApplicationListener<ApplicationE
     private Cache<String, Api> apiCache;
 
     @Autowired
-    private Cache<String, StickySession> stickySessionCache;
+    private IMap<String, StickySession> stickySessionCache;
 
     @Override
-    public void onApplicationEvent(ApplicationEvent applicationEvent) {
+    public void onApplicationEvent(@NotNull ApplicationEvent applicationEvent) {
         if(applicationEvent instanceof ContextClosedEvent) {
             log.info("Capi is shutting down, time to clear all cache info.");
             apiCache.clear();

@@ -47,6 +47,8 @@ public class CapiConfiguration {
     @Bean
     @ConditionalOnProperty(prefix = "capi.zipkin", name = "enabled", havingValue = "true")
     CapiZipkinTracer zipkinTracer(CamelContext camelContext) {
+        camelContext.setUseMDCLogging(true);
+
         log.debug("Zipkin Enabled!");
         Set<String> excludePatterns = new HashSet<>();
         excludePatterns.add("timer://");

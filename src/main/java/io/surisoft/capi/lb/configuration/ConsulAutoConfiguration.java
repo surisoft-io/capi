@@ -41,7 +41,7 @@ public class ConsulAutoConfiguration {
     @ConditionalOnProperty(prefix = "capi.consul.discovery", name = "enabled", havingValue = "true")
     public ConsulNodeDiscovery consulNodeDiscovery(CamelContext camelContext, ApiUtils apiUtils, RouteUtils routeUtils, MetricsProcessor metricsProcessor, HttpUtils httpUtils, StickySessionCacheManager stickySessionCacheManager, Cache<String, Api> apiCache) {
         //Testing Inline Route
-        //camelContext.getRestConfiguration().setInlineRoutes(false);
+        camelContext.getRestConfiguration().setInlineRoutes(true);
 
         ConsulNodeDiscovery consulNodeDiscovery = new ConsulNodeDiscovery(camelContext, apiUtils, routeUtils, metricsProcessor, stickySessionCacheManager, apiCache);
         consulNodeDiscovery.setCapiContext(httpUtils.getCapiContext(capiContext));

@@ -12,17 +12,17 @@
   <name>CAPI Load Balancer</name>
 
   <properties>
-    <org.apache.camel.springboot-version>4.0.0-M3</org.apache.camel.springboot-version>
-    <spring.boot-version>3.0.6</spring.boot-version>
+    <org.apache.camel.springboot-version>4.0.0-RC1</org.apache.camel.springboot-version>
+    <spring.boot-version>3.1.1</spring.boot-version>
 
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-    <io.micrometer-version>1.9.3</io.micrometer-version>
-    <org.springdoc-verion>2.0.4</org.springdoc-verion>
-    <nimbus-jose-jwt-version>9.25.4</nimbus-jose-jwt-version>
-    <spring-cloud-sleuth-version>3.1.4</spring-cloud-sleuth-version>
-    <io.zipkin.reporter2-version>2.16.3</io.zipkin.reporter2-version>
-    <wiremock.version>3.0.0-beta-7</wiremock.version>
+    <io.micrometer-version>1.11.1</io.micrometer-version>
+    <org.springdoc-verion>2.1.0</org.springdoc-verion>
+    <nimbus-jose-jwt-version>9.31</nimbus-jose-jwt-version>
+    <spring-cloud-sleuth-version>3.1.9</spring-cloud-sleuth-version>
+    <io.zipkin.reporter2-version>2.16.4</io.zipkin.reporter2-version>
+    <wiremock.version>3.0.0-beta-10</wiremock.version>
     <org.bouncycastle.version>1.70</org.bouncycastle.version>
     <org.junit.jupiter.version>5.9.3</org.junit.jupiter.version>
     <jacoco.version>0.8.8</jacoco.version>
@@ -39,7 +39,7 @@
   <parent>
     <groupId>org.springframework.boot</groupId>
     <artifactId>spring-boot-starter-parent</artifactId>
-    <version>3.0.6</version>
+    <version>3.1.1</version>
     <relativePath/>
   </parent>
   <dependencyManagement>
@@ -47,7 +47,7 @@
       <dependency>
         <groupId>org.apache.camel.springboot</groupId>
         <artifactId>camel-spring-boot-dependencies</artifactId>
-        <version>4.0.0-M3</version>
+        <version>4.0.0-RC1</version>
         <type>pom</type>
         <scope>import</scope>
       </dependency>
@@ -115,13 +115,8 @@
     <dependency>
       <groupId>org.apache.camel.springboot</groupId>
       <artifactId>camel-zipkin-starter</artifactId>
-      <version>3.20.1</version>
-      <!--version>${org.apache.camel.springboot-version}</version-->
+      <version>3.21.0</version>
     </dependency>
-    <!--dependency>
-      <groupId>org.apache.camel.springboot</groupId>
-      <artifactId>camel-opentelemetry-starter</artifactId>
-    </dependency-->
     <dependency>
       <groupId>org.apache.camel</groupId>
       <artifactId>camel-kafka</artifactId>
@@ -167,7 +162,6 @@
       <artifactId>nimbus-jose-jwt</artifactId>
       <version>${nimbus-jose-jwt-version}</version>
     </dependency>
-
     <!-- Database support -->
     <dependency>
       <groupId>org.springframework.boot</groupId>
@@ -186,12 +180,10 @@
       <groupId>com.h2database</groupId>
       <artifactId>h2</artifactId>
     </dependency>
-
     <dependency>
       <groupId>org.springframework</groupId>
       <artifactId>spring-context</artifactId>
     </dependency>
-
     <!-- Springdoc -->
     <dependency>
       <groupId>org.springdoc</groupId>
@@ -265,6 +257,11 @@
       <artifactId>cache2k-core</artifactId>
       <version>${cache2k-version}</version>
       <scope>runtime</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.hazelcast</groupId>
+      <artifactId>hazelcast-all</artifactId>
+      <version>4.2.8</version>
     </dependency>
     <dependency>
       <groupId>com.fasterxml.jackson.dataformat</groupId>

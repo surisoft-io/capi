@@ -12,9 +12,9 @@ public final class CapiZipkinClientRequestAdapter {
     private final String spanName;
     private final String url;
 
-    public CapiZipkinClientRequestAdapter(Endpoint endpoint) {
+    public CapiZipkinClientRequestAdapter(Endpoint endpoint, String clientEndpoint) {
         this.spanName = URISupport.sanitizeUri(endpoint.getEndpointKey()).toLowerCase(Locale.ROOT);
-        this.url = URISupport.sanitizeUri(endpoint.getEndpointUri());
+        this.url = clientEndpoint;
     }
 
     public void onRequest(Exchange exchange, SpanCustomizer span) {

@@ -26,6 +26,7 @@ import java.util.*;
 public class ConsulNodeDiscovery {
 
     private static final Logger log = LoggerFactory.getLogger(ConsulNodeDiscovery.class);
+    private static boolean connectedToConsul = false;
     private String consulHost;
     private final ApiUtils apiUtils;
     private final RouteUtils routeUtils;
@@ -75,6 +76,7 @@ public class ConsulNodeDiscovery {
             for(String service : services) {
                     getServiceByName(service);
             }
+            connectedToConsul = true;
         } catch (IOException e) {
             log.error("Error connecting to Consul, will try again...");
         } catch (InterruptedException e) {
@@ -217,8 +219,8 @@ public class ConsulNodeDiscovery {
                         incomingApi.setRoundRobinEnabled(false);
                         incomingApi.setFailoverEnabled(false);
                     }
-                    camelContext.addRoutes(new RestDefinitionProcessor(camelContext, incomingApi, routeUtils, routeId));
                     camelContext.addRoutes(new DirectRouteProcessor(camelContext, incomingApi, routeUtils, metricsProcessor, routeId, stickySessionCacheManager, capiContext, reverseProxyHost));
+                    camelContext.addRoutes(new RestDefinitionProcessor(camelContext, incomingApi, routeUtils, routeId));
                 } catch (Exception e) {
                     log.error(e.getMessage(), e);
                 }
@@ -250,5 +252,9 @@ public class ConsulNodeDiscovery {
 
     public void setReverseProxyHost(String reverseProxyHost) {
         this.reverseProxyHost = reverseProxyHost;
+    }
+
+    public static boolean isConnectedToConsul() {
+        return connectedToConsul;
     }
 }

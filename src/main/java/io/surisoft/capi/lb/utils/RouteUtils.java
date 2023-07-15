@@ -176,8 +176,8 @@ public class RouteUtils {
             Route existingRoute = camelContext.getRoute(routeId);
             if(existingRoute == null) {
                 try {
-                    camelContext.addRoutes(new RestDefinitionProcessor(camelContext, incomingApi, this, routeId));
                     camelContext.addRoutes(new DirectRouteProcessor(camelContext, incomingApi, this, metricsProcessor, routeId, stickySessionCacheManager, capiContext, reverseProxyHost));
+                    camelContext.addRoutes(new RestDefinitionProcessor(camelContext, incomingApi, this, routeId));
                 } catch (Exception e) {
                     log.error(e.getMessage(), e);
                 }
