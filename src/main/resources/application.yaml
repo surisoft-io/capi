@@ -9,15 +9,21 @@ capi:
   #### If you want to disable routes from following redirects ###
   disable:
     redirect: true
+  #### Websocket Gateway
+  websocket:
+    enabled: false
+    server:
+      host: localhost
+      port: 8381
   #### Enable Zipkin
   zipkin:
     enabled: false
     endpoint: http://localhost:9411/api/v2/spans
   #### If you want CAPI to search consul for available APIs to be deployed, enable this feature. ####
   consul:
-    host: http://localhost:8500
+    host:
     discovery:
-      enabled: true
+      enabled: false
       timer:
         interval: 5
   #### If you want to enable certificate management, please provide a trust store (JKS). ####
@@ -83,7 +89,7 @@ camel:
     mapping:
       context-path: /capi/*
   springboot:
-    name: capi-load-balancer
+    name: capi-gateway
 
 #### SSL Configuration ####
 #server.ssl.key-store-type=PKCS12
@@ -116,6 +122,6 @@ oidc:
   provider:
     enabled: false
     host: http://localhost:8080
-    realm: /realms/apigw
+    realm: /realms/master
     clientId: 
     clientSecret:

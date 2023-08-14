@@ -1,10 +1,10 @@
 FROM openjdk:17-jdk
-ARG CAPI_VERSION=3.0.22
+ARG CAPI_VERSION=4.0.00
 
 RUN mkdir /capi
 RUN mkdir /capi/logs
 
-ARG JAR_FILE=target/capi-lb-${CAPI_VERSION}.jar
+ARG JAR_FILE=target/capi-${CAPI_VERSION}.jar
 COPY ${JAR_FILE} /capi/app.jar
 
 ENTRYPOINT  exec java -XX:InitialHeapSize=4g \
