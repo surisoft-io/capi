@@ -108,9 +108,11 @@ sticky:
       to:
         live: 2
 oidc:
+  cookieName:
   provider:
     enabled: false
     host: http://localhost:8080
+    keys: http://localhost:8080/realms/master/protocol/openid-connect/certs
     realm: /realms/
     clientId:
     clientSecret:

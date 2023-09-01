@@ -1,6 +1,5 @@
 package io.surisoft.capi.configuration;
 
-import com.hazelcast.map.IMap;
 import io.surisoft.capi.schema.Api;
 import io.surisoft.capi.schema.StickySession;
 import io.surisoft.capi.websocket.WebsocketGateway;
@@ -24,7 +23,7 @@ public class CapiApplicationListener implements ApplicationListener<ApplicationE
     private Cache<String, Api> apiCache;
 
     @Autowired
-    private IMap<String, StickySession> stickySessionCache;
+    private Cache<String, StickySession> stickySessionCache;
 
     @Autowired(required = false)
     private WebsocketGateway websocketGateway;

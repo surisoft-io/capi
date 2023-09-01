@@ -119,11 +119,12 @@ public class ApiManager {
                                                                 .map(RouteEndpointInfo::new)
                                                                 .toList();
         for(RouteEndpointInfo routeEndpointInfo : routeEndpointInfoList) {
-            if(!routeEndpointInfo.getId().startsWith("rd_"))  {
-                if(!routeEndpointInfo.getId().startsWith("consul-")) {
-                    detailInfoList.add(new RouteDetailsEndpointInfo(camelContext, camelContext.getRoute(routeEndpointInfo.getId())));
-                }
+            if(routeEndpointInfo.getId().startsWith("rd_"))  {
+                detailInfoList.add(new RouteDetailsEndpointInfo(camelContext, camelContext.getRoute(routeEndpointInfo.getId())));
             }
+        }
+        for(RouteDetailsEndpointInfo detailsEndpointInfo : detailInfoList) {
+            detailsEndpointInfo.setId(detailsEndpointInfo.getId().replaceAll("rd_", ""));
         }
         return new ResponseEntity<>(detailInfoList, HttpStatus.OK);
     }

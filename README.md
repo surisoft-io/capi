@@ -25,7 +25,7 @@
 * Load Balancer (Round robin)
 * Failover (With and without Round Robin)
 * Tenant support (Headers)
-* Stick Session (Cookies and Headers)
+* Sticky Session (Cookies and Headers)
 * Certificate Manager (using the CAPI Manager API)
 * Supports running with no DB, using Consul for service discovery
 

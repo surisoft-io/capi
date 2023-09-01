@@ -23,6 +23,7 @@ public class OIDCConstants {
     public static final String TOKEN_URI = "/protocol/openid-connect/token";
     public static final String CERTS_URI = "/protocol/openid-connect/certs";
     public static final String REALMS_CLAIM = "realm_access";
+    public static final String SUBSCRIPTIONS_CLAIM = "subscriptions";
     public static final String ROLES_CLAIM = "roles";
     public static final String CAMEL_SERVLET_CONTEXT_PATH = "CamelServletContextPath";
     public static final String AUTHORIZATION_QUERY = "access_token";

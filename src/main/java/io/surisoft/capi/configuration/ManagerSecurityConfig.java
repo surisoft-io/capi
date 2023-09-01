@@ -62,6 +62,9 @@ public class ManagerSecurityConfig {
     @Value("${oidc.provider.realm}")
     private String oidcProviderRealm;
 
+    @Value("${oidc.provider.keys}")
+    private String oidcProviderKeys;
+
     public ManagerSecurityConfig() {
     }
 
@@ -104,7 +107,7 @@ public class ManagerSecurityConfig {
     public DefaultJWTProcessor<SecurityContext> getJwtProcessor() throws IOException, ParseException {
         log.trace("Starting CAPI JWT Processor");
         DefaultJWTProcessor<SecurityContext> jwtProcessor = new DefaultJWTProcessor<>();
-        JWKSet jwkSet = JWKSet.load(new URL(oidcProviderHost + oidcProviderRealm + OIDCConstants.CERTS_URI));
+        JWKSet jwkSet = JWKSet.load(new URL(oidcProviderKeys));
         ImmutableJWKSet<SecurityContext> keySource = new ImmutableJWKSet<>(jwkSet);
         JWSAlgorithm expectedJWSAlg = JWSAlgorithm.RS256;
         JWSKeySelector<SecurityContext> keySelector = new JWSVerificationKeySelector<>(expectedJWSAlg, keySource);

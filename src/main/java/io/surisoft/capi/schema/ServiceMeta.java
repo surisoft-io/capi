@@ -3,6 +3,9 @@ package io.surisoft.capi.schema;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import java.util.List;
+import java.util.Set;
+
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class ServiceMeta {
 
@@ -42,6 +45,8 @@ public class ServiceMeta {
     @JsonProperty("type")
     private String type;
 
+    @JsonProperty("subscription-group")
+    private String subscriptionGroup;
 
     public boolean isSecured() {
         return secured;
@@ -137,5 +142,13 @@ public class ServiceMeta {
 
     public void setType(String type) {
         this.type = type;
+    }
+
+    public String getSubscriptionGroup() {
+        return subscriptionGroup;
+    }
+
+    public void setSubscriptionGroup(String subscriptionGroup) {
+        this.subscriptionGroup = subscriptionGroup;
     }
 }

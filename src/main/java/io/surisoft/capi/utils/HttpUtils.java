@@ -211,16 +211,26 @@ import com.nimbusds.jose.proc.SecurityContext;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.proc.DefaultJWTProcessor;
 import io.surisoft.capi.exception.AuthorizationException;
+import org.apache.camel.Exchange;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
+import java.net.HttpCookie;
+import java.net.http.HttpHeaders;
+import java.net.http.HttpRequest;
 import java.text.ParseException;
+import java.util.ArrayList;
+import java.util.List;
 
 @Component
-public class    HttpUtils {
+public class HttpUtils {
+
+    @Value("${oidc.cookieName}")
+    private String authorizationCookieName;
 
     private static final Logger log = LoggerFactory.getLogger(HttpUtils.class);
 
@@ -258,8 +268,8 @@ public class    HttpUtils {
         return authorizationHeader.substring(7);
     }
 
-    public JWTClaimsSet authorizeRequest(String authorizationHeader) throws AuthorizationException, BadJOSEException, ParseException, JOSEException, IOException {
-        return jwtProcessor.process(getBearerTokenFromHeader(authorizationHeader), null);
+    public JWTClaimsSet authorizeRequest(String accessToken) throws AuthorizationException, BadJOSEException, ParseException, JOSEException, IOException {
+        return jwtProcessor.process(accessToken, null);
     }
 
     public String normalizeHttpEndpoint(String httpEndpoint) {
@@ -274,5 +284,53 @@ public class    HttpUtils {
 
     public boolean isEndpointSecure(String httpEndpoint) {
         return httpEndpoint.contains("https://");
+    }
+
+    public List<HttpCookie> getCookiesFromExchange(Exchange exchange) {
+        List<HttpCookie> httpCookieList = new ArrayList<>();
+        if(exchange.getIn().getHeader("Cookie") != null) {
+            String[] cookieArray = exchange.getIn().getHeader("Cookie", String.class).split(";");
+            for (String cookieString : cookieArray) {
+                String[] cookieKeyValue = cookieString.split("=");
+                HttpCookie httpCookie = new HttpCookie(stripOffSurroundingQuote(cookieKeyValue[0]), stripOffSurroundingQuote(cookieKeyValue[1]));
+                httpCookieList.add(httpCookie);
+            }
+        }
+        return httpCookieList;
+    }
+
+    public String getAuthorizationCookieName(List<HttpCookie> httpCookieList) {
+        if(authorizationCookieName != null && !authorizationCookieName.isEmpty()) {
+            for(HttpCookie httpCookie : httpCookieList) {
+                if(httpCookie.getName().equals(authorizationCookieName)) {
+                    return httpCookie.getValue();
+                }
+            }
+        } else {
+            log.warn("No authorization cookie name provided, please make sure you have the property: oidc.cookieName");
+        }
+        return null;
+    }
+
+    public String getAuthorizationCookieValue(List<HttpCookie> httpCookieList, String authorizationCookie) {
+        for(HttpCookie httpCookie : httpCookieList) {
+            if(httpCookie.getName().equals(authorizationCookie)) {
+                return httpCookie.getValue();
+            }
+        }
+        return null;
+    }
+
+    private static String stripOffSurroundingQuote(String value) {
+
+        if (value != null && value.length() > 2 &&
+                value.charAt(0) == '"' && value.charAt(value.length() - 1) == '"') {
+            return value.substring(1, value.length() - 1);
+        }
+        if (value != null && value.length() > 2 &&
+                value.charAt(0) == '\'' && value.charAt(value.length() - 1) == '\'') {
+            return value.substring(1, value.length() - 1);
+        }
+        return value;
     }
 }

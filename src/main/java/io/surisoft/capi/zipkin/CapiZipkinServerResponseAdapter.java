@@ -57,15 +57,15 @@ public class CapiZipkinServerResponseAdapter {
 
         HttpServletRequest httpServletRequest = (HttpServletRequest) exchange.getIn().getHeader(Constants.CAMEL_HTTP_SERVLET_REQUEST);
 
-        if(httpServletRequest.getMethod() != null) {
+        if(httpServletRequest != null && httpServletRequest.getMethod() != null) {
             span.tag(Constants.CAPI_REQUEST_METHOD, httpServletRequest.getMethod());
         }
 
-        if(httpServletRequest.getHeader(Constants.CONTENT_TYPE) != null) {
+        if(httpServletRequest != null && httpServletRequest.getHeader(Constants.CONTENT_TYPE) != null) {
             span.tag(Constants.CAPI_REQUEST_CONTENT_TYPE, httpServletRequest.getHeader(Constants.CONTENT_TYPE));
         }
 
-        if(httpServletRequest.getContentLength() > -1) {
+        if(httpServletRequest != null && httpServletRequest.getContentLength() > -1) {
             span.tag(Constants.CAPI_REQUEST_CONTENT_LENGTH, Integer.toString(httpServletRequest.getContentLength()));
         }
 

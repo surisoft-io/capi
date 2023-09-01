@@ -1,7 +1,9 @@
 package io.surisoft.capi.oidc;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.surisoft.capi.schema.Group;
 import io.surisoft.capi.schema.OIDCClient;
 import okhttp3.*;
 import org.apache.camel.util.json.JsonArray;
@@ -213,5 +215,82 @@ public class OIDCClientManager {
             }
             return oidcClients;
         }
+    }
+
+    public List<Group> getGroups() throws IOException, OIDCException {
+        String accessToken = getAccessToken();
+        Request getAllCapiClientsRequest = new Request.Builder()
+                .addHeader(OIDCConstants.AUTHORIZATION_HEADER, OIDCConstants.BEARER_AUTHORIZATION_ATTRIBUTE + accessToken)
+                .url(oidcProviderHost + "/admin" + oidcProviderRealm + "/groups")
+                .get()
+                .build();
+        try (Response getAllCapiClientsResponse = httpClient.newCall(getAllCapiClientsRequest).execute()) {
+            if (!getAllCapiClientsResponse.isSuccessful()) {
+                throw new OIDCException("Problem subscribing to service, return code " + getAllCapiClientsResponse.code());
+            }
+            assert getAllCapiClientsResponse.body() != null;
+            return objectMapper.readValue(getAllCapiClientsResponse.body().string(), new TypeReference<>() {
+            });
+        }
+    }
+
+    public boolean addClientToGroup(String groupName, String clientId) throws IOException, OIDCException {
+        JsonObject emptyBody = new JsonObject();
+        List<Group> groupList = getGroups();
+        if(groupList != null && !groupList.isEmpty()) {
+            for(Group group : groupList) {
+                if(group.getName().equals(groupName)) {
+                    String serviceAccount = getServiceAccount(clientId);
+                    String accessToken = getAccessToken();
+                    Request addClientToGroupRequest = new Request.Builder()
+                            .addHeader(OIDCConstants.AUTHORIZATION_HEADER, OIDCConstants.BEARER_AUTHORIZATION_ATTRIBUTE + accessToken)
+                            .url(oidcProviderHost + "/admin" + oidcProviderRealm + "/users/" + serviceAccount + "/groups/" + group.getId())
+                            .put(RequestBody.create(emptyBody.toJson(), OIDCConstants.JSON_TYPE))
+                            .build();
+                    try (Response addClientToGroupResponse = httpClient.newCall(addClientToGroupRequest).execute()) {
+                        if (!addClientToGroupResponse.isSuccessful()) {
+                            throw new OIDCException("Problem adding client to group, return code " + addClientToGroupResponse.code());
+                        }
+                       return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
+    private JsonArray getAllMembersOfGroup(String groupName) throws OIDCException, IOException {
+        String accessToken = getAccessToken();
+        List<Group> groupList = getGroups();
+        if(groupList != null && !groupList.isEmpty()) {
+            for(Group group : groupList) {
+                if(group.getName().equals(groupName)) {
+                    Request getMembersOfGroupRequest = new Request.Builder()
+                            .addHeader(OIDCConstants.AUTHORIZATION_HEADER, OIDCConstants.BEARER_AUTHORIZATION_ATTRIBUTE + accessToken)
+                            .url(oidcProviderHost + "/admin" + oidcProviderRealm + "/groups/" + group.getId() + "/members")
+                            .get()
+                            .build();
+                    try (Response getMembersOfGroupResponse = httpClient.newCall(getMembersOfGroupRequest).execute()) {
+                        if (!getMembersOfGroupResponse.isSuccessful()) {
+                            throw new OIDCException("Problem getting members of group, return code " + getMembersOfGroupResponse.code());
+                        }
+                        assert getMembersOfGroupResponse.body() != null;
+                        return objectMapper.readValue(getMembersOfGroupResponse.body().string(), JsonArray.class);
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
+    public List<String> getAllClientsOfGroup(String groupName) throws OIDCException, IOException {
+        List<String> clientList = new ArrayList<>();
+        JsonArray members = getAllMembersOfGroup(groupName);
+        assert members != null;
+        members.forEach(o -> {
+            LinkedHashMap<String, String> member = (LinkedHashMap<String, String>) o;
+            clientList.add(member.get("username").replace("service-account-", ""));
+        });
+        return clientList;
     }
 }

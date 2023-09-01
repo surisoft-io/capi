@@ -45,7 +45,7 @@ public class DBAutoConfiguration {
         return new RouteBuilder() {
             @Override
             public void configure() {
-                from("timer:db-inspect?period=" + dbTimerInterval + "s")
+                from("timer:db-inspect?period=" + dbTimerInterval)
                         .to("bean:dbNodeDiscovery?method=processInfo")
                         .routeId("db-discovery-service");
             }

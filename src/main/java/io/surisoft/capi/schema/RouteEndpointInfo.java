@@ -67,4 +67,8 @@ public class RouteEndpointInfo {
     public String getStatus() {
         return status;
     }
+
+    public void setId(String id) {
+        this.id = id;
+    }
 }

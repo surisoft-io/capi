@@ -15,6 +15,8 @@ import org.apache.camel.component.http.HttpClientConfigurer;
 import org.apache.camel.component.http.HttpComponent;
 import org.apache.camel.component.micrometer.CamelJmxConfig;
 import org.apache.camel.component.micrometer.DistributionStatisticConfigFilter;
+import org.apache.camel.http.base.cookie.CookieHandler;
+import org.apache.camel.http.base.cookie.ExchangeCookieHandler;
 import org.apache.hc.client5.http.impl.classic.HttpClientBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -50,13 +52,7 @@ public class CapiConfiguration {
     @Bean
     @ConditionalOnProperty(prefix = "capi.websocket", name = "enabled", havingValue = "true")
     public Map<String, WebsocketClient> websocketClients() {
-        Map<String, WebsocketClient> websocketClientMap = new HashMap<>();
-        /*WebsocketClient echoClient = new WebsocketClient();
-        echoClient.setPort(8888);
-        echoClient.setHost("http://localhost");
-        echoClient.setPath(Constants.CAPI_CONTEXT + "/echo");
-        websocketClientMap.put(Constants.CAPI_CONTEXT + "/echo", echoClient);*/
-        return websocketClientMap;
+        return new HashMap<>();
     }
 
     @Bean

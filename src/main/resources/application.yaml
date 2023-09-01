@@ -11,7 +11,7 @@ capi:
     redirect: true
   #### Websocket Gateway
   websocket:
-    enabled: false
+    enabled: true
     server:
       host: localhost
       port: 8381
@@ -21,11 +21,11 @@ capi:
     endpoint: http://localhost:9411/api/v2/spans
   #### If you want CAPI to search consul for available APIs to be deployed, enable this feature. ####
   consul:
-    host:
+    host: http://localhost:8500
     discovery:
       enabled: false
       timer:
-        interval: 5
+        interval: 10000
   #### If you want to enable certificate management, please provide a trust store (JKS). ####
   trust:
     store:
@@ -47,7 +47,7 @@ capi:
   db:
     discovery:
       timer:
-        interval: 20
+        interval: 40000
   version: ^project.version^
   name: ^project.name^
   spring:
@@ -119,9 +119,11 @@ sticky:
       to:
         live: 2
 oidc:
+  cookieName:
   provider:
     enabled: false
+    keys: http://localhost:8080/realms/master/protocol/openid-connect/certs
     host: http://localhost:8080
     realm: /realms/master
-    clientId: 
-    clientSecret:
+    clientId:
+    clientSecret: 

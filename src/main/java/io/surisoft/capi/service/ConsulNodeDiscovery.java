@@ -202,6 +202,17 @@ public class ConsulNodeDiscovery {
         return false;
     }
 
+    public List<String> getSubscriptionGroups(String key, ConsulObject[] consulObject) {
+        for(ConsulObject entry : consulObject) {
+            if(Objects.equals(getServiceNodeGroup(entry), key)) {
+                if(entry.getServiceMeta().getSubscriptionGroup() != null && !entry.getServiceMeta().getSubscriptionGroup().isEmpty()) {
+                    return Arrays.asList(entry.getServiceMeta().getSubscriptionGroup().split(",", -1));
+                }
+            }
+        }
+        return null;
+    }
+
     private Api createApiObject(String apiId, String serviceName, String key, Set<Mapping> mappingList, ConsulObject[] consulResponse) {
         Api incomingApi = new Api();
         incomingApi.setId(apiId);
@@ -220,6 +231,8 @@ public class ConsulNodeDiscovery {
         incomingApi.setRoundRobinEnabled(true);
         incomingApi.setFailoverEnabled(true);
         incomingApi.setWebsocket(isWebsocket(key, consulResponse));
+        incomingApi.setSubscriptionGroup(getSubscriptionGroups(key, consulResponse));
+        incomingApi.setSubscriptionGroup(getSubscriptionGroups(key, consulResponse));
 
         return incomingApi;
     }

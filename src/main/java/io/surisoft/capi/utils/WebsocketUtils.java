@@ -50,9 +50,11 @@ public class WebsocketUtils {
         String websocketContext = Constants.CAPI_CONTEXT + api.getContext() + api.getMappingList().stream().toList().get(0).getRootContext();
 
         WebsocketClient websocketClient = new WebsocketClient();
+
         websocketClient.setApiId(api.getContext());
         websocketClient.setMappingList(api.getMappingList());
         websocketClient.setPath(websocketContext);
+        websocketClient.setRequiresSubscription(api.isSecured());
         websocketClient.setHttpHandler(createClientHttpHandler(websocketClient, api));
         return websocketClient;
     }

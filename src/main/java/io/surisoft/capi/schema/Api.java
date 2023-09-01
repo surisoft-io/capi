@@ -5,6 +5,7 @@ import jakarta.persistence.*;
 
 import java.io.Serializable;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 @Entity
@@ -35,10 +36,9 @@ public class Api implements Serializable {
     private boolean zipkinShowTraceId;
     private String zipkinServiceName;
     private String authorizationEndpointPublicKey;
-
     private boolean tenantAware;
-
     private boolean websocket;
+    private List<String> subscriptionGroup;
 
     public boolean isSecured() {
         return secured;
@@ -232,5 +232,13 @@ public class Api implements Serializable {
 
     public void setWebsocket(boolean websocket) {
         this.websocket = websocket;
+    }
+
+    public List<String> getSubscriptionGroup() {
+        return subscriptionGroup;
+    }
+
+    public void setSubscriptionGroup(List<String> subscriptionGroup) {
+        this.subscriptionGroup = subscriptionGroup;
     }
 }

@@ -1,6 +1,7 @@
 package io.surisoft.capi.controller;
 
 import com.github.tomakehurst.wiremock.WireMockServer;
+import com.github.tomakehurst.wiremock.junit.WireMockRule;
 import io.surisoft.capi.cache.StickySessionCacheManager;
 import io.surisoft.capi.schema.Api;
 import io.surisoft.capi.schema.WebsocketClient;
@@ -21,6 +22,7 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 import java.util.Map;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
+import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
 
 @ExtendWith(SpringExtension.class)
 @SpringBootTest
@@ -85,7 +87,7 @@ class TestConsulNodeDiscovery {
 
     @Test
     void testGetAllServices() throws Exception {
-        wireMockServer = new WireMockServer(8888);
+        WireMockRule wireMockServer = new WireMockRule(wireMockConfig().dynamicPort());
         wireMockServer.start();
         wireMockServer.stubFor(get(urlEqualTo("/v1/catalog/services")).willReturn(aResponse().withBody(SERVICES_RESPONSE)));
         wireMockServer.stubFor(get(urlEqualTo("/v1/catalog/service/dummy")).willReturn(aResponse().withBody(SERVICE_DUMMY_RESPONSE)));
@@ -98,7 +100,7 @@ class TestConsulNodeDiscovery {
         Assertions.assertNotNull(apiCache);
 
         ConsulNodeDiscovery consulNodeDiscovery = new ConsulNodeDiscovery(camelContext, apiUtils, routeUtils, metricsProcessor, stickySessionCacheManager, apiCache, websocketClientMap);
-        consulNodeDiscovery.setConsulHost("http://localhost:8888");
+        consulNodeDiscovery.setConsulHost("http://localhost:" + wireMockServer.port());
         consulNodeDiscovery.setCapiContext("/capi/test");
         consulNodeDiscovery.processInfo();
 

@@ -75,7 +75,7 @@ public class ConsulAutoConfiguration {
         return new RouteBuilder() {
             @Override
             public void configure() {
-                from("timer:consul-inspect?period=" + consulTimerInterval + "s")
+                from("timer:consul-inspect?period=" + consulTimerInterval)
                         .to("bean:consulNodeDiscovery?method=processInfo")
                         .routeId("consul-discovery-service");
             }
