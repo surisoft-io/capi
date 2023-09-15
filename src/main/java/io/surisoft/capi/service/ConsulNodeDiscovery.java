@@ -55,8 +55,8 @@ public class ConsulNodeDiscovery {
         this.websocketClientMap = websocketClientMap;
 
         client = HttpClient.newBuilder()
-                .version(HttpClient.Version.HTTP_1_1)
-                .connectTimeout(Duration.ofSeconds(20))
+                //.version(HttpClient.Version.HTTP_1_1)
+                .connectTimeout(Duration.ofSeconds(10))
                 .build();
     }
 
@@ -213,6 +213,15 @@ public class ConsulNodeDiscovery {
         return null;
     }
 
+    public boolean keepGroup(String key, ConsulObject[] consulObject) {
+        for(ConsulObject entry : consulObject) {
+            if(Objects.equals(getServiceNodeGroup(entry), key)) {
+                return entry.getServiceMeta().isKeepGroup();
+            }
+        }
+        return false;
+    }
+
     private Api createApiObject(String apiId, String serviceName, String key, Set<Mapping> mappingList, ConsulObject[] consulResponse) {
         Api incomingApi = new Api();
         incomingApi.setId(apiId);
@@ -232,7 +241,7 @@ public class ConsulNodeDiscovery {
         incomingApi.setFailoverEnabled(true);
         incomingApi.setWebsocket(isWebsocket(key, consulResponse));
         incomingApi.setSubscriptionGroup(getSubscriptionGroups(key, consulResponse));
-        incomingApi.setSubscriptionGroup(getSubscriptionGroups(key, consulResponse));
+        incomingApi.setKeepGroup(keepGroup(key, consulResponse));
 
         return incomingApi;
     }

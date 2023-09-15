@@ -191,6 +191,7 @@
       <artifactId>camel-micrometer</artifactId>
       <version>${org.apache.camel.springboot-version}</version>
     </dependency>
+
     <dependency>
       <groupId>io.micrometer</groupId>
       <artifactId>micrometer-registry-jmx</artifactId>
@@ -253,6 +254,13 @@
       <artifactId>jackson-dataformat-xml</artifactId>
       <version>${jackson-dataformat-xml.version}</version>
     </dependency>
+
+    <dependency>
+      <groupId>org.springframework.kafka</groupId>
+      <artifactId>spring-kafka</artifactId>
+      <version>3.0.11</version>
+    </dependency>
+
   </dependencies>
 <build>
   <resources>

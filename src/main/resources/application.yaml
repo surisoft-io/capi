@@ -1,7 +1,9 @@
 server:
   port: 8380
 capi:
-  kubernetes: false
+  kafka:
+    enabled: false
+    host: localhost:9092
   reverse:
     proxy:
       enabled: false
@@ -11,7 +13,7 @@ capi:
     redirect: true
   #### Websocket Gateway
   websocket:
-    enabled: true
+    enabled: false
     server:
       host: localhost
       port: 8381
@@ -126,4 +128,4 @@ oidc:
     host: http://localhost:8080
     realm: /realms/master
     clientId:
-    clientSecret: 
+    clientSecret:

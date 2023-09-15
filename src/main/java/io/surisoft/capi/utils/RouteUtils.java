@@ -145,17 +145,6 @@ public class RouteUtils {
         return routeId.split(":")[2];
     }
 
-    public Api setApiDefaults(Api api) {
-        //api.setConnectTimeout(5000);
-        //api.setSocketTimeout(5000);
-        //temp to false
-        api.setFailoverEnabled(false);
-        api.setMatchOnUriPrefix(true);
-        api.setRoundRobinEnabled(true);
-        api.setMaximumFailoverAttempts(1);
-        return api;
-    }
-
     public String getStickySessionId(String paramName, String paramValue) {
         return new String(Base64.getEncoder().encode((paramName + paramValue).getBytes()));
     }

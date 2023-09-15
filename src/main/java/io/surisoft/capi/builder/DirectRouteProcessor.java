@@ -47,6 +47,10 @@ public class DirectRouteProcessor extends RouteBuilder {
             routeUtils.enableAuthorization(api.getId(), routeDefinition);
         }
 
+        if(api.isKeepGroup()) {
+            routeDefinition.setHeader(Constants.CAPI_GROUP_HEADER, constant(api.getContext()));
+        }
+
         if(api.isFailoverEnabled()) {
             routeDefinition
                     .process(metricsProcessor)

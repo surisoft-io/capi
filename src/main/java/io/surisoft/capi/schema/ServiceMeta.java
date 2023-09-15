@@ -48,6 +48,9 @@ public class ServiceMeta {
     @JsonProperty("subscription-group")
     private String subscriptionGroup;
 
+    @JsonProperty("keep-group")
+    private boolean keepGroup;
+
     public boolean isSecured() {
         return secured;
     }
@@ -150,5 +153,13 @@ public class ServiceMeta {
 
     public void setSubscriptionGroup(String subscriptionGroup) {
         this.subscriptionGroup = subscriptionGroup;
+    }
+
+    public boolean isKeepGroup() {
+        return keepGroup;
+    }
+
+    public void setKeepGroup(boolean keepGroup) {
+        this.keepGroup = keepGroup;
     }
 }

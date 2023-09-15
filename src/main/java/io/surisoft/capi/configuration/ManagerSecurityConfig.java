@@ -63,7 +63,7 @@ public class ManagerSecurityConfig {
     private String oidcProviderRealm;
 
     @Value("${oidc.provider.keys}")
-    private String oidcProviderKeys;
+    private String  oidcProviderKeys;
 
     public ManagerSecurityConfig() {
     }

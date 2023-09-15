@@ -40,6 +40,8 @@ public class Api implements Serializable {
     private boolean websocket;
     private List<String> subscriptionGroup;
 
+    private boolean keepGroup;
+
     public boolean isSecured() {
         return secured;
     }
@@ -240,5 +242,13 @@ public class Api implements Serializable {
 
     public void setSubscriptionGroup(List<String> subscriptionGroup) {
         this.subscriptionGroup = subscriptionGroup;
+    }
+
+    public boolean isKeepGroup() {
+        return keepGroup;
+    }
+
+    public void setKeepGroup(boolean keepGroup) {
+        this.keepGroup = keepGroup;
     }
 }

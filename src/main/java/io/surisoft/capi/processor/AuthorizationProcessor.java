@@ -65,6 +65,7 @@ public class AuthorizationProcessor implements Processor {
         } else {
             sendException(exchange, "No authorization header provided");
         }
+        propagateAuthorization(exchange, accessToken);
     }
 
     private void sendException(Exchange exchange, String message) {
@@ -120,5 +121,9 @@ public class AuthorizationProcessor implements Processor {
 
     private String normalizeGroup(String group) {
         return group.trim().replaceAll("/", "");
+    }
+
+    private void propagateAuthorization(Exchange exchange, String accessToken) {
+        exchange.getIn().setHeader(Constants.AUTHORIZATION_HEADER, Constants.BEARER + accessToken);
     }
 }

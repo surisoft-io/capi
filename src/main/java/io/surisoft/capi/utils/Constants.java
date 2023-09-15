@@ -284,4 +284,7 @@ public class Constants {
     public static final int HTTP_PORT = 80;
     public static final String CAPI_CONTEXT = "/capi";
 
+    public static final String BEARER = "Bearer ";
+    public static final String CAPI_GROUP_HEADER = "Capi-Group";
+
 }
