@@ -1,4 +1,4 @@
-[![CAPI](https://capi.surisoft.io/capi_horizontal.svg)](https://capi.surisoft.io/capi_horizontal.svg)
+<img src="https://capi.surisoft.io/capi_horizontal.svg" alt="CAPI" width="30%"/>
 
 [![CAPI-LB](https://github.com/rodrigoserracoelho/capi-lb/actions/workflows/main.yml/badge.svg)](https://github.com/rodrigoserracoelho/capi-lb/actions/workflows/main.yml)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
