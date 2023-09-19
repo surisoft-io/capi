@@ -12,8 +12,8 @@
   <br>
 </h5>
 
-# CAPI Load Balancer
-## _Light Apache Camel Load Balancer_
+# CAPI Gateway Documentation
+## _Light Apache Camel API Gateway_
 
 ## Supports:
 * Light API Gateway / Load Balancer powered by Apache Camel dynamics routes.
@@ -28,14 +28,40 @@
 * Sticky Session (Cookies and Headers)
 * Certificate Manager (using the CAPI Manager API)
 * Supports running with no DB, using Consul for service discovery
+* Websocket Gateway (Since version 4.0.11)
 
-## Run CAPI behind a reverse proxy? Enable the following:
+
+## CAPI support 2 deployment strategies:
+* Hashicorp Consul
+* Database (MySQL / Postgres / H2)
+
+### Enable Hashicorp Consul (Currently the Best Option, actively supported)
+```yaml
+  consul:
+    host: http://localhost:8500
+    discovery:
+      enabled: true
+      timer:
+        interval: 10000
 ```
-capi.reverse.proxy.enable = true
-capi.reverse.proxy.host = https://your.host
+The interval will determine how often CAPI will pull Consul for changes.
+CAPI consumes the Catalog API from Consul to discover new services.
+Here is an example of how to declare your service to be discovered by CAPI (we will use a Spring Boot application):
+You need to include all the required Consul dependencies on your project:
+```xml
+<dependency>
+  <groupId>org.springframework.cloud</groupId>
+  <artifactId>spring-cloud-starter-consul</artifactId>
+  <version></version>
+</dependency>
+<dependency>
+  <groupId>org.springframework.cloud</groupId>
+  <artifactId>spring-cloud-starter-consul-discovery</artifactId>
+  <version></version>
+</dependency>
 ```
 
-## CAPI support two deployment strategies
+
 If you enable persistence, you will need to provide a database instance.
 CAPI supports out of the box MySQL, PostgreSQL and H2
 To enable persistence run CAPI with the following property:
@@ -113,34 +139,188 @@ If you scale up CAPI, new instances will read all the deployments from Consul ca
 
 
 * ```ingress``` (default false) - If one of your mapping is pointing to a Kubernetes ingress, ```ingress``` should be true. This is because Ingress Controller needs to evaluate the Host header to determine to which service to forward the request. Check the documentation here: https://kubernetes.io/docs/concepts/services-networking/ingress/#ingress-rules
-### CAPI Manager API
+### Manager API
 CAPI Manager is available on http://localhost:8380/swagger-ui.html
-Security to this API is disabled by default, if you need to enable security you need to provide the following properties at run time:
+Security to this API is disabled by default, if you need to enable security you need to provide the following properties:
+```yaml
+capi:
+  manager:
+    security:
+      enabled: true
+      issuer: https://localhost:8443/auth/realms/master/protocol/openid-connect/certs
 ```
-    -Dcapi.manager.security.enabled=true \ 
-    -Dcapi.manager.security.issuer=https://localhost:8443/auth/realms/master/protocol/openid-connect/certs \
-```
-If security (OpenID Connect/oauth2) is enabled CAPI needs the endpoint of your identity provider JWK.
-###### With the API you can:
-* Get all configured API's
-* Get all cached API's
-* Add/Remove a node to an API
+If security (oauth2) is enabled, CAPI needs the endpoint of your identity provider Public keys.
+###### Read only run time info
+* Get info about the running CAPI instance: `/manager/info`
+* Get all cached (running) API's `/manager/cached`
+* Get statistics about the routes. `/manager/stats/routes`
 
+###### Manage your trust store
 Certificate management is disabled by default, to enable it you need to provide a valid path to a truststore. 
 CAPI will not change JVM default certificate.
 To enable start CAPI with the following attributes:
-```
-    -Dcapi.trust.store.enabled=true
-    -Dcapi.trust.store.path=/your/path/cacerts \ 
-    -Dcapi.trust.store.password=changeit \
+```yaml
+capi:
+  trust:
+    store:
+      enabled: true
+      path: /your/path/cacerts 
+      password: changeit
 ```
 With the Certificate Management enabled you can:
 * Get all the certificates in the trust store
 * Add a certificate to the trust store providing the certificate
-* Add a certificate to the trust store providing the HTTPS endpoint.
 * Remove a certificate from the trust store.
 
+###### Manage your Clients (Authorization) Only available if your oauth2 provider is Keycloak
+Client management is disabled by default, to enable it you need to enable `oidc.provider.enabled`.
+See `Authorization`
+With the Client Management enabled you can:
+* Get all the clients (Client on Keycloak) managed by CAPI (all clients managed by CAPI, are prefixed with `capi_` in the name)
+* Add a new Client (this operation will return a consumer `key` and `secret`)
+* Subscribe a Client to an API. (CAPI will create a `role` on Keycloak and associate it to your client).
+* Add a client to a group (CAPI will add an existing group to your client). (See `Configure Keycloak to support subscriptions)
+
+## Authorization (REST and Websocket)
+There are 2 ways to work with Authorization on CAPI.
+* You have control on your oauth2 provider, and you are able to manage your token claims, so they can be interpreted by CAPI. In this case you only need to provide CAPI with the Public Keys endpoint of your oauth2 provider using the property `oidc.provider.keys`.
+```yaml
+#example
+oidc:
+  provider:
+    enabled: true
+    keys: http://localhost:8080/realms/master/protocol/openid-connect/certs
+```
+* Use Keycloak! In this case, CAPI provides manager endpoints (see `Manager API`) to create roles and groups directly on Keycloak. In this case you need the following properties:
+```yaml
+oidc:
+  provider:
+    enabled: true
+    keys: http://localhost:8080/realms/master/protocol/openid-connect/certs
+    host: http://localhost:8080
+    realm: /realms/your-realm
+    clientId: <a client with realm management permissions>
+    clientSecret: <the secret used by CAPI to authenticate to Keycloak>
+```
+### After having Authorization enabled, and if your service is protected (See `Protect your API`), CAPI will only route traffic to your service if the following conditions are met:
+* The token was signed by the oauth2 provider configured: `oidc.provider.keys`.
+* The token is not expired.
+* The token azp (authorized party) has a role with the same as your service.
+Example: 
+```
+TODO: get a token to put here
+```
+* If the third step fails, CAPI will check if the claim `subscription` is present and if so, if any group in the subscription list matches the subscriptions-groups of your service. `see Api.subscription-groups`
+Example:
+```
+TODO: get a token to put here
+```
+
+## Protect your API (REST and Websocket)
+If you want CAPI to perform authorization before routing the traffic to your API, you will have to do the following:
+* Enable Authorization (See `Authorization`)
+* Declare your API as protected (`Api.secured`) (This is performed during route creation) (See `How to declare your API to CAPI`)
+* When you declare your API, you can specify a list of groups (subscriptions) allowed to consume your api. (`Api.subscriptionGroup`)
+
+## CAPI Websocket Support.
+You can have CAPI acting as a Websocket Gateway.
+The main features of the Websocket Support are:
+* Reverse Proxy (Hide your websocket server endpoint)
+* Authorization (Supports JWT Access tokens)
+* Load Balancing. (Distribute the traffic to your websocket server nodes)
+
+Websocket is disabled by default, to enable, just run CAPI with the following configuration:
+```
+  websocket:
+    enabled: true
+    server:
+      host: localhost
+      port: 8381      
+```
+With the following configuration, CAPI will be listening for Websocket requests on localhost port 8381.
+#### Important information regarding Websockets.
+CAPI will only look into the initial HTTP request, for authorization if needed. After the protocol update, you should manage the connection between your websocket client and your websocket server.
+If your client or server drops the connection, you will need to start a new request.
+
+### Example of a happy path using an anonymous (unprotected) web native connection request to CAPI.
+```
+websocket: WebSocket | undefined;
+endpoint: string = "ws://localhost:8381/capi/your-websocket-server/your-version/your-path";
+this.websocket = new WebSocket(this.endpoint);
+this.websocket.onopen = (event: any) => {
+   console.log("Connected to Your Websocket Server via CAPI");
+}
+```
+### Example of a happy path using a protected web native connection request to CAPI. An access token needs to be sent.
+```
+websocket: WebSocket | undefined;
+endpoint: string = "ws://localhost:8381/capi/your-websocket-server/your-version/your-path?access_token=<your JWT access token>";
+this.websocket = new WebSocket(this.endpoint);
+this.websocket.onopen = (event: any) => {
+   console.log("Connected to Your Websocket Server via CAPI");
+}
+```
+#### For authentication CAPI supports the standard Authorization header, or a query parameter with the key `access_token`.
+*Important info* about Authorization: CAPI actively supports Keycloak as an oauth2 provider, but you should still be able to use any oauth2 compliant provider. See `Authorization` section to know how CAPI authorizes a request.
+
+#### For CAPI to know that your API is a Websocket, please set `Api.websocket` to true.
+(See `How to declare your API to CAPI`)
+
+
+
+# Installing and Operating CAPI
+
+
+## Run CAPI behind a reverse proxy? Enable the following:
+```yaml
+capi:
+  reverse:
+      proxy:
+        enable: true
+        host: https://your.host
+```
+
+## Enable Tracing (Tested with Zipkin, OpenTelemetry Collector)
+```yaml
+capi:
+  zipkin:
+    enabled: true
+    endpoint: http://localhost:9411/api/v2/spans
+```
+
+## Running CAPI on HTTPS
+```yaml
+server:
+  ssl:
+    enabled: true
+    key-store-type: PKCS12
+    key-store: /your/path/capi.p12
+    key-store-password: capi-lb
+    key-alias: capi
+```
+   
+### Install CAPI on Kubernetes
+
+To create your cluster and resources, please check the documentation on your Kubernetes service.
+The following charts were tested on Minikube, EKS and OpenShift.
+
+#### CAPI Helm charts available here: [CAPI-LB Helm Charts](https://github.com/surisoft-io/capi-charts)
+
+
+Install CAPI Gateway Helm Charts
+```
+$ helm install "capi" ./capi-lb-charts
+```
+
+Delete the helm charts
+```
+$ helm delete capi
+$ eksctl delete cluster --name capi-demo-1
+```
+
+
 ### Install CAPI fat jar on a VM
+
 * You need a valid MySQL running instance, with CAPI db created.
 * You need Open JDK 17
 ```
@@ -206,23 +386,3 @@ networks:
   capi-network:
 ```
 
-### Install CAPI on Kubernetes
-
-To create your cluster and resources, please check the documentation on your Kubernetes service.
-The following charts were tested on Minikube, EKS and OpenShift.
-
-#### CAPI Helm charts available here: [CAPI-LB Helm Charts](https://github.com/surisoft-io/capi-charts) 
-
-
-Install Capi Load Balancer Helm Charts
-```
-$ helm install "capi" ./capi-lb-charts
-```
-
-Delete the helm charts
-```
-$ helm delete capi
-$ eksctl delete cluster --name capi-demo-1
-```
-
- 
