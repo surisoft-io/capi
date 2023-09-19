@@ -6,7 +6,7 @@ import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
 import io.micrometer.core.instrument.util.HierarchicalNameMapper;
 import io.micrometer.jmx.JmxMeterRegistry;
 import io.surisoft.capi.schema.WebsocketClient;
-import io.surisoft.capi.zipkin.CapiZipkinTracer;
+import io.surisoft.capi.tracer.CapiTracer;
 import io.surisoft.capi.utils.Constants;
 import io.surisoft.capi.utils.HttpUtils;
 import okhttp3.OkHttpClient;
@@ -15,8 +15,6 @@ import org.apache.camel.component.http.HttpClientConfigurer;
 import org.apache.camel.component.http.HttpComponent;
 import org.apache.camel.component.micrometer.CamelJmxConfig;
 import org.apache.camel.component.micrometer.DistributionStatisticConfigFilter;
-import org.apache.camel.http.base.cookie.CookieHandler;
-import org.apache.camel.http.base.cookie.ExchangeCookieHandler;
 import org.apache.hc.client5.http.impl.classic.HttpClientBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -43,8 +41,8 @@ public class CapiConfiguration {
 
     private static final Logger log = LoggerFactory.getLogger(CapiConfiguration.class);
 
-    @Value("${capi.zipkin.endpoint}")
-    private String zipkinEndpoint;
+    @Value("${capi.traces.endpoint}")
+    private String tracesEndpoint;
 
     @Autowired
     HttpUtils httpUtils;
@@ -56,23 +54,23 @@ public class CapiConfiguration {
     }
 
     @Bean
-    @ConditionalOnProperty(prefix = "capi.zipkin", name = "enabled", havingValue = "true")
-    CapiZipkinTracer zipkinTracer(CamelContext camelContext) {
+    @ConditionalOnProperty(prefix = "capi.traces", name = "enabled", havingValue = "true")
+    CapiTracer capiTracer(CamelContext camelContext) {
         camelContext.setUseMDCLogging(true);
 
-        log.debug("Zipkin Enabled!");
+        log.debug("Traces Enabled!");
         Set<String> excludePatterns = new HashSet<>();
         excludePatterns.add("timer://");
         excludePatterns.add("bean://consulNodeDiscovery");
-        CapiZipkinTracer zipkin = new CapiZipkinTracer(httpUtils);
-        OkHttpSender okHttpSender = OkHttpSender.create(zipkinEndpoint);
-        zipkin.setSpanReporter(AsyncReporter.create(okHttpSender));
-        zipkin.setIncludeMessageBody(true);
-        zipkin.setIncludeMessageBodyStreams(true);
+        CapiTracer capiTracer = new CapiTracer(httpUtils);
+        OkHttpSender okHttpSender = OkHttpSender.create(tracesEndpoint);
+        capiTracer.setSpanReporter(AsyncReporter.create(okHttpSender));
+        capiTracer.setIncludeMessageBody(true);
+        capiTracer.setIncludeMessageBodyStreams(true);
 
-        zipkin.setExcludePatterns(excludePatterns);
-        zipkin.init(camelContext);
-        return zipkin;
+        capiTracer.setExcludePatterns(excludePatterns);
+        capiTracer.init(camelContext);
+        return capiTracer;
     }
 
     @Bean

@@ -19,16 +19,16 @@ capi:
     server:
       host: localhost
       port: 8381
-  #### Enable Zipkin (Editable Property) ####
-  zipkin:
-    enabled: false
+  #### Enable Traces (Editable Property) ####
+  traces:
+    enabled: true
     endpoint: http://localhost:9411/api/v2/spans
   #### Consul Integration (Editable Property) ####
   #### If you want CAPI to search consul for available APIs to be deployed, enable this feature. ####
   consul:
     host: http://localhost:8500
     discovery:
-      enabled: false
+      enabled: true
       timer:
         interval: 10000
   #### Certificate Management (Editable property) ####

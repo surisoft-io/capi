@@ -18,7 +18,7 @@
 ## Supports:
 * Light API Gateway / Load Balancer powered by Apache Camel dynamics routes.
 * Optional Spring Security OIDC protected CAPI Manager API.
-* Distributed tracing system (Zipkin)
+* Distributed tracing system (OpenTelemetry Collector / Jaeger / Zipkin)
 * Metrics (Prometheus)
 * CAPI Browser user interface for route management.
 * Rest API for Route management.
@@ -283,7 +283,7 @@ capi:
 ## Enable Tracing (Tested with Zipkin, OpenTelemetry Collector)
 ```yaml
 capi:
-  zipkin:
+  traces:
     enabled: true
     endpoint: http://localhost:9411/api/v2/spans
 ```

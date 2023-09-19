@@ -1,6 +1,6 @@
 package io.surisoft.capi.controller;
 
-import io.surisoft.capi.zipkin.CapiZipkinTracer;
+import io.surisoft.capi.tracer.CapiTracer;
 import org.apache.camel.component.http.HttpComponent;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -18,7 +18,7 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 class TestCapiConfiguration {
 
     @Autowired
-    CapiZipkinTracer zipkinTracer;
+    CapiTracer zipkinTracer;
 
     @Autowired
     HttpComponent httpComponent;

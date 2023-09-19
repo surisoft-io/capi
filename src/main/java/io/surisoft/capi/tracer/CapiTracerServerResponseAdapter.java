@@ -1,4 +1,4 @@
-package io.surisoft.capi.zipkin;
+package io.surisoft.capi.tracer;
 
 import brave.SpanCustomizer;
 import com.nimbusds.jose.JOSEException;
@@ -15,12 +15,12 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.text.ParseException;
 
-public class CapiZipkinServerResponseAdapter {
-    private static final Logger LOG = LoggerFactory.getLogger(CapiZipkinServerResponseAdapter.class);
-    private final CapiZipkinTracer capiZipkinEventNotifier;
+public class CapiTracerServerResponseAdapter {
+    private static final Logger LOG = LoggerFactory.getLogger(CapiTracerServerResponseAdapter.class);
+    private final CapiTracer capiTracer;
     private final String url;
-    public CapiZipkinServerResponseAdapter(CapiZipkinTracer capiZipkinEventNotifier, String url) {
-        this.capiZipkinEventNotifier = capiZipkinEventNotifier;
+    public CapiTracerServerResponseAdapter(CapiTracer capiTracer, String url) {
+        this.capiTracer = capiTracer;
         this.url = url;
     }
 
@@ -37,7 +37,7 @@ public class CapiZipkinServerResponseAdapter {
 
         if(exchange.getIn().getHeader(Constants.AUTHORIZATION_HEADER, String.class) != null) {
             try {
-                JWTClaimsSet jwtClaimsSet = capiZipkinEventNotifier.getHttpUtils().authorizeRequest(exchange.getIn().getHeader(Constants.AUTHORIZATION_HEADER, String.class));
+                JWTClaimsSet jwtClaimsSet = capiTracer.getHttpUtils().authorizeRequest(exchange.getIn().getHeader(Constants.AUTHORIZATION_HEADER, String.class));
                 String authorizedParty = jwtClaimsSet.getStringClaim(Constants.AUTHORIZED_PARTY);
                 if(authorizedParty != null) {
                     span.tag(Constants.CAPI_EXCHANGE_REQUESTER_ID, authorizedParty);

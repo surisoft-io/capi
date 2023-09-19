@@ -1,4 +1,4 @@
-package io.surisoft.capi.zipkin;
+package io.surisoft.capi.tracer;
 
 import brave.SpanCustomizer;
 import com.nimbusds.jose.JOSEException;
@@ -17,12 +17,12 @@ import java.text.ParseException;
 
 import static org.apache.camel.zipkin.ZipkinHelper.prepareBodyForLogging;
 
-public class CapiZipkinClientResponseAdapter {
+public class CapiTracerClientResponseAdapter {
 
-    private static final Logger LOG = LoggerFactory.getLogger(CapiZipkinClientResponseAdapter.class);
-    private final CapiZipkinTracer eventNotifier;
+    private static final Logger LOG = LoggerFactory.getLogger(CapiTracerClientResponseAdapter.class);
+    private final CapiTracer eventNotifier;
 
-    public CapiZipkinClientResponseAdapter(CapiZipkinTracer eventNotifier) {
+    public CapiTracerClientResponseAdapter(CapiTracer eventNotifier) {
         this.eventNotifier = eventNotifier;
     }
 

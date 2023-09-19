@@ -1,4 +1,4 @@
-package io.surisoft.capi.zipkin;
+package io.surisoft.capi.tracer;
 
 import brave.SpanCustomizer;
 import io.surisoft.capi.utils.Constants;
@@ -8,11 +8,11 @@ import org.apache.camel.util.URISupport;
 
 import java.util.Locale;
 
-public class CapiZipkinServerRequestAdapter {
+public class CapiTracerServerRequestAdapter {
     private final String spanName;
     private final String url;
 
-    public CapiZipkinServerRequestAdapter(Exchange exchange, String serviceName) {
+    public CapiTracerServerRequestAdapter(Exchange exchange, String serviceName) {
         Endpoint endpoint = exchange.getFromEndpoint();
         this.spanName = URISupport.sanitizeUri(endpoint.getEndpointKey()).toLowerCase(Locale.ROOT);
         this.url = serviceName;

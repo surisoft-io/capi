@@ -1,4 +1,4 @@
-package io.surisoft.capi.zipkin;
+package io.surisoft.capi.tracer;
 
 import brave.Span;
 import brave.Tracing;
@@ -33,21 +33,21 @@ import java.util.*;
 
 import static org.apache.camel.util.URISupport.sanitizeUri;
 
-@ManagedResource(description = "CapiZipkinTracer")
-public class CapiZipkinTracer extends ServiceSupport implements RoutePolicyFactory, StaticService, CamelContextAware {
+@ManagedResource(description = "CapiTracer")
+public class CapiTracer extends ServiceSupport implements RoutePolicyFactory, StaticService, CamelContextAware {
     private final HttpUtils httpUtils;
 
     //CAPI Only cares about rest routes
     private static final String REST_ROUTE = "rest://";
 
-    private static final Logger LOG = LoggerFactory.getLogger(CapiZipkinTracer.class);
-    private static final String ZIPKIN_COLLECTOR_HTTP_SERVICE = "zipkin-collector-http";
-    private static final String ZIPKIN_COLLECTOR_THRIFT_SERVICE = "zipkin-collector-thrift";
+    private static final Logger LOG = LoggerFactory.getLogger(CapiTracer.class);
+    private static final String TRACES_COLLECTOR_HTTP_SERVICE = "traces-collector-http";
+    private static final String TRACES_COLLECTOR_THRIFT_SERVICE = "traces-collector-thrift";
     private static final Propagation.Getter<CamelRequest, String> GETTER = CamelRequest::getHeader;
     private static final Propagation.Setter<CamelRequest, String> SETTER = CamelRequest::setHeader;
     static final TraceContext.Extractor<CamelRequest> EXTRACTOR = B3Propagation.B3_STRING.extractor(GETTER);
     private static final TraceContext.Injector<CamelRequest> INJECTOR = B3Propagation.B3_STRING.injector(SETTER);
-    private final ZipkinEventNotifier eventNotifier = new ZipkinEventNotifier();
+    private final CapiEventNotifier eventNotifier = new CapiEventNotifier();
     private final Map<String, Tracing> braves = new HashMap<>();
     private transient boolean useFallbackServiceNames;
     private CamelContext camelContext;
@@ -63,7 +63,7 @@ public class CapiZipkinTracer extends ServiceSupport implements RoutePolicyFacto
     private final Map<String, Span.Kind> consumerComponentToSpanKind = new HashMap<>();
     private final List<String> exclusions = new ArrayList<>();
 
-    public CapiZipkinTracer(HttpUtils httpUtils) {
+    public CapiTracer(HttpUtils httpUtils) {
         exclusions.add("bean://consulNodeDiscovery");
         exclusions.add("timer://consul-inspect");
         this.httpUtils = httpUtils;
@@ -82,7 +82,7 @@ public class CapiZipkinTracer extends ServiceSupport implements RoutePolicyFacto
     @Override
     public RoutePolicy createRoutePolicy(CamelContext camelContext, String routeId, NamedNode route) {
         init(camelContext);
-        return new ZipkinRoutePolicy();
+        return new CapiTracerRoutePolicy();
     }
 
     public void init(CamelContext camelContext) {
@@ -105,7 +105,7 @@ public class CapiZipkinTracer extends ServiceSupport implements RoutePolicyFacto
         this.camelContext = camelContext;
     }
 
-    @ManagedAttribute(description = "The POST URL for zipkin's v2 api.")
+    @ManagedAttribute(description = "The POST URL for the traces v2 api.")
     public String getEndpoint() {
         return endpoint;
     }
@@ -114,7 +114,7 @@ public class CapiZipkinTracer extends ServiceSupport implements RoutePolicyFacto
         this.endpoint = endpoint;
     }
 
-    @ManagedAttribute(description = "The port number for the remote zipkin scribe collector.")
+    @ManagedAttribute(description = "The port number for the remote trace scribe collector.")
     public int getPort() {
         return port;
     }
@@ -124,18 +124,18 @@ public class CapiZipkinTracer extends ServiceSupport implements RoutePolicyFacto
     }
 
     /**
-     * Sets the reporter used to send timing data (spans) to the zipkin server.
+     * Sets the reporter used to send timing data (spans) to the trace server.
      */
     public void setSpanReporter(Reporter<zipkin2.Span> spanReporter) {
         this.spanReporter = spanReporter;
     }
 
     /**
-     * Adds a server service mapping that matches Camel events to the given zipkin service name. See more details at the
+     * Adds a server service mapping that matches Camel events to the given traces service name. See more details at the
      * class javadoc.
      *
      * @param pattern     the pattern such as route id, endpoint url
-     * @param serviceName the zipkin service name
+     * @param serviceName the traces service name
      */
     public void addServerServiceMapping(String pattern, String serviceName) {
         serverServiceMappings.put(pattern, serviceName);
@@ -145,13 +145,13 @@ public class CapiZipkinTracer extends ServiceSupport implements RoutePolicyFacto
         this.excludePatterns = excludePatterns;
     }
 
-    @ManagedAttribute(description = "Whether to include the Camel message body in the zipkin traces")
+    @ManagedAttribute(description = "Whether to include the Camel message body in the traces")
     public boolean isIncludeMessageBody() {
         return includeMessageBody;
     }
 
     /**
-     * Whether to include the Camel message body in the zipkin traces.
+     * Whether to include the Camel message body in the traces.
      * <p/>
      * This is not recommended for production usage, or when having big payloads. You can limit the size by configuring
      * the <a href= "http://camel.apache.org/how-do-i-set-the-max-chars-when-debug-logging-messages-in-camel.html">max
@@ -160,18 +160,18 @@ public class CapiZipkinTracer extends ServiceSupport implements RoutePolicyFacto
      * By default message bodies that are stream based are <b>not</b> included. You can use the option
      * {@link #setIncludeMessageBodyStreams(boolean)} to turn that on.
      */
-    @ManagedAttribute(description = "Whether to include the Camel message body in the zipkin traces")
+    @ManagedAttribute(description = "Whether to include the Camel message body in the traces")
     public void setIncludeMessageBody(boolean includeMessageBody) {
         this.includeMessageBody = includeMessageBody;
     }
 
-    @ManagedAttribute(description = "Whether to include stream based Camel message bodies in the zipkin traces")
+    @ManagedAttribute(description = "Whether to include stream based Camel message bodies in the traces")
     public boolean isIncludeMessageBodyStreams() {
         return includeMessageBodyStreams;
     }
 
     /**
-     * Whether to include message bodies that are stream based in the zipkin traces.
+     * Whether to include message bodies that are stream based in the traces.
      * <p/>
      * This requires enabling <a href="http://camel.apache.org/stream-caching.html">stream caching</a> on the routes or
      * globally on the CamelContext.
@@ -180,7 +180,7 @@ public class CapiZipkinTracer extends ServiceSupport implements RoutePolicyFacto
      * the <a href= "http://camel.apache.org/how-do-i-set-the-max-chars-when-debug-logging-messages-in-camel.html">max
      * debug log size</a>.
      */
-    @ManagedAttribute(description = "Whether to include stream based Camel message bodies in the zipkin traces")
+    @ManagedAttribute(description = "Whether to include stream based Camel message bodies in the traces")
     public void setIncludeMessageBodyStreams(boolean includeMessageBodyStreams) {
         this.includeMessageBodyStreams = includeMessageBodyStreams;
     }
@@ -196,21 +196,21 @@ public class CapiZipkinTracer extends ServiceSupport implements RoutePolicyFacto
 
         if (spanReporter == null) {
             if (endpoint != null) {
-                LOG.info("Configuring Zipkin URLConnectionSender using endpoint: {}", endpoint);
+                LOG.info("Configuring Traces URLConnectionSender using endpoint: {}", endpoint);
                 spanReporter = AsyncReporter.create(URLConnectionSender.create(endpoint));
             } else {
-                String host = ServiceHostFunction.apply(ZIPKIN_COLLECTOR_HTTP_SERVICE);
-                String port = ServicePortFunction.apply(ZIPKIN_COLLECTOR_HTTP_SERVICE);
+                String host = ServiceHostFunction.apply(TRACES_COLLECTOR_HTTP_SERVICE);
+                String port = ServicePortFunction.apply(TRACES_COLLECTOR_HTTP_SERVICE);
                 if (ObjectHelper.isNotEmpty(host) && ObjectHelper.isNotEmpty(port)) {
-                    LOG.trace("Auto-configuring Zipkin URLConnectionSender using host: {} and port: {}", host, port);
+                    LOG.trace("Auto-configuring Traces URLConnectionSender using host: {} and port: {}", host, port);
                     int num = camelContext.getTypeConverter().mandatoryConvertTo(Integer.class, port);
                     String implicitEndpoint = "http://" + host + ":" + num + "/api/v2/spans";
                     spanReporter = AsyncReporter.create(URLConnectionSender.create(implicitEndpoint));
                 } else {
-                    host = ServiceHostFunction.apply(ZIPKIN_COLLECTOR_THRIFT_SERVICE);
-                    port = ServicePortFunction.apply(ZIPKIN_COLLECTOR_THRIFT_SERVICE);
+                    host = ServiceHostFunction.apply(TRACES_COLLECTOR_THRIFT_SERVICE);
+                    port = ServicePortFunction.apply(TRACES_COLLECTOR_THRIFT_SERVICE);
                     if (ObjectHelper.isNotEmpty(host) && ObjectHelper.isNotEmpty(port)) {
-                        LOG.trace("Auto-configuring Zipkin ScribeSpanCollector using host: {} and port: {}", host, port);
+                        LOG.trace("Auto-configuring Traces ScribeSpanCollector using host: {} and port: {}", host, port);
                         int num = camelContext.getTypeConverter().mandatoryConvertTo(Integer.class, port);
                         LibthriftSender sender = LibthriftSender.newBuilder().host(host).port(num).build();
                         spanReporter = AsyncReporter.create(sender);
@@ -350,7 +350,7 @@ public class CapiZipkinTracer extends ServiceSupport implements RoutePolicyFacto
         Span.Kind spanKind = getProducerComponentSpanKind(event.getEndpoint());
         span.kind(spanKind).start();
 
-        CapiZipkinClientRequestAdapter parser = new CapiZipkinClientRequestAdapter(event.getEndpoint(), normalizeClientEndpoint(event.getEndpoint()));
+        CapiTracerClientRequestAdapter parser = new CapiTracerClientRequestAdapter(event.getEndpoint(), normalizeClientEndpoint(event.getEndpoint()));
         CamelRequest request = new CamelRequest(event.getExchange().getIn(), spanKind);
         INJECTOR.inject(span.context(), request);
         parser.onRequest(event.getExchange(), span.customizer());
@@ -383,7 +383,7 @@ public class CapiZipkinTracer extends ServiceSupport implements RoutePolicyFacto
         }
 
         if (span != null) {
-            CapiZipkinClientResponseAdapter parser = new CapiZipkinClientResponseAdapter(this);
+            CapiTracerClientResponseAdapter parser = new CapiTracerClientResponseAdapter(this);
             parser.onResponse(event.getExchange(), span.customizer());
             span.finish();
             TraceContext context = span.context();
@@ -416,7 +416,7 @@ public class CapiZipkinTracer extends ServiceSupport implements RoutePolicyFacto
             span = brave.tracer().nextSpan(sampleFlag);
         }
         span.kind(spanKind).start();
-        CapiZipkinServerRequestAdapter parser = new CapiZipkinServerRequestAdapter(exchange, serviceName);
+        CapiTracerServerRequestAdapter parser = new CapiTracerServerRequestAdapter(exchange, serviceName);
         parser.onRequest(exchange, span.customizer());
         INJECTOR.inject(span.context(), camelRequest);
 
@@ -451,7 +451,7 @@ public class CapiZipkinTracer extends ServiceSupport implements RoutePolicyFacto
             }
 
             if (span != null) {
-                CapiZipkinServerResponseAdapter parser = new CapiZipkinServerResponseAdapter(this, serviceName);
+                CapiTracerServerResponseAdapter parser = new CapiTracerServerResponseAdapter(this, serviceName);
                 parser.onResponse(exchange, span.customizer());
                 span.finish();
                 TraceContext context = span.context();
@@ -480,13 +480,13 @@ public class CapiZipkinTracer extends ServiceSupport implements RoutePolicyFacto
         return null;
     }
 
-    private final class ZipkinEventNotifier extends EventNotifierSupport {
+    private final class CapiEventNotifier extends EventNotifierSupport {
 
         @Override
         public void notify(CamelEvent camelEvent) throws Exception {
             // use event notifier to track events when Camel messages to
             // endpoints
-            // these events corresponds to Zipkin client events
+            // these events corresponds to Tracer client events
 
             // client events
             if (camelEvent instanceof CamelEvent.ExchangeSendingEvent exchangeSendingEvent) {
@@ -516,11 +516,11 @@ public class CapiZipkinTracer extends ServiceSupport implements RoutePolicyFacto
 
         @Override
         public String toString() {
-            return "ZipkinEventNotifier";
+            return "CapiEventNotifier";
         }
     }
 
-    private final class ZipkinRoutePolicy extends RoutePolicySupport {
+    private final class CapiTracerRoutePolicy extends RoutePolicySupport {
 
         @Override
         public void onExchangeBegin(Route route, Exchange exchange) {

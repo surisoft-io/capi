@@ -10,7 +10,7 @@ capi:
   disable:
     redirect: true
   #### Enable Zipkin
-  zipkin:
+  traces:
     enabled: false
     endpoint: https://localhost:9411/api/v2/spans
   #### If you want CAPI to search consul for available APIs to be deployed, enable this feature. ####

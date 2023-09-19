@@ -5,7 +5,7 @@ import io.surisoft.capi.builder.RestDefinitionProcessor;
 import io.surisoft.capi.cache.StickySessionCacheManager;
 import io.surisoft.capi.builder.DirectRouteProcessor;
 import io.surisoft.capi.processor.AuthorizationProcessor;
-import io.surisoft.capi.zipkin.CapiZipkinTracer;
+import io.surisoft.capi.tracer.CapiTracer;
 import io.surisoft.capi.processor.HttpErrorProcessor;
 import io.surisoft.capi.processor.MetricsProcessor;
 import io.surisoft.capi.schema.Api;
@@ -44,7 +44,7 @@ public class RouteUtils {
     @Autowired
     private CompositeMeterRegistry meterRegistry;
     @Autowired(required = false)
-    private CapiZipkinTracer capiZipkinTracer;
+    private CapiTracer capiTracer;
     @Autowired
     private CamelContext camelContext;
     @Autowired
@@ -57,9 +57,9 @@ public class RouteUtils {
     }
 
     public void registerTracer(Api api) {
-        if (capiZipkinTracer != null) {
-            log.debug("Adding API to Zipkin tracer as {}", api.getRouteId());
-            capiZipkinTracer.addServerServiceMapping(api.getRouteId(), api.getZipkinServiceName() != null ? api.getZipkinServiceName() : api.getRouteId());
+        if (capiTracer != null) {
+            log.debug("Adding API to tracer as {}", api.getRouteId());
+            capiTracer.addServerServiceMapping(api.getRouteId(), api.getZipkinServiceName() != null ? api.getZipkinServiceName() : api.getRouteId());
         }
     }
 
