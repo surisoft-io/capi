@@ -1,6 +1,7 @@
 server:
   port: 8380
 capi:
+  #### Kafka is still experimental ####
   kafka:
     enabled: false
     host: localhost:9092
@@ -8,19 +9,21 @@ capi:
     proxy:
       enabled: false
       host: localhost:8380
-  #### If you want to disable routes from following redirects ###
+  #### DO NOT CHANGE, unless you know exactly that you CAPI to follow Redirects. ###
+  #### If you want to disable routes from following redirects ####
   disable:
     redirect: true
-  #### Websocket Gateway
+  #### Websocket Gateway (Editable Property) ####
   websocket:
     enabled: false
     server:
       host: localhost
       port: 8381
-  #### Enable Zipkin
+  #### Enable Zipkin (Editable Property) ####
   zipkin:
     enabled: false
     endpoint: http://localhost:9411/api/v2/spans
+  #### Consul Integration (Editable Property) ####
   #### If you want CAPI to search consul for available APIs to be deployed, enable this feature. ####
   consul:
     host: http://localhost:8500
@@ -28,16 +31,19 @@ capi:
       enabled: false
       timer:
         interval: 10000
+  #### Certificate Management (Editable property) ####
   #### If you want to enable certificate management, please provide a trust store (JKS). ####
   trust:
     store:
       enabled: false
       path:
       password:
+  #### CORS (Manager) (Editable property)
+  #### For web applications calling CAPI Manager Endpoint, if you want to restrict who is allowed to call.
   manager:
     cors:
       host: http://localhost:4200
-    #### Management endpoints security configuration ####
+    #### Management endpoints security configuration (Editable property) ####
     ## CAPI Manager endpoints can be secured by enabling this feature, if you enable, you need to provide the JWK endpoint of your OIDC provider.
     ## If the OIDC Provider listens on HTTPS, it needs to be trusted by CAPI
     security:
@@ -59,16 +65,18 @@ capi:
       #### All calls in error will be bridged to this endpoint ####
       endpoint: localhost:8380/capi-error
 
+#### DO NOT CHANGE SPRINGDOC PROPERTIES ####
 #### This is important to disable the default petstore ####
 springdoc:
   swagger-ui:
     enabled: true
     disable.swagger-default-url: true
+#### DO NOT CHANGE THESE SPRING AUTOCONFIGURE EXCLUSIONS #####
 spring:
   #### We want persistence to be optional, so we disable autoconfiguration for JPA ####
   autoconfigure:
     exclude: org.springframework.boot.autoconfigure.security.servlet.UserDetailsServiceAutoConfiguration, org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration, org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration, org.springframework.boot.autoconfigure.jdbc.DataSourceTransactionManagerAutoConfiguration
-  ## JDBC Properties (default MySQL)
+  ### JDBC Properties (default MySQL) (Editable) ###
   jpa:
     hibernate:
       ddl-auto: update
@@ -79,8 +87,10 @@ spring:
     password: root
   profiles:
     active: default
+  ### CAPI Banner, keep it, it is beautiful!
   banner:
     location: classpath:capi.txt
+  ### Allow bean definition overriding (Do not change) ###
   main:
     allow-bean-definition-overriding: true
 camel:
@@ -101,7 +111,7 @@ camel:
 #server.ssl.enabled=true
 
 
-#### Actuator Metrics Endpoint Configuration ####
+#### Actuator Metrics Endpoint Configuration (Do not change) ####
 management:
   security:
     enabled: false
@@ -120,6 +130,7 @@ sticky:
     time:
       to:
         live: 2
+#### OAUTH2 Support to protect the routes. (Editable properties) ####
 oidc:
   cookieName:
   provider:
