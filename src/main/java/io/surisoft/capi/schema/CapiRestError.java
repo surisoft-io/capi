@@ -213,7 +213,7 @@ public class CapiRestError {
     private String httpUri;
     private String exception;
     private String internalExceptionMessage;
-    private String zipkinTraceID;
+    private String traceID;
 
     public String getRouteID() {
         return routeID;
@@ -271,11 +271,11 @@ public class CapiRestError {
         this.internalExceptionMessage = internalExceptionMessage;
     }
 
-    public String getZipkinTraceID() {
-        return zipkinTraceID;
+    public String getTraceID() {
+        return traceID;
     }
 
-    public void setZipkinTraceID(String zipkinTraceID) {
-        this.zipkinTraceID = zipkinTraceID;
+    public void setTraceID(String traceID) {
+        this.traceID = traceID;
     }
 }

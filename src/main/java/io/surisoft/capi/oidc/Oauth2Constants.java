@@ -2,7 +2,7 @@ package io.surisoft.capi.oidc;
 
 import okhttp3.MediaType;
 
-public class OIDCConstants {
+public class Oauth2Constants {
     public static final String CLIENT_ID = "client_id";
     public static final String CLIENT_SECRET = "client_secret";
     public static final String CLIENT_NAME = "client_name";

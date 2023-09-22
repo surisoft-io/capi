@@ -1,19 +1,11 @@
 package io.surisoft.capi.utils;
 
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
-import io.surisoft.capi.builder.RestDefinitionProcessor;
-import io.surisoft.capi.cache.StickySessionCacheManager;
-import io.surisoft.capi.builder.DirectRouteProcessor;
 import io.surisoft.capi.processor.AuthorizationProcessor;
-import io.surisoft.capi.tracer.CapiTracer;
 import io.surisoft.capi.processor.HttpErrorProcessor;
-import io.surisoft.capi.processor.MetricsProcessor;
-import io.surisoft.capi.schema.Api;
-import io.surisoft.capi.schema.HttpMethod;
-import io.surisoft.capi.schema.HttpProtocol;
-import io.surisoft.capi.schema.Mapping;
-
+import io.surisoft.capi.schema.*;
 import io.surisoft.capi.service.CapiTrustManager;
+import io.surisoft.capi.tracer.CapiTracer;
 import org.apache.camel.CamelContext;
 import org.apache.camel.Route;
 import org.apache.camel.component.http.HttpComponent;
@@ -28,6 +20,7 @@ import org.springframework.stereotype.Component;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
+import java.util.Map;
 
 import static org.apache.camel.language.constant.ConstantLanguage.constant;
 
@@ -48,30 +41,34 @@ public class RouteUtils {
     @Autowired
     private CamelContext camelContext;
     @Autowired
-    private Cache<String, Api> apiCache;
+    private Cache<String, Service> serviceCache;
     @Autowired(required = false)
     private AuthorizationProcessor authorizationProcessor;
+    @Autowired
+    private WebsocketUtils websocketUtils;
+    @Autowired(required = false)
+    private Map<String, WebsocketClient> websocketClientMap;
 
     public void registerMetric(String routeId) {
         meterRegistry.counter(routeId);
     }
 
-    public void registerTracer(Api api) {
+    public void registerTracer(Service service) {
         if (capiTracer != null) {
-            log.debug("Adding API to tracer as {}", api.getRouteId());
-            capiTracer.addServerServiceMapping(api.getRouteId(), api.getZipkinServiceName() != null ? api.getZipkinServiceName() : api.getRouteId());
+            log.debug("Adding API to tracer as {}", service.getId());
+            capiTracer.addServerServiceMapping(service.getId(), service.getName());
         }
     }
 
     public void buildOnExceptionDefinition(RouteDefinition routeDefinition,
-                                           boolean isZipkinTraceIdVisible,
+                                           boolean isTraceIdVisible,
                                            boolean isInternalExceptionMessageVisible,
                                            boolean isInternalExceptionVisible,
                                            String routeID) {
         routeDefinition
                 .onException(Exception.class)
                 .handled(true)
-                .setHeader(Constants.ERROR_API_SHOW_TRACE_ID, constant(isZipkinTraceIdVisible))
+                .setHeader(Constants.ERROR_API_SHOW_TRACE_ID, constant(isTraceIdVisible))
                 .setHeader(Constants.ERROR_API_SHOW_INTERNAL_ERROR_MESSAGE, constant(isInternalExceptionMessageVisible))
                 .setHeader(Constants.ERROR_API_SHOW_INTERNAL_ERROR_CLASS, constant(isInternalExceptionVisible))
                 .process(httpErrorProcessor)
@@ -86,58 +83,57 @@ public class RouteUtils {
                 .end();
     }
 
-    public String[] buildEndpoints(Api api) {
+    public String[] buildEndpoints(Service service) {
         List<String> transformedEndpointList = new ArrayList<>();
-        for(Mapping mapping : api.getMappingList()) {
-            if(api.getHttpProtocol() == null) {
-                api.setHttpProtocol(HttpProtocol.HTTP);
+        for(Mapping mapping : service.getMappingList()) {
+            HttpProtocol httpProtocol = null;
+            if(service.getServiceMeta().getSchema() == null || service.getServiceMeta().getSchema().equals("http")) {
+                httpProtocol = HttpProtocol.HTTP;
+            } else {
+                httpProtocol = HttpProtocol.HTTPS;
             }
+
             String endpoint;
             if(mapping.getPort() > -1) {
-                endpoint = api.getHttpProtocol().getProtocol() + "://" + mapping.getHostname() + ":" + mapping.getPort() + mapping.getRootContext() + "?bridgeEndpoint=true&throwExceptionOnFailure=false";
+                endpoint = httpProtocol.getProtocol() + "://" + mapping.getHostname() + ":" + mapping.getPort() + mapping.getRootContext() + "?bridgeEndpoint=true&throwExceptionOnFailure=false";
             } else {
-                endpoint = api.getHttpProtocol().getProtocol() + "://" + mapping.getHostname() + mapping.getRootContext() + "?bridgeEndpoint=true&throwExceptionOnFailure=false";
+                endpoint = httpProtocol.getProtocol() + "://" + mapping.getHostname() + mapping.getRootContext() + "?bridgeEndpoint=true&throwExceptionOnFailure=false";
             }
             if(mapping.isIngress()) {
                 endpoint = httpUtils.setIngressEndpoint(endpoint, mapping.getHostname());
             }
 
-            if(api.isTenantAware()) {
-                endpoint = endpoint + "&tenantId=" + mapping.getTenandId();
+            if(service.getServiceMeta().isTenantAware()) {
+                endpoint = endpoint + "&" + Constants.TENANT_HEADER + "="  + mapping.getTenandId();
             }
             transformedEndpointList.add(endpoint);
         }
         return transformedEndpointList.toArray(String[]::new);
     }
 
-    public String buildFrom(Api api) {
-        if(!api.getContext().startsWith("/")) {
-            return "/" + api.getContext();
+    public String buildFrom(Service service) {
+        if(!service.getContext().startsWith("/")) {
+            return "/" + service.getContext();
         }
-        return api.getContext();
+        return service.getContext();
     }
-
-    public String getRouteId(Api api, String httpMethod) {
-        return api.getName() + ":" + api.getContext() + ":" + httpMethod;
-    }
-
-    public List<String> getAllRouteIdForAGivenApi(Api api) {
+    public List<String> getAllRouteIdForAGivenService(Service service) {
         List<String> routeIdList = new ArrayList<>();
-        routeIdList.add(api.getId() + ":" + HttpMethod.DELETE.getMethod());
-        routeIdList.add(api.getId() + ":" + HttpMethod.PUT.getMethod());
-        routeIdList.add(api.getId() + ":" + HttpMethod.POST.getMethod());
-        routeIdList.add(api.getId() + ":" + HttpMethod.GET.getMethod());
-        routeIdList.add(api.getId() + ":" + HttpMethod.PATCH.getMethod());
+        routeIdList.add(service.getId() + ":" + HttpMethod.DELETE.getMethod());
+        routeIdList.add(service.getId() + ":" + HttpMethod.PUT.getMethod());
+        routeIdList.add(service.getId() + ":" + HttpMethod.POST.getMethod());
+        routeIdList.add(service.getId() + ":" + HttpMethod.GET.getMethod());
+        routeIdList.add(service.getId() + ":" + HttpMethod.PATCH.getMethod());
         return routeIdList;
     }
 
-    public List<String> getAllRouteIdForAGivenApi(String apiId) {
+    public List<String> getAllRouteIdForAGivenService(String serviceId) {
         List<String> routeIdList = new ArrayList<>();
-        routeIdList.add(apiId + ":" + HttpMethod.DELETE.getMethod());
-        routeIdList.add(apiId + ":" + HttpMethod.PUT.getMethod());
-        routeIdList.add(apiId + ":" + HttpMethod.POST.getMethod());
-        routeIdList.add(apiId + ":" + HttpMethod.GET.getMethod());
-        routeIdList.add(apiId + ":" + HttpMethod.PATCH.getMethod());
+        routeIdList.add(serviceId + ":" + HttpMethod.DELETE.getMethod());
+        routeIdList.add(serviceId + ":" + HttpMethod.PUT.getMethod());
+        routeIdList.add(serviceId + ":" + HttpMethod.POST.getMethod());
+        routeIdList.add(serviceId + ":" + HttpMethod.GET.getMethod());
+        routeIdList.add(serviceId + ":" + HttpMethod.PATCH.getMethod());
         return routeIdList;
     }
 
@@ -158,37 +154,29 @@ public class RouteUtils {
         return routeIdList;
     }
 
-    public void createRoute(Api incomingApi, Cache<String, Api> apiCache, CamelContext camelContext, MetricsProcessor metricsProcessor, StickySessionCacheManager stickySessionCacheManager, String capiContext, String reverseProxyHost) {
-        apiCache.put(incomingApi.getId(), incomingApi);
-        List<String> apiRouteIdList = getAllRouteIdForAGivenApi(incomingApi);
-        for(String routeId : apiRouteIdList) {
-            Route existingRoute = camelContext.getRoute(routeId);
-            if(existingRoute == null) {
-                try {
-                    camelContext.addRoutes(new DirectRouteProcessor(camelContext, incomingApi, this, metricsProcessor, routeId, stickySessionCacheManager, capiContext, reverseProxyHost));
-                    camelContext.addRoutes(new RestDefinitionProcessor(camelContext, incomingApi, this, routeId));
-                } catch (Exception e) {
-                    log.error(e.getMessage(), e);
-                }
-            }
-        }
+    public boolean isStickySessionEnabled(Service service) {
+        return service.getServiceMeta().isStickySession() && service.getServiceMeta().getStickySessionKey() != null && service.getServiceMeta().getStickySessionType() != null;
     }
 
-    public void reloadTrustStoreManager(String apiId, boolean undeploy) {
+    public boolean isStickySessionOnCookie(Service service) {
+        return service.getServiceMeta().getStickySessionType().equals("cookie");
+    }
+
+    public void reloadTrustStoreManager(String serviceId, boolean undeploy) {
         try {
-            log.trace("Reloading Trust Store Manager after changes for API: {}", apiId);
+            log.trace("Reloading Trust Store Manager after changes for API: {}", serviceId);
             HttpComponent httpComponent = (HttpComponent) camelContext.getComponent("https");
             CapiTrustManager capiTrustManager = (CapiTrustManager) httpComponent.getSslContextParameters().getTrustManagers().getTrustManager();
             capiTrustManager.reloadTrustManager();
             if(undeploy) {
-                List<String> routeIdList = getAllRouteIdForAGivenApi(apiId);
+                List<String> routeIdList = getAllRouteIdForAGivenService(serviceId);
                 for(String routeId : routeIdList) {
                     camelContext.getRouteController().stopRoute(Constants.CAMEL_REST_PREFIX + routeId);
                     camelContext.removeRoute(Constants.CAMEL_REST_PREFIX + routeId);
                     camelContext.getRouteController().stopRoute(routeId);
                     camelContext.removeRoute(routeId);
                 }
-                apiCache.remove(apiId);
+               serviceCache.remove(serviceId);
             }
         } catch(Exception e) {
             log.error(e.getMessage(), e);

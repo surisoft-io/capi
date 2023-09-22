@@ -1,11 +1,19 @@
 package io.surisoft.capi.tracer;
 
 import brave.SpanCustomizer;
+import com.nimbusds.jose.JOSEException;
+import com.nimbusds.jose.proc.BadJOSEException;
+import com.nimbusds.jwt.JWTClaimsSet;
+import io.surisoft.capi.exception.AuthorizationException;
 import io.surisoft.capi.utils.Constants;
 import org.apache.camel.Endpoint;
 import org.apache.camel.Exchange;
 import org.apache.camel.util.URISupport;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
+import java.text.ParseException;
 import java.util.Locale;
 
 public final class CapiTracerClientRequestAdapter {

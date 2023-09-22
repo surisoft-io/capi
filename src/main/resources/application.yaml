@@ -21,14 +21,14 @@ capi:
       port: 8381
   #### Enable Traces (Editable Property) ####
   traces:
-    enabled: true
+    enabled: false
     endpoint: http://localhost:9411/api/v2/spans
   #### Consul Integration (Editable Property) ####
   #### If you want CAPI to search consul for available APIs to be deployed, enable this feature. ####
   consul:
     host: http://localhost:8500
     discovery:
-      enabled: true
+      enabled: false
       timer:
         interval: 10000
   #### Certificate Management (Editable property) ####
@@ -49,13 +49,6 @@ capi:
     security:
       enabled: false
       issuer:
-  #### Persistence Management ####
-  persistence:
-    enabled: false
-  db:
-    discovery:
-      timer:
-        interval: 40000
   version: ^project.version^
   name: ^project.name^
   spring:
@@ -75,16 +68,7 @@ springdoc:
 spring:
   #### We want persistence to be optional, so we disable autoconfiguration for JPA ####
   autoconfigure:
-    exclude: org.springframework.boot.autoconfigure.security.servlet.UserDetailsServiceAutoConfiguration, org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration, org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration, org.springframework.boot.autoconfigure.jdbc.DataSourceTransactionManagerAutoConfiguration
-  ### JDBC Properties (default MySQL) (Editable) ###
-  jpa:
-    hibernate:
-      ddl-auto: update
-      use-new-id-generator-mappings: false
-  datasource:
-    url: jdbc:mysql://localhost:3306/capi
-    username: root
-    password: root
+    exclude: org.springframework.boot.autoconfigure.security.servlet.UserDetailsServiceAutoConfiguration
   profiles:
     active: default
   ### CAPI Banner, keep it, it is beautiful!
@@ -131,12 +115,12 @@ sticky:
       to:
         live: 2
 #### OAUTH2 Support to protect the routes. (Editable properties) ####
-oidc:
-  cookieName:
+oauth2:
+  cookieName: 
   provider:
     enabled: false
     keys: http://localhost:8080/realms/master/protocol/openid-connect/certs
     host: http://localhost:8080
     realm: /realms/master
-    clientId:
-    clientSecret:
+    clientId: capi
+    clientSecret: XDeIeoDTYuvuV6xEGtzv1zdGLUENCIGE

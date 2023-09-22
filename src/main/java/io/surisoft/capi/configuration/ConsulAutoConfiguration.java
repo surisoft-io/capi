@@ -2,12 +2,12 @@ package io.surisoft.capi.configuration;
 
 import io.surisoft.capi.cache.StickySessionCacheManager;
 import io.surisoft.capi.processor.MetricsProcessor;
-import io.surisoft.capi.schema.Api;
+import io.surisoft.capi.schema.Service;
 import io.surisoft.capi.schema.WebsocketClient;
 import io.surisoft.capi.service.ConsulNodeDiscovery;
-import io.surisoft.capi.utils.ApiUtils;
 import io.surisoft.capi.utils.HttpUtils;
 import io.surisoft.capi.utils.RouteUtils;
+import io.surisoft.capi.utils.ServiceUtils;
 import io.surisoft.capi.utils.WebsocketUtils;
 import org.apache.camel.CamelContext;
 import org.apache.camel.builder.RouteBuilder;
@@ -50,14 +50,16 @@ public class ConsulAutoConfiguration {
 
     @Bean(name = "consulNodeDiscovery")
     @ConditionalOnProperty(prefix = "capi.consul.discovery", name = "enabled", havingValue = "true")
-    public ConsulNodeDiscovery consulNodeDiscovery(CamelContext camelContext, ApiUtils apiUtils, RouteUtils routeUtils, MetricsProcessor metricsProcessor, HttpUtils httpUtils, StickySessionCacheManager stickySessionCacheManager, Cache<String, Api> apiCache) {
-        //Testing Inline Route
+    public ConsulNodeDiscovery consulNodeDiscovery(CamelContext camelContext,
+                                                   ServiceUtils serviceUtils,
+                                                   RouteUtils routeUtils,
+                                                   MetricsProcessor metricsProcessor,
+                                                   HttpUtils httpUtils,
+                                                   StickySessionCacheManager stickySessionCacheManager,
+                                                   Cache<String, Service> serviceCache) {
         camelContext.getRestConfiguration().setInlineRoutes(true);
-
-        ConsulNodeDiscovery consulNodeDiscovery = new ConsulNodeDiscovery(camelContext, apiUtils, routeUtils, metricsProcessor, stickySessionCacheManager, apiCache, websocketClientMap);
-
+        ConsulNodeDiscovery consulNodeDiscovery = new ConsulNodeDiscovery(camelContext, serviceUtils, routeUtils, metricsProcessor, stickySessionCacheManager, serviceCache, websocketClientMap);
         consulNodeDiscovery.setWebsocketUtils(websocketUtils);
-
         consulNodeDiscovery.setCapiContext(httpUtils.getCapiContext(capiContext));
         consulNodeDiscovery.setConsulHost(capiConsulHost);
 

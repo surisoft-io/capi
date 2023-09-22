@@ -220,6 +220,8 @@ public class Constants {
     public static final String ROUTE_ID_HEADER = "routeID";
     public static final String API_ID_HEADER = "apiId";
     public static final String AUTHORIZATION_HEADER = "Authorization";
+    public static final String COOKIE_HEADER = "Cookie";
+    public static final String SET_COOKIE_HEADER = "Set-Cookie";
     public static final String AUTHORIZED_PARTY = "azp";
     public static final String CAPI_INTERNAL_ERROR = "capi-internal-error";
     public static final String CAPI_INTERNAL_ERROR_CLASS_NAME = "capi-internal-error-class-name";
@@ -242,6 +244,7 @@ public class Constants {
     public static final String ERROR_CODE = "errorCode";
     public static final String NO_CUSTOM_TRUST_STORE_PROVIDED = "No custom trust store was provided, to enable this feature, add a custom trust store.";
     public static final String STICKY_SESSION_IMAP_NAME = "stickySession";
+    public static final String TENANT_HEADER = "tenant";
     public static final HttpString PROTOCOL_HTTP = new HttpString("HTTP/1.1");
     public static final String[] CAPI_WHITELISTED_PATHS = {
             //Swagger UI v2
@@ -286,5 +289,6 @@ public class Constants {
 
     public static final String BEARER = "Bearer ";
     public static final String CAPI_GROUP_HEADER = "Capi-Group";
+    public static final String WEBSOCKET_TYPE = "websocket";
 
 }

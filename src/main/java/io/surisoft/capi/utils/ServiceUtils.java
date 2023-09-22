@@ -205,29 +205,27 @@
 
 package io.surisoft.capi.utils;
 
+import io.surisoft.capi.builder.DirectRouteProcessor;
 import io.surisoft.capi.builder.RestDefinitionProcessor;
 import io.surisoft.capi.cache.StickySessionCacheManager;
-import io.surisoft.capi.builder.DirectRouteProcessor;
 import io.surisoft.capi.processor.MetricsProcessor;
-import io.surisoft.capi.repository.ApiRepository;
-import io.surisoft.capi.schema.Api;
-import io.surisoft.capi.schema.ConsulObject;
-import io.surisoft.capi.schema.Mapping;
-import io.surisoft.capi.schema.WebsocketClient;
+import io.surisoft.capi.schema.*;
 import org.apache.camel.CamelContext;
 import org.cache2k.Cache;
 import org.cache2k.CacheEntry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-import java.util.*;
+import java.util.List;
+import java.util.Map;
 
 @Component
-public class ApiUtils {
+public class ServiceUtils {
 
-    private static final Logger log = LoggerFactory.getLogger(ApiUtils.class);
+    private static final Logger log = LoggerFactory.getLogger(ServiceUtils.class);
 
     @Autowired
     private HttpUtils httpUtils;
@@ -235,8 +233,26 @@ public class ApiUtils {
     @Autowired(required = false)
     private Map<String, WebsocketClient> websocketClientMap;
 
-    public String getApiId(Api api) {
-        return api.getName() + ":" + api.getContext();
+    @Autowired
+    private RouteUtils routeUtils;
+
+    @Autowired
+    private MetricsProcessor metricsProcessor;
+
+    @Autowired
+    private CamelContext camelContext;
+
+    @Autowired
+    private StickySessionCacheManager stickySessionCacheManager;
+
+    @Value("${camel.servlet.mapping.context-path}")
+    private String capiContext;
+
+    @Value("${capi.reverse.proxy.host}")
+    private String reverseProxyHost;
+
+    public String getServiceId(Service service) {
+        return service.getName() + ":" + service.getServiceMeta().getGroup();
     }
 
     public Mapping consulObjectToMapping(ConsulObject consulObject) {
@@ -246,6 +262,7 @@ public class ApiUtils {
 
         if(consulObject.getServiceMeta() != null && consulObject.getServiceMeta().getIngress() != null) {
             mapping.setHostname(httpUtils.normalizeHttpEndpoint(consulObject.getServiceMeta().getIngress()));
+            mapping.setIngress(true);
             if(httpUtils.isEndpointSecure(consulObject.getServiceMeta().getIngress())) {
                 mapping.setPort(Constants.HTTPS_PORT);
             } else {
@@ -266,56 +283,39 @@ public class ApiUtils {
             mapping.setRootContext("/");
         }
         mapping.setTenandId(consulObject.getServiceMeta().getTenantId() != null ? consulObject.getServiceMeta().getTenantId() : null);
-        mapping.setIngress(true);
         return mapping;
     }
 
-    public void updateExistingApi(Api existingApi, Api incomingApi, ApiRepository apiRepository) {
-        if(incomingApi.getMappingList().size() == 1) {
-            if(!existingApi.getMappingList().stream().toList().contains(incomingApi.getMappingList().stream().toList().get(0))) {
-                existingApi.getMappingList().add(incomingApi.getMappingList().stream().toList().get(0));
-                apiRepository.update(existingApi);
-            }
-        } else if(isMappingChanged(existingApi.getMappingList().stream().toList(), incomingApi.getMappingList().stream().toList())) {
-            log.trace("Changes detected for API: {}, redeploying routes.", existingApi.getId());
-            existingApi.setMappingList(incomingApi.getMappingList());
-            apiRepository.update(existingApi);
-        } else {
-            log.trace("No changes detected for API: {}.", existingApi.getId());
+    public void validateServiceType(Service service) {
+        if(service.getServiceMeta().getType() == null) {
+            service.getServiceMeta().setType("rest");
         }
     }
 
-    public void updateExistingApi(Api existingApi, Api incomingApi, Cache<String, Api> apiCache, RouteUtils routeUtils, MetricsProcessor metricsProcessor, CamelContext camelContext, StickySessionCacheManager stickySessionCacheManager, String capiContext, String reverseProxyHost) {
+    public void updateExistingService(Service existingService,
+                                      Service incomingService,
+                                      Cache<String, Service> serviceCache) {
 
-        if(isMappingChanged(existingApi.getMappingList().stream().toList(), incomingApi.getMappingList().stream().toList())) {
-            log.trace("Changes detected for API: {}, redeploying routes.", existingApi.getId());
-
-
+        if(isMappingChanged(existingService.getMappingList().stream().toList(), incomingService.getMappingList().stream().toList())) {
+            log.trace("Changes detected for Service: {}, redeploying routes.", existingService.getId());
             try {
-                List<String> apiRouteIdList = routeUtils.getAllRouteIdForAGivenApi(existingApi);
+                List<String> apiRouteIdList = routeUtils.getAllRouteIdForAGivenService(existingService);
                 for(String routeId : apiRouteIdList) {
                     camelContext.getRouteController().stopRoute(routeId);
                     camelContext.removeRoute(routeId);
                     camelContext.getRouteController().stopRoute(Constants.CAMEL_REST_PREFIX + routeId);
                     camelContext.removeRoute(Constants.CAMEL_REST_PREFIX + routeId);
 
-                    if(incomingApi.getMappingList().size() == 1 || incomingApi.isTenantAware()) {
-                        existingApi.setRoundRobinEnabled(false);
-                        existingApi.setFailoverEnabled(false);
-                        incomingApi.setRoundRobinEnabled(false);
-                        incomingApi.setFailoverEnabled(false);
-                    } else {
-                        existingApi.setRoundRobinEnabled(true);
-                        existingApi.setFailoverEnabled(true);
-                        incomingApi.setRoundRobinEnabled(true);
-                        incomingApi.setFailoverEnabled(true);
-                    }
+                    incomingService.setRoundRobinEnabled(incomingService.getMappingList().size() != 1 && !incomingService.getServiceMeta().isTenantAware());
+                    incomingService.setFailOverEnabled(incomingService.getMappingList().size() != 1 && !incomingService.getServiceMeta().isTenantAware());
+                    existingService.setRoundRobinEnabled(incomingService.getMappingList().size() != 1 && !incomingService.getServiceMeta().isTenantAware());
+                    existingService.setFailOverEnabled(incomingService.getMappingList().size() != 1 && !incomingService.getServiceMeta().isTenantAware());
 
-                    camelContext.addRoutes(new DirectRouteProcessor(camelContext, incomingApi, routeUtils, metricsProcessor, routeId, stickySessionCacheManager, capiContext, reverseProxyHost));
-                    camelContext.addRoutes(new RestDefinitionProcessor(camelContext, incomingApi, routeUtils, routeId));
+                    camelContext.addRoutes(new DirectRouteProcessor(camelContext, incomingService, routeUtils, metricsProcessor, routeId, stickySessionCacheManager, capiContext, reverseProxyHost));
+                    camelContext.addRoutes(new RestDefinitionProcessor(camelContext, incomingService, routeUtils, routeId));
 
-                    existingApi.setMappingList(incomingApi.getMappingList());
-                    apiCache.put(existingApi.getId(), existingApi);
+                    existingService.setMappingList(incomingService.getMappingList());
+                    serviceCache.put(existingService.getId(), existingService);
                 }
             } catch (Exception e) {
                 log.error(e.getMessage(), e);
@@ -323,19 +323,8 @@ public class ApiUtils {
 
 
         } else {
-            log.trace("No changes detected for API: {}.", existingApi.getId());
+            log.trace("No changes detected for Service: {}.", existingService.getId());
         }
-    }
-
-    public void applyApiDefaults(Api api) {
-        //By default CAPI LB will match any request to your backend
-        api.setMatchOnUriPrefix(true);
-        //Failover is enabled by default
-        api.setFailoverEnabled(true);
-        api.setMaximumFailoverAttempts(1);
-        //Round robin is enabled by default
-        api.setRoundRobinEnabled(true);
-        api.setSwaggerEndpoint(null);
     }
 
     public boolean isMappingChanged(List<Mapping> existingMappingList, List<Mapping> incomingMappingList) {
@@ -350,17 +339,17 @@ public class ApiUtils {
         return false;
     }
 
-    public void removeUnusedApi(CamelContext camelContext, RouteUtils routeUtils, Cache<String, Api> apiCache, List<String> serviceNameList) throws Exception {
-        for (CacheEntry<String, Api> stringApiCacheEntry : apiCache.entries()) {
-            Api api = stringApiCacheEntry.getValue();
-            if (!serviceNameList.contains(api.getName())) {
-                apiCache.remove(api.getId());
-                if(api.isWebsocket()) {
-                   // websocketClientMap.remove()
+    public void removeUnusedService(CamelContext camelContext, RouteUtils routeUtils, Cache<String, Service> serviceCache, List<String> serviceNameList) throws Exception {
+        for (CacheEntry<String, Service> stringServiceCacheEntry : serviceCache.entries()) {
+            Service service = stringServiceCacheEntry.getValue();
+            if (!serviceNameList.contains(service.getName())) {
+                serviceCache.remove(service.getId());
+                if(service.getServiceMeta().getType().equals("websocket")) {
+                    // websocketClientMap.remove()
 
                 } else {
-                    List<String> apiRouteIdList = routeUtils.getAllRouteIdForAGivenApi(api);
-                    for (String routeId : apiRouteIdList) {
+                    List<String> serviceRouteIdList = routeUtils.getAllRouteIdForAGivenService(service);
+                    for (String routeId : serviceRouteIdList) {
                         camelContext.getRouteController().stopRoute(routeId);
                         camelContext.removeRoute(routeId);
                         camelContext.getRouteController().stopRoute(Constants.CAMEL_REST_PREFIX + routeId);
@@ -369,52 +358,5 @@ public class ApiUtils {
                 }
             }
         }
-    }
-
-    @Deprecated
-    public void removeUnusedApi(CamelContext camelContext, RouteUtils routeUtils, Cache<String, Api> apiCache, Map<String, List<Mapping>> servicesStructure, String serviceName) throws Exception {
-        Set<String> apiNameList = new HashSet<>();
-        for (var entry : servicesStructure.keySet()) {
-            apiNameList.add(serviceName + ":" + entry);
-        }
-        for (CacheEntry<String, Api> stringApiCacheEntry : apiCache.entries()) {
-            Api api = stringApiCacheEntry.getValue();
-            if (!apiNameList.contains(api.getId())) {
-                apiCache.remove(api.getId());
-                List<String> apiRouteIdList = routeUtils.getAllRouteIdForAGivenApi(api);
-                for (String routeId : apiRouteIdList) {
-                    camelContext.getRouteController().stopRoute(routeId);
-                    camelContext.removeRoute(routeId);
-                    camelContext.getRouteController().stopRoute(Constants.CAMEL_REST_PREFIX + routeId);
-                    camelContext.removeRoute(Constants.CAMEL_REST_PREFIX + routeId);
-                }
-            }
-
-        }
-    }
-
-    public void removeUnusedApi(CamelContext camelContext, RouteUtils routeUtils, Cache<String, Api> apiCache, Collection<Api> apiList) throws Exception {
-        for (CacheEntry<String, Api> stringApiCacheEntry : apiCache.entries()) {
-            Api api = stringApiCacheEntry.getValue();
-            if (!isApiCached(api.getId(), apiList)) {
-                apiCache.remove(api.getId());
-                List<String> apiRouteIdList = routeUtils.getAllRouteIdForAGivenApi(api);
-                for (String routeId : apiRouteIdList) {
-                    camelContext.getRouteController().stopRoute(routeId);
-                    camelContext.removeRoute(routeId);
-                    camelContext.getRouteController().stopRoute(Constants.CAMEL_REST_PREFIX + routeId);
-                    camelContext.removeRoute(Constants.CAMEL_REST_PREFIX + routeId);
-                }
-            }
-        }
-    }
-
-    private boolean isApiCached(String apiId, Collection<Api> apiList) {
-        for(Api api : apiList) {
-            if(api.getId().equals(apiId)) {
-                return true;
-            }
-        }
-        return false;
     }
 }

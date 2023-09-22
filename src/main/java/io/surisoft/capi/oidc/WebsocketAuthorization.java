@@ -29,8 +29,8 @@ public class WebsocketAuthorization {
         if(!websocketClient.requiresSubscription()) {
             return true;
         }
-        if(httpServerExchange.getRequestHeaders().contains(OIDCConstants.AUTHORIZATION_HEADER)
-                || httpServerExchange.getQueryParameters().containsKey(OIDCConstants.AUTHORIZATION_QUERY)) {
+        if(httpServerExchange.getRequestHeaders().contains(Oauth2Constants.AUTHORIZATION_HEADER)
+                || httpServerExchange.getQueryParameters().containsKey(Oauth2Constants.AUTHORIZATION_QUERY)) {
             return isApiSubscribed(httpServerExchange, websocketClient.getSubscriptionRole());
         }
         return false;
@@ -42,18 +42,18 @@ public class WebsocketAuthorization {
 
     private boolean isApiSubscribed(HttpServerExchange httpServerExchange, String role) {
         String bearerToken;
-        if(httpServerExchange.getRequestHeaders().contains(OIDCConstants.AUTHORIZATION_HEADER)) {
-            bearerToken = getBearerTokenFromHeader(httpServerExchange.getRequestHeaders().get(OIDCConstants.AUTHORIZATION_HEADER, 0));
-            httpServerExchange.getRequestHeaders().remove(new HttpString(OIDCConstants.AUTHORIZATION_HEADER));
+        if(httpServerExchange.getRequestHeaders().contains(Oauth2Constants.AUTHORIZATION_HEADER)) {
+            bearerToken = getBearerTokenFromHeader(httpServerExchange.getRequestHeaders().get(Oauth2Constants.AUTHORIZATION_HEADER, 0));
+            httpServerExchange.getRequestHeaders().remove(new HttpString(Oauth2Constants.AUTHORIZATION_HEADER));
         } else {
-            bearerToken = httpServerExchange.getQueryParameters().get(OIDCConstants.AUTHORIZATION_QUERY).getFirst();
+            bearerToken = httpServerExchange.getQueryParameters().get(Oauth2Constants.AUTHORIZATION_QUERY).getFirst();
             removeAuthorizationFromQuery(httpServerExchange);
         }
         try {
             JWTClaimsSet jwtClaimsSet = jwtProcessor.process(bearerToken, null);
-            Map<String, Object> claimSetMap = jwtClaimsSet.getJSONObjectClaim(OIDCConstants.REALMS_CLAIM);
-            if(claimSetMap != null && claimSetMap.containsKey(OIDCConstants.ROLES_CLAIM)) {
-                List<String> roleList = (List<String>) claimSetMap.get(OIDCConstants.ROLES_CLAIM);
+            Map<String, Object> claimSetMap = jwtClaimsSet.getJSONObjectClaim(Oauth2Constants.REALMS_CLAIM);
+            if(claimSetMap != null && claimSetMap.containsKey(Oauth2Constants.ROLES_CLAIM)) {
+                List<String> roleList = (List<String>) claimSetMap.get(Oauth2Constants.ROLES_CLAIM);
                 for(String claimRole : roleList) {
                     if(claimRole.equals(role)) {
                         return true;
@@ -69,7 +69,7 @@ public class WebsocketAuthorization {
     private void removeAuthorizationFromQuery(HttpServerExchange httpServerExchange) {
         StringBuilder queryString = new StringBuilder();
         httpServerExchange.getQueryParameters().forEach((key, value) -> {
-            if(!key.equals(OIDCConstants.AUTHORIZATION_QUERY)) {
+            if(!key.equals(Oauth2Constants.AUTHORIZATION_QUERY)) {
                 if(queryString.isEmpty()) {
                     queryString
                             .append(key)

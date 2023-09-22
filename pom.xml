@@ -7,7 +7,7 @@
   <groupId>io.surisoft.capi</groupId>
   <artifactId>capi</artifactId>
   <packaging>jar</packaging>
-  <version>4.1.00</version>
+  <version>4.2.00</version>
   <description>${spring.boot-version}</description>
   <name>CAPI Gateway</name>
 
@@ -152,24 +152,6 @@
       <artifactId>nimbus-jose-jwt</artifactId>
       <version>${nimbus-jose-jwt-version}</version>
     </dependency>
-    <!-- Database support -->
-    <dependency>
-      <groupId>org.springframework.boot</groupId>
-      <artifactId>spring-boot-starter-data-jpa</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>com.mysql</groupId>
-      <artifactId>mysql-connector-j</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.postgresql</groupId>
-      <artifactId>postgresql</artifactId>
-      <version>${org.postgresql-version}</version>
-    </dependency>
-    <dependency>
-      <groupId>com.h2database</groupId>
-      <artifactId>h2</artifactId>
-    </dependency>
     <dependency>
       <groupId>org.springframework</groupId>
       <artifactId>spring-context</artifactId>
@@ -254,13 +236,11 @@
       <artifactId>jackson-dataformat-xml</artifactId>
       <version>${jackson-dataformat-xml.version}</version>
     </dependency>
-
     <dependency>
       <groupId>org.springframework.kafka</groupId>
       <artifactId>spring-kafka</artifactId>
       <version>3.0.11</version>
     </dependency>
-
   </dependencies>
 <build>
   <resources>

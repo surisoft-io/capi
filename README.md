@@ -17,7 +17,7 @@
 
 ## Supports:
 * Light API Gateway / Load Balancer powered by Apache Camel dynamics routes.
-* Optional Spring Security OIDC protected CAPI Manager API.
+* Optional Spring Security OAUTH2 protected CAPI Manager API.
 * Distributed tracing system (OpenTelemetry Collector / Jaeger / Zipkin)
 * Metrics (Prometheus)
 * CAPI Browser user interface for route management.
@@ -27,15 +27,10 @@
 * Tenant support (Headers)
 * Sticky Session (Cookies and Headers)
 * Certificate Manager (using the CAPI Manager API)
-* Supports running with no DB, using Consul for service discovery
+* No DB is needed, CAPI uses Hashicorp Consul for service discovery
 * Websocket Gateway (Since version 4.0.11)
 
-
-## CAPI support 2 deployment strategies:
-* Hashicorp Consul
-* Database (MySQL / Postgres / H2)
-
-### Enable Hashicorp Consul (Currently the Best Option, actively supported)
+### Enable Hashicorp Consul
 ```yaml
   consul:
     host: http://localhost:8500
@@ -61,70 +56,48 @@ You need to include all the required Consul dependencies on your project:
 </dependency>
 ```
 
-
-If you enable persistence, you will need to provide a database instance.
-CAPI supports out of the box MySQL, PostgreSQL and H2
-To enable persistence run CAPI with the following property:
+## Example of an Service definition
+```json
+  {
+    "name": "test-service",
+    "context": "/test-service/dev",
+    "mappingList": [
+      {
+        "rootContext": "/",
+        "hostname": "domain1",
+        "port": 8080,
+        "ingress": false
+      },
+      {
+        "rootContext": "/",
+        "hostname": "domain2",
+        "port": 8080,
+        "ingress": false
+      }
+    ],
+    "serviceMeta": {
+      "group": "dev",
+      "root-context": null,
+      "schema": null,
+      "secured": false,
+      "tenant_aware": false,
+      "tenant_id": null,
+      "X-B3-TraceId": false,
+      "ingress": null,
+      "sticky_session_enabled": true,
+      "sticky_session_type": "cookie",
+      "sticky_session_key": "smkSession",
+      "type": "rest",
+      "subscription-group": null,
+      "keep-group": true
+    },
+    "roundRobinEnabled": false,
+    "failOverEnabled": false,
+    "matchOnUriPrefix": true,
+    "forwardPrefix": false,
+    "registeredBy": "io.surisoft.capi.service.ConsulNodeDiscovery"
+}
 ```
-capi.persistence.enabled=true
-```
-
-CAPI will auto discover your DB vendor based on the provided:
-```
-spring.datasource.url
-```
-
-Examples:
-```
-(mysql) jdbc:mysql://localhost:3306/capi
-```
-```
-(postgres) jdbc:postgresql://localhost:5432/capi
-```
-```
-(h2) jdbc:h2:mem:db;DB_CLOSE_DELAY=-1;
-```
-
-With persistence enabled you will be able to deploy new apis using:
-* CAPI Manager endpoint.
-If you scale up CAPI, new instances will read the deployments from the database.
-
-If you choose not to enable persistence you will need to provide a Consul instance, CAPI will then read Consul catalog and deploy the available services. 
-If you scale up CAPI, new instances will read all the deployments from Consul catalog.
-
-*Keep in mind that you can have both Persistence and Consul strategies enabled.*
-## Example of an API definition
-
-    {
-        "name": "api-name",
-    	"context": "your-api-context",
-    	"mappingList": [
-    		{
-    		    "hostname": "your.app.node1",
-    		    "port": 8080,
-    		    "rootContext": "your-app-context",
-                        "ingress": false
-    		},
-    		{
-    		    "hostname": "your.app.node2",
-    		    "port": 8080,
-    		    "rootContext": "your-app-context",
-                        "ingress": true
-    		}
-    	],
-    	"roundRobinEnabled": true,
-    	"failoverEnabled": true,
-    	"matchOnUriPrefix": true,
-    	"httpMethod": ALL,
-    	"httpProtocol": "HTTP",
-    	"stickySession": true,
-    	"stickySessionParam": "SESSION_ID",
-    	"stickySessionParamInCookie": true,
-    	"removeMe": false,
-    	"connectTimeout": 0,
-    	"socketTimeout": 0,
-    	"swaggerEndpoint": null
-    }
 ### Field Description
 
 * ```context``` (Mandatory) The context where users will access your api. (Example: https://domain.com/capi/your-api-context).
@@ -133,12 +106,8 @@ If you scale up CAPI, new instances will read all the deployments from Consul ca
 * ```httpMethod``` (Default ALL) - If no http method is specified, CAPI will expose all standard methods for your API (GET,POST,PUT,DELETE). If you specify POST, only post calls to your API will be load balanced.
 * ```matchOnUriPrefix``` (Default true), if true, you don't need to specify a definition (Swagger) for your API. CAPI will allow all paths. (Example: /your-api-context/clients /your-api-context/customer/foo/bar?action=example).
 * ```stickySession``` (Default false) - If you enable sticky sessions then you also need to provide ```stickySessionParam``` and ```stickySessionParamInCookie``` (Example: ```stickySession=true```, ```stickySessionParam=X_KEY```,```stickySessionParamInCookie=true```: CAPI will look for a cookie named X_KEY, and associate the value with a random node, subsequent calls with the same cookie value will be forwarded to the same node. If that node becames unavailable CAPI returns a 503 to the client and starts all over again.)
-* ```connectTimeout``` (default 2 minutes) - You can specify the timeout for CAPI to try to connect to your endpoint.
-* ```socketTimeout``` (default 2 minutes) - You can specify the timeout for CAPI to wait for a response from your endpoint.
-* ```removeMe``` (default true) - If false, CAPI will not only remove the node requesting to be removed, but the entire API. (Example: Node 1 joins the _API-X_, Node 2 joins _API-X_, with ```removeMe=false```, if Node 2 exits _API-X_, the entire _API-X_ will be deleted)
-
-
 * ```ingress``` (default false) - If one of your mapping is pointing to a Kubernetes ingress, ```ingress``` should be true. This is because Ingress Controller needs to evaluate the Host header to determine to which service to forward the request. Check the documentation here: https://kubernetes.io/docs/concepts/services-networking/ingress/#ingress-rules
+
 ### Manager API
 CAPI Manager is available on http://localhost:8380/swagger-ui.html
 Security to this API is disabled by default, if you need to enable security you need to provide the following properties:
@@ -186,14 +155,14 @@ There are 2 ways to work with Authorization on CAPI.
 * You have control on your oauth2 provider, and you are able to manage your token claims, so they can be interpreted by CAPI. In this case you only need to provide CAPI with the Public Keys endpoint of your oauth2 provider using the property `oidc.provider.keys`.
 ```yaml
 #example
-oidc:
+oauth2:
   provider:
     enabled: true
     keys: http://localhost:8080/realms/master/protocol/openid-connect/certs
 ```
 * Use Keycloak! In this case, CAPI provides manager endpoints (see `Manager API`) to create roles and groups directly on Keycloak. In this case you need the following properties:
 ```yaml
-oidc:
+oauth2:
   provider:
     enabled: true
     keys: http://localhost:8080/realms/master/protocol/openid-connect/certs
@@ -203,7 +172,7 @@ oidc:
     clientSecret: <the secret used by CAPI to authenticate to Keycloak>
 ```
 ### After having Authorization enabled, and if your service is protected (See `Protect your API`), CAPI will only route traffic to your service if the following conditions are met:
-* The token was signed by the oauth2 provider configured: `oidc.provider.keys`.
+* The token was signed by the oauth2 provider configured: `oauth2.provider.keys`.
 * The token is not expired.
 * The token azp (authorized party) has a role with the same as your service.
 Example: 
@@ -263,8 +232,8 @@ this.websocket.onopen = (event: any) => {
 #### For authentication CAPI supports the standard Authorization header, or a query parameter with the key `access_token`.
 *Important info* about Authorization: CAPI actively supports Keycloak as an oauth2 provider, but you should still be able to use any oauth2 compliant provider. See `Authorization` section to know how CAPI authorizes a request.
 
-#### For CAPI to know that your API is a Websocket, please set `Api.websocket` to true.
-(See `How to declare your API to CAPI`)
+#### For CAPI to know that your API is a Websocket, please set `Service.serviceMeta.type` to `websocket`.
+(See `How to declare your Service to CAPI`)
 
 
 
@@ -319,11 +288,16 @@ $ eksctl delete cluster --name capi-demo-1
 ```
 
 
-### Install CAPI fat jar on a VM
-
-* You need a valid MySQL running instance, with CAPI db created.
+### Install CAPI fat jar on a VM 
+#### The example below has the following dependencies:
 * You need Open JDK 17
-```
+* Hashicorp Consul
+* Keycloak (or a compatible oauth2 provide: See `Authorization`)
+* Any traces collector (Open Telemetry Collector or Zipkin)
+* A certificate for SSL configuration
+* A custom trust store.
+
+```bash
 $ mkdir logs
 $ git clone this repo
 $ mvn clean package
@@ -332,13 +306,27 @@ $ java \
      -XX:MaxHeapSize=2g \
      -XX:+HeapDumpOnOutOfMemoryError \
      -XX:HeapDumpPath="$PWD/logs/heap-dump.hprof" \
-     -Dspring.datasource.url=jdbc:mysql://localhost:3306/capi \
-     -Dspring.datasource.username=root \
-     -Dspring.datasource.password=root \
-     -Dcapi.trust.store.path=/your/path/cacerts \ 
+     -Dspring.profiles.active=prod \
+     -Dcapi.consul.discovery.enabled=true \
+     -Dcapi.consul.host=http://localhost:8500 \
+     -Dcapi.consul.discovery.time.interval=20 \
+     -Dcapi.manager.security.enabled=false \
+     -Dcapi.disable.redirect=true \
+     -Dcapi.trust.store.enabled=true \
+     -Dcapi.trust.store.path=$CAPI_HOME/client-truststore.jks \
      -Dcapi.trust.store.password=changeit \
-     -Dcapi.manager.security.enabled=true \ 
-     -Dcapi.manager.security.issuer=https://localhost:8443/auth/realms/master/protocol/openid-connect/certs \
+     -Dlog-dir=$LOGS_DIR \
+     -Dserver.ssl.key-store-type=JKS \
+     -Dserver.ssl.key-store=$CAPI_HOME/capi.jks \
+     -Dserver.ssl.key-store-password=changeit \
+     -Dserver.ssl.key-alias=capi \
+     -Dcapi.traces.enabled=true \
+     -Dcapi.traces.endpoint=http://localhost:9411/api/v2/spans \
+     -Dserver.ssl.enabled=true \
+     -Dserver.port=$CAPI_PORT \
+     -Doauth2.cookieName=Authorization-Cookie-Name \
+     -Doauth2.provider.enabled=true \
+     -Doauth2.provider.keys=https://some-auth-server/.well-known/jwks.json \
      -jar <CAPI_JAR> > $PWD/logs/capi.log 2>&1 & echo $! > capi.pid
    ```
 

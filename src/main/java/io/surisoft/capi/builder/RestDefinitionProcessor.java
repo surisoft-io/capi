@@ -1,6 +1,6 @@
 package io.surisoft.capi.builder;
 
-import io.surisoft.capi.schema.Api;
+import io.surisoft.capi.schema.Service;
 import io.surisoft.capi.utils.Constants;
 import io.surisoft.capi.utils.RouteUtils;
 import org.apache.camel.CamelContext;
@@ -10,12 +10,12 @@ import org.apache.camel.model.rest.RestDefinition;
 public class RestDefinitionProcessor extends RouteBuilder {
 
     private final RouteUtils routeUtils;
-    private final Api api;
+    private final Service service;
     private final String routeId;
 
-    public RestDefinitionProcessor(CamelContext camelContext, Api api, RouteUtils routeUtils, String routeId) {
+    public RestDefinitionProcessor(CamelContext camelContext, Service service, RouteUtils routeUtils, String routeId) {
         super(camelContext);
-        this.api = api;
+        this.service = service;
         this.routeUtils = routeUtils;
         this.routeId = routeId;
     }
@@ -23,36 +23,36 @@ public class RestDefinitionProcessor extends RouteBuilder {
     @Override
     public void configure() {
         String restRouteId = Constants.CAMEL_REST_PREFIX + routeId;
-        RestDefinition restDefinition = getRestDefinition(api);
+        RestDefinition restDefinition = getRestDefinition(service);
         if(restDefinition != null) {
             restDefinition.to(Constants.CAMEL_DIRECT + routeId);
             restDefinition.id(restRouteId);
             routeUtils.registerMetric(restRouteId);
         } else {
-            log.warn("Bad definition for service name: {}, please make sure the service context does not contain colons", api.getContext());
+            log.warn("Bad definition for service name: {}, please make sure the service context does not contain colons", service.getContext());
         }
     }
 
-    private RestDefinition getRestDefinition(Api api) {
+    private RestDefinition getRestDefinition(Service service) {
         RestDefinition restDefinition;
-        api.setMatchOnUriPrefix(true);
+        service.setMatchOnUriPrefix(true);
 
         switch (routeUtils.getMethodFromRouteId(routeId)) {
-            case "get" -> restDefinition = rest().get(routeUtils.buildFrom(api)
+            case "get" -> restDefinition = rest().get(routeUtils.buildFrom(service)
                     + Constants.MATCH_ON_URI_PREFIX
-                    + api.isMatchOnUriPrefix());
-            case "post" -> restDefinition = rest().post(routeUtils.buildFrom(api)
+                    + service.isMatchOnUriPrefix());
+            case "post" -> restDefinition = rest().post(routeUtils.buildFrom(service)
                     + Constants.MATCH_ON_URI_PREFIX
-                    + api.isMatchOnUriPrefix());
-            case "put" -> restDefinition = rest().put(routeUtils.buildFrom(api)
+                    + service.isMatchOnUriPrefix());
+            case "put" -> restDefinition = rest().put(routeUtils.buildFrom(service)
                     + Constants.MATCH_ON_URI_PREFIX
-                    + api.isMatchOnUriPrefix());
-            case "delete" -> restDefinition = rest().delete(routeUtils.buildFrom(api)
+                    + service.isMatchOnUriPrefix());
+            case "delete" -> restDefinition = rest().delete(routeUtils.buildFrom(service)
                     + Constants.MATCH_ON_URI_PREFIX
-                    + api.isMatchOnUriPrefix());
-            case "patch" -> restDefinition = rest().patch(routeUtils.buildFrom(api)
+                    + service.isMatchOnUriPrefix());
+            case "patch" -> restDefinition = rest().patch(routeUtils.buildFrom(service)
                     + Constants.MATCH_ON_URI_PREFIX
-                    + api.isMatchOnUriPrefix());
+                    + service.isMatchOnUriPrefix());
             default -> {
                 return null;
             }

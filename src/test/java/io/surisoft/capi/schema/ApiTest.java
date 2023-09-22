@@ -6,45 +6,42 @@ import org.junit.jupiter.api.Test;
 import java.util.HashSet;
 import java.util.Set;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-class ApiTest {
+class ServiceTest {
 
-    private Api api;
+    private Service service;
 
     @BeforeEach
     void setUp() {
-        api = new Api();
+        service = new Service();
+        ServiceMeta serviceMeta = new ServiceMeta();
+        service.setServiceMeta(serviceMeta);
     }
 
     @Test
     void testSecured() {
-        api.setSecured(true);
-        assertTrue(api.isSecured());
+        service.getServiceMeta().setSecured(true);
+        assertTrue(service.getServiceMeta().isSecured());
     }
 
     @Test
     void testId() {
-        api.setId("ID");
-        assertEquals("ID", api.getId());
-    }
-
-    @Test
-    void getRouteId() {
-        api.setRouteId("route:id");
-        assertEquals("route:id", api.getRouteId());
+        service.setId("ID");
+        assertEquals("ID", service.getId());
     }
 
     @Test
     void testName() {
-        api.setName("name");
-        assertEquals("name", api.getName());
+        service.setName("name");
+        assertEquals("name", service.getName());
     }
 
     @Test
     void testContext() {
-        api.setContext("context");
-        assertEquals("context", api.getContext());
+        service.setContext("context");
+        assertEquals("context", service.getContext());
     }
 
     @Test
@@ -52,109 +49,55 @@ class ApiTest {
         Mapping mapping = new Mapping();
         Set<Mapping> mappingList = new HashSet<>();
         mappingList.add(mapping);
-        api.setMappingList(mappingList);
-        assertEquals(1, api.getMappingList().size());
+        service.setMappingList(mappingList);
+        assertEquals(1, service.getMappingList().size());
     }
 
     @Test
     void testRoundRobinEnabled() {
-        api.setRoundRobinEnabled(true);
-        assertTrue(api.isRoundRobinEnabled());
+        service.setRoundRobinEnabled(true);
+        assertTrue(service.isRoundRobinEnabled());
     }
 
     @Test
-    void testFailoverEnabled() {
-        api.setFailoverEnabled(true);
-        assertTrue(api.isFailoverEnabled());
+    void testFailOverEnabled() {
+        service.setFailOverEnabled(true);
+        assertTrue(service.isFailOverEnabled());
     }
 
     @Test
     void testMatchOnUriPrefix() {
-        api.setMatchOnUriPrefix(true);
-        assertTrue(api.isMatchOnUriPrefix());
-    }
-
-    @Test
-    void testHttpMethod() {
-        api.setHttpMethod(HttpMethod.GET);
-        assertEquals(HttpMethod.GET, api.getHttpMethod());
+        service.setMatchOnUriPrefix(true);
+        assertTrue(service.isMatchOnUriPrefix());
     }
 
     @Test
     void testHttpProtocol() {
-        api.setHttpProtocol(HttpProtocol.HTTP);
-        assertEquals(HttpProtocol.HTTP, api.getHttpProtocol());
-    }
-
-    @Test
-    void testSwaggerEndpoint() {
-        api.setSwaggerEndpoint("http://domain");
-        assertEquals("http://domain", api.getSwaggerEndpoint());
-    }
-
-    @Test
-    void testMaximumFailoverAttempts() {
-        api.setMaximumFailoverAttempts(1);
-        assertEquals(1, api.getMaximumFailoverAttempts());
+        service.getServiceMeta().setSchema(HttpProtocol.HTTP.getProtocol());
+        assertEquals(HttpProtocol.HTTP.getProtocol(), service.getServiceMeta().getSchema());
     }
 
     @Test
     void testStickySession() {
-        api.setStickySession(true);
-        assertTrue(api.isStickySession());
+        service.getServiceMeta().setStickySession(true);
+        assertTrue(service.getServiceMeta().isStickySession());
     }
 
     @Test
     void testStickySessionParam() {
-        api.setStickySessionParam("param");
-        assertEquals("param", api.getStickySessionParam());
+        service.getServiceMeta().setStickySessionKey("param");
+        assertEquals("param", service.getServiceMeta().getStickySessionKey());
     }
 
     @Test
     void testStickySessionParamInCookie() {
-        api.setStickySessionParamInCookie(true);
-        assertTrue(api.isStickySessionParamInCookie());
-    }
-
-    @Test
-    void testRemoveMe() {
-        api.setRemoveMe(true);
-        assertTrue(api.isRemoveMe());
-    }
-
-    @Test
-    void testPublished() {
-        api.setPublished(true);
-        assertTrue(api.isPublished());
-    }
-
-    @Test
-    void testForwardPrefix() {
-        api.setForwardPrefix(true);
-        assertTrue(api.isForwardPrefix());
-    }
-
-    @Test
-    void testZipkinShowTraceId() {
-        api.setZipkinShowTraceId(true);
-        assertTrue(api.isZipkinShowTraceId());
-    }
-
-    @Test
-    void testZipkinServiceName() {
-        api.setZipkinServiceName("service");
-        assertEquals("service", api.getZipkinServiceName());
-    }
-
-    @Test
-    void testAuthorizationEndpointPublicKey() {
-        api.setAuthorizationEndpointPublicKey("http://domain");
-        assertEquals("http://domain", api.getAuthorizationEndpointPublicKey());
+        service.getServiceMeta().setStickySessionType("cookie");
+        assertEquals("cookie", service.getServiceMeta().getStickySessionType());
     }
 
     @Test
     void testTenantAware() {
-        api.setTenantAware(true);
-        assertTrue(api.isTenantAware());
+        service.getServiceMeta().setTenantAware(true);
+        assertTrue(service.getServiceMeta().isTenantAware());
     }
 }

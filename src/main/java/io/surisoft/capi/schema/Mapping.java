@@ -205,24 +205,14 @@
 
 package io.surisoft.capi.schema;
 
-import io.swagger.v3.oas.annotations.media.Schema;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.IdClass;
-
 import java.io.Serializable;
 import java.util.Objects;
 
-@Entity
-@IdClass(MappingId.class)
-@Schema(hidden = true)
 public class Mapping implements Serializable {
 
-    @Id
     private String rootContext;
-    @Id
+
     private String hostname;
-    @Id
     private int port = -1;
     private boolean ingress;
 

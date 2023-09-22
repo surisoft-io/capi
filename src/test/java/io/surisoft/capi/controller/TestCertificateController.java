@@ -2,8 +2,9 @@ package io.surisoft.capi.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.surisoft.capi.schema.AliasInfo;
-import io.surisoft.capi.schema.Api;
-import io.surisoft.capi.utils.ApiUtils;
+import io.surisoft.capi.schema.Service;
+import io.surisoft.capi.schema.ServiceMeta;
+import io.surisoft.capi.utils.ServiceUtils;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cert.X509v3CertificateBuilder;
@@ -56,7 +57,7 @@ class TestCertificateController {
     private WebApplicationContext webApplicationContext;
 
     @Autowired
-    private ApiUtils apiUtils;
+    private ServiceUtils serviceUtils;
 
     private MockMvc mockMvc;
     private ObjectMapper objectMapper;
@@ -86,7 +87,7 @@ class TestCertificateController {
 
         List<AliasInfo> aliasInfoList = objectMapper.readValue(getResult.getResponse().getContentAsString(), objectMapper.getTypeFactory().constructCollectionType(List.class, AliasInfo.class));
         System.out.println(getResult.getResponse().getContentAsString());
-        Assertions.assertTrue(aliasInfoList.size() > 0);
+        Assertions.assertFalse(aliasInfoList.isEmpty());
     }
 
     @Test
@@ -94,19 +95,22 @@ class TestCertificateController {
         File capiUnitTestCer = createTestCertificate();
         Assertions.assertNotNull(capiUnitTestCer);
 
-        Api api = new Api();
-        api.setName("test");
-        api.setContext("context");
-        String apiId = apiUtils.getApiId(api);
+        Service service = new Service();
+        ServiceMeta serviceMeta = new ServiceMeta();
+        serviceMeta.setGroup("context");
+        service.setServiceMeta(serviceMeta);
+        service.setName("test");
+        service.setContext("context");
+        String serviceId = serviceUtils.getServiceId(service);
 
         try(FileInputStream inputStream = new FileInputStream(capiUnitTestCer)) {
             MvcResult postResult  = mockMvc.perform(MockMvcRequestBuilders
-                            .multipart("/manager/certificate/capi-unit-test/" + apiId).file("file", inputStream.readAllBytes()))
+                            .multipart("/manager/certificate/capi-unit-test/" + serviceId).file("file", inputStream.readAllBytes()))
                     .andExpect(status().isOk())
                     .andReturn();
             AliasInfo aliasInfo = objectMapper.readValue(postResult.getResponse().getContentAsString(), AliasInfo.class);
             Assertions.assertEquals("capi-unit-test", aliasInfo.getAlias());
-            Assertions.assertEquals(apiId, aliasInfo.getApiId());
+            Assertions.assertEquals(serviceId, aliasInfo.getApiId());
         }
 
     }

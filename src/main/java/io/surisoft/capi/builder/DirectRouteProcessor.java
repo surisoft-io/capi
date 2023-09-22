@@ -2,9 +2,9 @@ package io.surisoft.capi.builder;
 
 import io.surisoft.capi.cache.StickySessionCacheManager;
 import io.surisoft.capi.processor.MetricsProcessor;
-import io.surisoft.capi.processor.SessionChecker;
+import io.surisoft.capi.processor.StickyLoadBalancer;
 import io.surisoft.capi.processor.TenantAwareLoadBalancer;
-import io.surisoft.capi.schema.Api;
+import io.surisoft.capi.schema.Service;
 import io.surisoft.capi.utils.Constants;
 import io.surisoft.capi.utils.RouteUtils;
 import org.apache.camel.CamelContext;
@@ -13,16 +13,16 @@ import org.apache.camel.model.RouteDefinition;
 
 public class DirectRouteProcessor extends RouteBuilder {
     private final RouteUtils routeUtils;
-    private final Api api;
+    private final Service service;
     private final StickySessionCacheManager stickySessionCacheManager;
     private final String routeId;
     private final String capiContext;
     private final MetricsProcessor metricsProcessor;
     private final String reverseProxyHost;
 
-    public DirectRouteProcessor(CamelContext camelContext, Api api, RouteUtils routeUtils, MetricsProcessor metricsProcessor, String routeId, StickySessionCacheManager stickySessionCacheManager, String capiContext, String reverseProxyHost) {
+    public DirectRouteProcessor(CamelContext camelContext, Service service, RouteUtils routeUtils, MetricsProcessor metricsProcessor, String routeId, StickySessionCacheManager stickySessionCacheManager, String capiContext, String reverseProxyHost) {
         super(camelContext);
-        this.api = api;
+        this.service = service;
         this.routeUtils = routeUtils;
         this.stickySessionCacheManager = stickySessionCacheManager;
         this.routeId = routeId;
@@ -38,58 +38,66 @@ public class DirectRouteProcessor extends RouteBuilder {
             routeDefinition
                     .setHeader(Constants.X_FORWARDED_HOST, constant(reverseProxyHost));
             routeDefinition
-                    .setHeader(Constants.X_FORWARDED_PREFIX, constant(capiContext + api.getContext()));
+                    .setHeader(Constants.X_FORWARDED_PREFIX, constant(capiContext + service.getContext()));
         }
 
         log.trace("Trying to build and deploy route {}", routeId);
-        routeUtils.buildOnExceptionDefinition(routeDefinition, api.isZipkinShowTraceId(), true, false, routeId);
-        if(api.isSecured()) {
-            routeUtils.enableAuthorization(api.getId(), routeDefinition);
+        routeUtils.buildOnExceptionDefinition(routeDefinition, service.getServiceMeta().isB3TraceId(), true, false, routeId);
+        if(service.getServiceMeta().isSecured()) {
+            routeUtils.enableAuthorization(service.getId(), routeDefinition);
         }
 
-        if(api.isKeepGroup()) {
-            routeDefinition.setHeader(Constants.CAPI_GROUP_HEADER, constant(api.getContext()));
+        if(service.getServiceMeta().isKeepGroup()) {
+            routeDefinition.setHeader(Constants.CAPI_GROUP_HEADER, constant(service.getContext()));
         }
 
-        if(api.isFailoverEnabled()) {
+        if(service.isFailOverEnabled()) {
             routeDefinition
                     .process(metricsProcessor)
                     .loadBalance()
-                    .failover(1, false, api.isRoundRobinEnabled(), false)
-                    .to(routeUtils.buildEndpoints(api))
+                    .failover(1, false, service.isRoundRobinEnabled(), false)
+                    .to(routeUtils.buildEndpoints(service))
                     .end()
                     .removeHeader(Constants.X_FORWARDED_HOST)
                     .removeHeader(Constants.X_FORWARDED_PREFIX)
+                    .removeHeader(Constants.AUTHORIZATION_HEADER)
+                    .removeHeader(Constants.CAPI_GROUP_HEADER)
                     .routeId(routeId);
-        } else if(api.isStickySession()) {
+        } else if(routeUtils.isStickySessionEnabled(service)) {
             routeDefinition
                     .process(metricsProcessor)
-                    .loadBalance(new SessionChecker(stickySessionCacheManager, api.getStickySessionParam(), api.isStickySessionParamInCookie()))
-                    .to(routeUtils.buildEndpoints(api))
+                    .loadBalance(new StickyLoadBalancer(stickySessionCacheManager, service.getServiceMeta().getStickySessionKey(), routeUtils.isStickySessionOnCookie(service)))
+                    .to(routeUtils.buildEndpoints(service))
                     .end()
                     .removeHeader(Constants.X_FORWARDED_HOST)
                     .removeHeader(Constants.X_FORWARDED_PREFIX)
+                    .removeHeader(Constants.AUTHORIZATION_HEADER)
+                    .removeHeader(Constants.CAPI_GROUP_HEADER)
                     .routeId(routeId);
-        } else if(api.isTenantAware()) {
+        } else if(service.getServiceMeta().isTenantAware()) {
             routeDefinition
                     .process(metricsProcessor)
                     .loadBalance(new TenantAwareLoadBalancer())
-                    .to(routeUtils.buildEndpoints(api))
+                    .to(routeUtils.buildEndpoints(service))
                     .end()
                     .removeHeader(Constants.X_FORWARDED_HOST)
                     .removeHeader(Constants.X_FORWARDED_PREFIX)
+                    .removeHeader(Constants.AUTHORIZATION_HEADER)
+                    .removeHeader(Constants.CAPI_GROUP_HEADER)
                     .routeId(routeId);
         } else {
             routeDefinition
                     .process(metricsProcessor)
-                    .to(routeUtils.buildEndpoints(api))
+                    .to(routeUtils.buildEndpoints(service))
                     .end()
                     .removeHeader(Constants.X_FORWARDED_HOST)
                     .removeHeader(Constants.X_FORWARDED_PREFIX)
+                    .removeHeader(Constants.AUTHORIZATION_HEADER)
+                    .removeHeader(Constants.CAPI_GROUP_HEADER)
                     .routeId(routeId);
         }
         routeUtils.registerMetric(routeId);
-        api.setRouteId(routeId);
-        routeUtils.registerTracer(api);
+        //api.setRouteId(routeId);
+        routeUtils.registerTracer(service);
     }
 }

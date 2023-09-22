@@ -49,12 +49,12 @@ public class TenantAwareLoadBalancer extends LoadBalancerSupport implements Trac
             this.callback = callback;
             this.processors = processors;
 
-            if(exchange.getIn().getHeader("tenant") != null) {
+            if(exchange.getIn().getHeader(Constants.TENANT_HEADER) != null) {
                 //For tenant, it will always get the value from a header
-                tenant = exchange.getIn().getHeader("tenant", String.class);
+                tenant = exchange.getIn().getHeader(Constants.TENANT_HEADER, String.class);
                 List<RunningTenant> runningTenantList = new ArrayList<>();
                 for(int i = 0; i < processors.length; i++) {
-                    if(processors[i].toString().contains("tenantId=" + tenant)) {
+                    if(processors[i].toString().contains(Constants.TENANT_HEADER + "=" + tenant)) {
                         //index = i;
                         log.info(processors[i].toString());
                         runningTenantList.add(new RunningTenant(tenant, i));

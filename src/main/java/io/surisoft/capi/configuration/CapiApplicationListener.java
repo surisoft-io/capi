@@ -1,6 +1,6 @@
 package io.surisoft.capi.configuration;
 
-import io.surisoft.capi.schema.Api;
+import io.surisoft.capi.schema.Service;
 import io.surisoft.capi.schema.StickySession;
 import io.surisoft.capi.websocket.WebsocketGateway;
 import org.cache2k.Cache;
@@ -20,7 +20,7 @@ public class CapiApplicationListener implements ApplicationListener<ApplicationE
     private static final Logger log = LoggerFactory.getLogger(CapiApplicationListener.class);
 
     @Autowired
-    private Cache<String, Api> apiCache;
+    private Cache<String, Service> serviceCache;
 
     @Autowired
     private Cache<String, StickySession> stickySessionCache;
@@ -38,7 +38,7 @@ public class CapiApplicationListener implements ApplicationListener<ApplicationE
         }
         if(applicationEvent instanceof ContextClosedEvent) {
             log.info("Capi is shutting down, time to clear all cache info.");
-            apiCache.clear();
+            serviceCache.clear();
             stickySessionCache.clear();
         }
     }

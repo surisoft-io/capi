@@ -1,7 +1,10 @@
 server:
   port: 8380
 capi:
-  kubernetes: false
+  #### Kafka is still experimental ####
+  kafka:
+    enabled: false
+    host: localhost:9092
   reverse:
     proxy:
       enabled: false
@@ -9,6 +12,12 @@ capi:
   #### If you want to disable routes from following redirects ###
   disable:
     redirect: true
+  #### Websocket Gateway (Editable Property) ####
+  websocket:
+    enabled: false
+    server:
+      host: localhost
+      port: 8381
   #### Enable Zipkin
   traces:
     enabled: false
@@ -35,13 +44,6 @@ capi:
     security:
       enabled: false
       issuer:
-  #### Persistence Management ####
-  persistence:
-    enabled: true
-  db:
-    discovery:
-      timer:
-        interval: 20
   version: ^project.version^
   name: ^project.name^
   spring:
@@ -54,16 +56,7 @@ capi:
 spring:
   #### We want persistence to be optional, so we disable autoconfiguration for JPA ####
   autoconfigure:
-    exclude: org.springframework.boot.autoconfigure.security.servlet.UserDetailsServiceAutoConfiguration, org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration, org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration, org.springframework.boot.autoconfigure.jdbc.DataSourceTransactionManagerAutoConfiguration
-  ## JDBC Properties (default H2)
-  jpa:
-    hibernate:
-      ddl-auto: update
-      use-new-id-generator-mappings: false
-  datasource:
-    url: jdbc:h2:mem:db;DB_CLOSE_DELAY=-1
-    username: root
-    password: root
+    exclude: org.springframework.boot.autoconfigure.security.servlet.UserDetailsServiceAutoConfiguration
   profiles:
     active: default
   banner:
@@ -107,7 +100,7 @@ sticky:
     time:
       to:
         live: 2
-oidc:
+oauth2:
   cookieName:
   provider:
     enabled: false

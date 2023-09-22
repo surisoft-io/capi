@@ -35,26 +35,6 @@ public class CapiTracerServerResponseAdapter {
             span.tag(Constants.CAMEL_SERVER_EXCHANGE_FAILURE, message);
         }
 
-        if(exchange.getIn().getHeader(Constants.AUTHORIZATION_HEADER, String.class) != null) {
-            try {
-                JWTClaimsSet jwtClaimsSet = capiTracer.getHttpUtils().authorizeRequest(exchange.getIn().getHeader(Constants.AUTHORIZATION_HEADER, String.class));
-                String authorizedParty = jwtClaimsSet.getStringClaim(Constants.AUTHORIZED_PARTY);
-                if(authorizedParty != null) {
-                    span.tag(Constants.CAPI_EXCHANGE_REQUESTER_ID, authorizedParty);
-                }
-                String clientHost = jwtClaimsSet.getStringClaim("clientHost");
-                if(clientHost != null) {
-                    span.tag("capi.requester.host", clientHost);
-                }
-                String iss = jwtClaimsSet.getStringClaim("iss");
-                if(iss != null) {
-                    span.tag("capi.requester.token.issuer", iss);
-                }
-            } catch (AuthorizationException | BadJOSEException | ParseException | JOSEException | IOException e) {
-                LOG.trace("No Authorization header detected, or access token invalid");
-            }
-        }
-
         HttpServletRequest httpServletRequest = (HttpServletRequest) exchange.getIn().getHeader(Constants.CAMEL_HTTP_SERVLET_REQUEST);
 
         if(httpServletRequest != null && httpServletRequest.getMethod() != null) {

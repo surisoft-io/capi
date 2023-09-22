@@ -58,7 +58,7 @@ class CapiRestErrorTest {
 
     @Test
     void testZipkinTraceID() {
-        capiRestError.setZipkinTraceID("ID");
-        assertEquals("ID", capiRestError.getZipkinTraceID());
+        capiRestError.setTraceID("ID");
+        assertEquals("ID", capiRestError.getTraceID());
     }
 }

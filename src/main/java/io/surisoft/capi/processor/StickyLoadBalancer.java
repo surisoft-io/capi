@@ -2,6 +2,7 @@ package io.surisoft.capi.processor;
 
 import io.surisoft.capi.cache.StickySessionCacheManager;
 import io.surisoft.capi.schema.StickySession;
+import io.surisoft.capi.utils.Constants;
 import org.apache.camel.*;
 import org.apache.camel.processor.loadbalancer.ExceptionFailureStatistics;
 import org.apache.camel.processor.loadbalancer.LoadBalancerSupport;
@@ -12,9 +13,9 @@ import org.slf4j.LoggerFactory;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class SessionChecker extends LoadBalancerSupport implements Traceable, CamelContextAware {
+public class StickyLoadBalancer extends LoadBalancerSupport implements Traceable, CamelContextAware {
 
-    private static final Logger log = LoggerFactory.getLogger(SessionChecker.class);
+    private static final Logger log = LoggerFactory.getLogger(StickyLoadBalancer.class);
     private CamelContext camelContext;
     private final StickySessionCacheManager stickySessionCacheManager;
     private final boolean isCookie;
@@ -24,7 +25,7 @@ public class SessionChecker extends LoadBalancerSupport implements Traceable, Ca
     private final AtomicInteger lastGoodIndex = new AtomicInteger(-1);
     private final ExceptionFailureStatistics statistics = new ExceptionFailureStatistics();
 
-    public SessionChecker(StickySessionCacheManager stickySessionCacheManager, String paramName, boolean isCookie) {
+    public StickyLoadBalancer(StickySessionCacheManager stickySessionCacheManager, String paramName, boolean isCookie) {
         this.stickySessionCacheManager = stickySessionCacheManager;
         this.isCookie = isCookie;
         this.paramName = paramName;
@@ -38,7 +39,7 @@ public class SessionChecker extends LoadBalancerSupport implements Traceable, Ca
                 .getContext()
                 .getCamelContextExtension()
                 .getReactiveExecutor()
-                .schedule(new SessionChecker.State(exchange, callback, processors)::run);
+                .schedule(new StickyLoadBalancer.State(exchange, callback, processors)::run);
         return false;
     }
 
@@ -51,12 +52,14 @@ public class SessionChecker extends LoadBalancerSupport implements Traceable, Ca
     }
 
     private String getCookieValue(Exchange exchange) {
-        String[] cookieArray = exchange.getIn().getHeader("Cookie", String.class).split(";");
         String paramValue = null;
-        for(String cookie : cookieArray) {
-            if(cookie.startsWith(paramName)) {
-                String[] keyValue = cookie.split("=");
-                paramValue = keyValue[1].trim();
+        if(exchange.getIn().getHeader(Constants.COOKIE_HEADER) != null) {
+            String[] cookieArray = exchange.getIn().getHeader(Constants.COOKIE_HEADER, String.class).split(";");
+            for(String cookie : cookieArray) {
+                if(cookie.startsWith(paramName)) {
+                    String[] keyValue = cookie.split("=");
+                    paramValue = keyValue[1].trim();
+                }
             }
         }
         return paramValue;
@@ -68,6 +71,14 @@ public class SessionChecker extends LoadBalancerSupport implements Traceable, Ca
         }
 
         boolean answer = false;
+        if(exchange.getMessage() != null && exchange.getMessage().getHeader(Constants.SET_COOKIE_HEADER) != null) {
+            String[] serviceCookieArray = exchange.getMessage().getHeader(Constants.SET_COOKIE_HEADER, String.class).split(";");
+            for(String cookie : serviceCookieArray) {
+                if(cookie.contains(stickySession.getParamName())) {
+                    stickySession.setParamValue(cookie.split("=")[1]);
+                }
+            }
+        }
         String exchangeCode = exchange.getIn().getHeader(Exchange.HTTP_RESPONSE_CODE) + "";
         if(exchangeCode.startsWith("5")) {
             if(firstTime) {
@@ -100,32 +111,6 @@ public class SessionChecker extends LoadBalancerSupport implements Traceable, Ca
         log.debug("Deleting object with value: {}", stickySession.getParamValue());
         stickySessionCacheManager.deleteStickySession(stickySession);
         stickySession.setParamValue(null);
-    }
-
-    private boolean isDone(Exchange exchange) {
-
-        ExchangeExtension ee = exchange.getExchangeExtension();
-        if (ee.isInterrupted()) {
-            // mark the exchange to stop continue routing when interrupted
-            // as we do not want to continue routing (for example a task has been cancelled)
-            if (log.isTraceEnabled()) {
-                log.trace("Is exchangeId: {} interrupted? true", exchange.getExchangeId());
-            }
-            exchange.setRouteStop(true);
-            return true;
-        }
-
-        // only done if the exchange hasn't failed
-        // and it has not been handled by the failure processor
-        // or we are exhausted
-        boolean answer = exchange.getException() == null
-                || ExchangeHelper.isFailureHandled(exchange)
-                || ee.isRedeliveryExhausted();
-
-        if (log.isTraceEnabled()) {
-            log.trace("Is exchangeId: {} done? {}", exchange.getExchangeId(), answer);
-        }
-        return answer;
     }
 
     protected class State {
@@ -161,6 +146,7 @@ public class SessionChecker extends LoadBalancerSupport implements Traceable, Ca
                 firstTime = true;
                 stickySession = new StickySession();
                 stickySession.setParamValue(paramValue);
+                stickySession.setParamName(paramName);
                 stickySession.setNodeIndex(index);
             } else {
                 log.debug("Already existing config with index:" + stickySession.getNodeIndex());
@@ -196,15 +182,13 @@ public class SessionChecker extends LoadBalancerSupport implements Traceable, Ca
 
             if (copy != null) {
                 attempts++;
-                // are we exhausted by attempts?
                 int maximumFailoverAttempts = -1;
-                if (maximumFailoverAttempts > -1 && attempts > maximumFailoverAttempts) {
+                if (attempts > maximumFailoverAttempts) {
                     log.debug("Breaking out of failover after {} failover attempts", attempts);
                     ExchangeHelper.copyResults(exchange, copy);
                     callback.done(false);
                     return;
                 }
-
                 index++;
                 counter.incrementAndGet();
             }
@@ -253,10 +237,6 @@ public class SessionChecker extends LoadBalancerSupport implements Traceable, Ca
     @Override
     public String getTraceLabel() {
         return "failover";
-    }
-
-    public ExceptionFailureStatistics getExceptionFailureStatistics() {
-        return statistics;
     }
 
     public void reset() {

@@ -19,7 +19,7 @@ import static org.apache.camel.zipkin.ZipkinHelper.prepareBodyForLogging;
 
 public class CapiTracerClientResponseAdapter {
 
-    private static final Logger LOG = LoggerFactory.getLogger(CapiTracerClientResponseAdapter.class);
+
     private final CapiTracer eventNotifier;
 
     public CapiTracerClientResponseAdapter(CapiTracer eventNotifier) {
@@ -27,19 +27,6 @@ public class CapiTracerClientResponseAdapter {
     }
 
     void onResponse(Exchange exchange, SpanCustomizer span) {
-
-
-        if(exchange.getIn().getHeader(Constants.AUTHORIZATION_HEADER, String.class) != null) {
-            try {
-                JWTClaimsSet jwtClaimsSet = eventNotifier.getHttpUtils().authorizeRequest(exchange.getIn().getHeader(Constants.AUTHORIZATION_HEADER, String.class));
-                String authorizedParty = jwtClaimsSet.getStringClaim("azp");
-                if(authorizedParty != null) {
-                    span.tag("capi.exchange.requester.id", authorizedParty);
-                }
-            } catch (AuthorizationException | BadJOSEException | ParseException | JOSEException | IOException e) {
-                LOG.trace("No Authorization header detected, or access token invalid");
-            }
-        }
 
         if(exchange.getIn().getHeader("tenant", String.class) != null) {
             span.tag("capi.tenant.id", exchange.getIn().getHeader("tenant", String.class));

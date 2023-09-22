@@ -253,7 +253,7 @@ public class ErrorController {
         }
 
         if(Boolean.parseBoolean(request.getHeader(Constants.ERROR_API_SHOW_TRACE_ID))) {
-            capiRestError.setZipkinTraceID(request.getHeader(Constants.TRACE_ID_HEADER));
+            capiRestError.setTraceID(request.getHeader(Constants.TRACE_ID_HEADER));
         }
         if(Boolean.parseBoolean(request.getHeader(Constants.ERROR_API_SHOW_INTERNAL_ERROR_MESSAGE))) {
             capiRestError.setInternalExceptionMessage(request.getHeader(Constants.CAPI_INTERNAL_ERROR));

@@ -5,31 +5,27 @@ import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.proc.BadJOSEException;
 import com.nimbusds.jwt.JWTClaimsSet;
 import io.surisoft.capi.exception.AuthorizationException;
-import io.surisoft.capi.oidc.OIDCConstants;
-import io.surisoft.capi.schema.Api;
+import io.surisoft.capi.oidc.Oauth2Constants;
+import io.surisoft.capi.schema.Service;
 import io.surisoft.capi.utils.Constants;
 import io.surisoft.capi.utils.HttpUtils;
-import jakarta.servlet.http.Cookie;
 import org.apache.camel.Exchange;
 import org.apache.camel.Processor;
-import org.apache.camel.http.base.cookie.CookieHandler;
 import org.cache2k.Cache;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
-import java.net.CookieStore;
-import java.net.HttpCookie;
 import java.text.ParseException;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
 @Component
-@ConditionalOnProperty(prefix = "oidc.provider", name = "enabled", havingValue = "true")
+@ConditionalOnProperty(prefix = "oauth2.provider", name = "enabled", havingValue = "true")
 public class AuthorizationProcessor implements Processor {
     private static final Logger log = LoggerFactory.getLogger(AuthorizationProcessor.class);
 
@@ -37,24 +33,22 @@ public class AuthorizationProcessor implements Processor {
     private HttpUtils httpUtils;
 
     @Autowired
-    private Cache<String, Api> apiCache;
+    private Cache<String, Service> serviceCache;
 
 
     @Override
     public void process(Exchange exchange) {
 
-        String contextPath = (String) exchange.getIn().getHeader(OIDCConstants.CAMEL_SERVLET_CONTEXT_PATH);
-        String accessToken = processAuthorizationAccessToken(exchange);
-
-        log.info(contextToRole(contextPath));
-        Api api = apiCache.get(contextToRole(contextPath));
+        String contextPath = (String) exchange.getIn().getHeader(Oauth2Constants.CAMEL_SERVLET_CONTEXT_PATH);
+        String accessToken = httpUtils.processAuthorizationAccessToken(exchange);
+        Service service = serviceCache.get(contextToRole(contextPath));
 
         if(accessToken != null) {
             try {
                 JWTClaimsSet jwtClaimsSet = httpUtils.authorizeRequest(accessToken);
                 if(!isApiSubscribed(jwtClaimsSet, contextToRole(contextPath))) {
-                    assert api != null;
-                    if(!isTokenInGroup(jwtClaimsSet, api.getSubscriptionGroup())) {
+                    assert service != null;
+                    if(!isTokenInGroup(jwtClaimsSet, service.getServiceMeta().getSubscriptionGroup())) {
                         sendException(exchange, "Not subscribed");
                     }
                 }
@@ -74,9 +68,9 @@ public class AuthorizationProcessor implements Processor {
     }
 
     private boolean isApiSubscribed(JWTClaimsSet jwtClaimsSet, String role) throws ParseException, JsonProcessingException {
-        Map<String, Object> claimSetMap = jwtClaimsSet.getJSONObjectClaim(OIDCConstants.REALMS_CLAIM);
-        if(claimSetMap != null && claimSetMap.containsKey(OIDCConstants.ROLES_CLAIM)) {
-            List<String> roleList = (List<String>) claimSetMap.get(OIDCConstants.ROLES_CLAIM);
+        Map<String, Object> claimSetMap = jwtClaimsSet.getJSONObjectClaim(Oauth2Constants.REALMS_CLAIM);
+        if(claimSetMap != null && claimSetMap.containsKey(Oauth2Constants.ROLES_CLAIM)) {
+            List<String> roleList = (List<String>) claimSetMap.get(Oauth2Constants.ROLES_CLAIM);
             for(String claimRole : roleList) {
                 if(claimRole.equals(role)) {
                     return true;
@@ -86,16 +80,19 @@ public class AuthorizationProcessor implements Processor {
         return false;
     }
 
-    private boolean isTokenInGroup(JWTClaimsSet jwtClaimsSet, List<String> groupList) throws ParseException, JsonProcessingException {
-        List<String> subscriptionGroupList =  jwtClaimsSet.getStringListClaim(OIDCConstants.SUBSCRIPTIONS_CLAIM);
-        for(String subscriptionGroup : subscriptionGroupList) {
-            for(String apiGroup : groupList) {
-                if(normalizeGroup(apiGroup).equals(normalizeGroup(subscriptionGroup))) {
-                    return true;
+    private boolean isTokenInGroup(JWTClaimsSet jwtClaimsSet, String groups) throws ParseException, JsonProcessingException {
+        if(groups != null) {
+            List<String> groupList = Collections.singletonList(groups);
+            List<String> subscriptionGroupList =  jwtClaimsSet.getStringListClaim(Oauth2Constants.SUBSCRIPTIONS_CLAIM);
+            for(String subscriptionGroup : subscriptionGroupList) {
+                for(String apiGroup : groupList) {
+                    if(normalizeGroup(apiGroup).equals(normalizeGroup(subscriptionGroup))) {
+                        return true;
+                    }
                 }
             }
         }
-       return false;
+        return false;
     }
 
     private String contextToRole(String context) {
@@ -105,25 +102,13 @@ public class AuthorizationProcessor implements Processor {
         return context.replace("/", ":");
     }
 
-    private String processAuthorizationAccessToken(Exchange exchange) {
-        String authorization = exchange.getIn().getHeader(Constants.AUTHORIZATION_HEADER, String.class);
-        if(authorization == null) {
-            List<HttpCookie> cookies = httpUtils.getCookiesFromExchange(exchange);
-            String authorizationCookieName = httpUtils.getAuthorizationCookieName(cookies);
-            if(authorizationCookieName != null) {
-                return httpUtils.getAuthorizationCookieValue(cookies, authorizationCookieName);
-            }
-        } else {
-            return httpUtils.getBearerTokenFromHeader(authorization);
-        }
-        return null;
-    }
-
     private String normalizeGroup(String group) {
         return group.trim().replaceAll("/", "");
     }
 
     private void propagateAuthorization(Exchange exchange, String accessToken) {
-        exchange.getIn().setHeader(Constants.AUTHORIZATION_HEADER, Constants.BEARER + accessToken);
+        if(accessToken != null) {
+            exchange.getIn().setHeader(Constants.AUTHORIZATION_HEADER, Constants.BEARER + accessToken);
+        }
     }
 }

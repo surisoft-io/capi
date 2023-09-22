@@ -66,6 +66,8 @@ public class CapiTracer extends ServiceSupport implements RoutePolicyFactory, St
     public CapiTracer(HttpUtils httpUtils) {
         exclusions.add("bean://consulNodeDiscovery");
         exclusions.add("timer://consul-inspect");
+        exclusions.add("bean://dbNodeDiscovery");
+        exclusions.add("timer://db-inspect");
         this.httpUtils = httpUtils;
         producerComponentToSpanKind.put("jms", Span.Kind.PRODUCER);
         producerComponentToSpanKind.put("sjms", Span.Kind.PRODUCER);
@@ -368,7 +370,6 @@ public class CapiTracer extends ServiceSupport implements RoutePolicyFactory, St
         }
     }
 
-    //protected for testing
     protected Span.Kind getProducerComponentSpanKind(Endpoint endpoint) {
         return producerComponentToSpanKind.getOrDefault(getComponentName(endpoint), Span.Kind.CLIENT);
     }
@@ -416,7 +417,7 @@ public class CapiTracer extends ServiceSupport implements RoutePolicyFactory, St
             span = brave.tracer().nextSpan(sampleFlag);
         }
         span.kind(spanKind).start();
-        CapiTracerServerRequestAdapter parser = new CapiTracerServerRequestAdapter(exchange, serviceName);
+        CapiTracerServerRequestAdapter parser = new CapiTracerServerRequestAdapter(exchange, serviceName, this);
         parser.onRequest(exchange, span.customizer());
         INJECTOR.inject(span.context(), camelRequest);
 
@@ -549,15 +550,6 @@ public class CapiTracer extends ServiceSupport implements RoutePolicyFactory, St
         }
     }
 
-    private static Expression routeIdExpression() {
-        return new Expression() {
-            @Override
-            public <T> T evaluate(Exchange exchange, Class<T> type) {
-                String answer = ExchangeHelper.getRouteId(exchange);
-                return type.cast(answer);
-            }
-        };
-    }
     public HttpUtils getHttpUtils() {
         return httpUtils;
     }

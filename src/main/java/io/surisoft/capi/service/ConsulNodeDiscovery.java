@@ -6,8 +6,9 @@ import io.surisoft.capi.builder.RestDefinitionProcessor;
 import io.surisoft.capi.cache.StickySessionCacheManager;
 import io.surisoft.capi.processor.MetricsProcessor;
 import io.surisoft.capi.schema.*;
-import io.surisoft.capi.utils.ApiUtils;
+import io.surisoft.capi.utils.Constants;
 import io.surisoft.capi.utils.RouteUtils;
+import io.surisoft.capi.utils.ServiceUtils;
 import io.surisoft.capi.utils.WebsocketUtils;
 import org.apache.camel.CamelContext;
 import org.apache.camel.Route;
@@ -29,7 +30,7 @@ public class ConsulNodeDiscovery {
     private static final Logger log = LoggerFactory.getLogger(ConsulNodeDiscovery.class);
     private static boolean connectedToConsul = false;
     private String consulHost;
-    private final ApiUtils apiUtils;
+    private final ServiceUtils serviceUtils;
     private final RouteUtils routeUtils;
     private final MetricsProcessor metricsProcessor;
     private final StickySessionCacheManager stickySessionCacheManager;
@@ -39,23 +40,20 @@ public class ConsulNodeDiscovery {
     private String capiContext;
     private String reverseProxyHost;
     private final CamelContext camelContext;
-    private final Cache<String, Api> apiCache;
-
-    private Map<String, WebsocketClient> websocketClientMap;
-
+    private final Cache<String, Service> serviceCache;
+    private final Map<String, WebsocketClient> websocketClientMap;
     private WebsocketUtils websocketUtils;
 
-    public ConsulNodeDiscovery(CamelContext camelContext, ApiUtils apiUtils, RouteUtils routeUtils, MetricsProcessor metricsProcessor, StickySessionCacheManager stickySessionCacheManager, Cache<String, Api> apiCache, Map<String, WebsocketClient> websocketClientMap) {
-        this.apiUtils = apiUtils;
+    public ConsulNodeDiscovery(CamelContext camelContext, ServiceUtils serviceUtils, RouteUtils routeUtils, MetricsProcessor metricsProcessor, StickySessionCacheManager stickySessionCacheManager, Cache<String, Service> serviceCache, Map<String, WebsocketClient> websocketClientMap) {
+        this.serviceUtils = serviceUtils;
         this.routeUtils = routeUtils;
         this.camelContext = camelContext;
         this.stickySessionCacheManager = stickySessionCacheManager;
-        this.apiCache = apiCache;
+        this.serviceCache = serviceCache;
         this.metricsProcessor = metricsProcessor;
         this.websocketClientMap = websocketClientMap;
 
         client = HttpClient.newBuilder()
-                //.version(HttpClient.Version.HTTP_1_1)
                 .connectTimeout(Duration.ofSeconds(10))
                 .build();
     }
@@ -75,7 +73,7 @@ public class ConsulNodeDiscovery {
             responseObject.remove("consul");
             Set<String> services = responseObject.keySet();
             try {
-                apiUtils.removeUnusedApi(camelContext, routeUtils, apiCache, services.stream().toList());
+                serviceUtils.removeUnusedService(camelContext, routeUtils, serviceCache, services.stream().toList());
             } catch (Exception e) {
                 log.error(e.getMessage(), e);
             }
@@ -101,13 +99,13 @@ public class ConsulNodeDiscovery {
             Map<String, Set<Mapping>> servicesStructure = groupByServiceId(consulResponse);
 
             for (var entry : servicesStructure.entrySet()) {
-                String apiId = serviceName + ":" + entry.getKey();
-                Api incomingApi = createApiObject(apiId, serviceName, entry.getKey(), entry.getValue(), consulResponse);
-                Api existingApi = apiCache.peek(apiId);
-                if(existingApi == null) {
-                    createRoute(incomingApi);
+                String serviceId = serviceName + ":" + entry.getKey();
+                Service incomingService = createServiceObject(serviceId, serviceName, entry.getKey(), entry.getValue(), consulResponse);
+                Service existingService = serviceCache.peek(serviceId);
+                if(existingService == null) {
+                    createRoute(incomingService);
                 } else {
-                    apiUtils.updateExistingApi(existingApi, incomingApi, apiCache, routeUtils, metricsProcessor, camelContext, stickySessionCacheManager, capiContext, reverseProxyHost);
+                    serviceUtils.updateExistingService(existingService, incomingService, serviceCache);
                 }
             }
         } catch (IOException e) {
@@ -134,7 +132,7 @@ public class ConsulNodeDiscovery {
             for (ConsulObject serviceIdToProcess : consulService) {
                 String serviceNodeGroup = getServiceNodeGroup(serviceIdToProcess);
                 if (id.equals(serviceNodeGroup)) {
-                    Mapping entryMapping = apiUtils.consulObjectToMapping(serviceIdToProcess);
+                    Mapping entryMapping = serviceUtils.consulObjectToMapping(serviceIdToProcess);
                     mappingList.add(entryMapping);
                 }
             }
@@ -173,7 +171,7 @@ public class ConsulNodeDiscovery {
         return false;
     }
 
-    private boolean showZipkinTraceId(String tagName, ConsulObject[] consulObject) {
+    private boolean showTraceId(String tagName, ConsulObject[] consulObject) {
         for(ConsulObject entry : consulObject) {
             if(entry.getServiceMeta() != null) {
                 if(entry.getServiceMeta().getGroup() != null && entry.getServiceMeta().getGroup().equals(tagName) && entry.getServiceMeta().isB3TraceId()) {
@@ -213,6 +211,15 @@ public class ConsulNodeDiscovery {
         return null;
     }
 
+    public ServiceMeta getServiceMeta(String key, ConsulObject[] consulObject) {
+        for(ConsulObject entry : consulObject) {
+            if(Objects.equals(getServiceNodeGroup(entry), key)) {
+                return entry.getServiceMeta();
+            }
+        }
+        return null;
+    }
+
     public boolean keepGroup(String key, ConsulObject[] consulObject) {
         for(ConsulObject entry : consulObject) {
             if(Objects.equals(getServiceNodeGroup(entry), key)) {
@@ -222,49 +229,36 @@ public class ConsulNodeDiscovery {
         return false;
     }
 
-    private Api createApiObject(String apiId, String serviceName, String key, Set<Mapping> mappingList, ConsulObject[] consulResponse) {
-        Api incomingApi = new Api();
-        incomingApi.setId(apiId);
-        incomingApi.setName(serviceName);
-        incomingApi.setContext("/" + serviceName + "/" + key);
-        incomingApi.setHttpMethod(HttpMethod.ALL);
-        incomingApi.setPublished(true);
-        incomingApi.setMatchOnUriPrefix(true);
-        incomingApi.setMappingList(mappingList);
-        incomingApi.setForwardPrefix(reverseProxyHost != null);
-        incomingApi.setZipkinShowTraceId(showZipkinTraceId(key, consulResponse));
-        incomingApi.setHttpProtocol(getHttpProtocol(key, consulResponse));
-        incomingApi.setSecured(isSecured(key, consulResponse));
-        incomingApi.setTenantAware(isTenantAware(key, consulResponse));
+    private Service createServiceObject(String serviceId, String serviceName, String key, Set<Mapping> mappingList, ConsulObject[] consulResponse) {
+        Service incomingService = new Service();
+        incomingService.setId(serviceId);
+        incomingService.setName(serviceName);
+        incomingService.setRegisteredBy(getClass().getName());
+        incomingService.setContext("/" + serviceName + "/" + key);
+        incomingService.setMappingList(mappingList);
+        incomingService.setServiceMeta(getServiceMeta(key, consulResponse));
+        incomingService.setRoundRobinEnabled(incomingService.getMappingList().size() != 1 && !incomingService.getServiceMeta().isTenantAware() && !incomingService.getServiceMeta().isStickySession());
+        incomingService.setFailOverEnabled(incomingService.getMappingList().size() != 1 && !incomingService.getServiceMeta().isTenantAware() && !incomingService.getServiceMeta().isStickySession());
 
-        incomingApi.setRoundRobinEnabled(true);
-        incomingApi.setFailoverEnabled(true);
-        incomingApi.setWebsocket(isWebsocket(key, consulResponse));
-        incomingApi.setSubscriptionGroup(getSubscriptionGroups(key, consulResponse));
-        incomingApi.setKeepGroup(keepGroup(key, consulResponse));
-
-        return incomingApi;
+        serviceUtils.validateServiceType(incomingService);
+        return incomingService;
     }
 
-    private void createRoute(Api incomingApi) {
-        apiCache.put(incomingApi.getId(), incomingApi);
-        if(incomingApi.isWebsocket()) {
-            WebsocketClient websocketClient = websocketUtils.createWebsocketClient(incomingApi);
+    private void createRoute(Service incomingService) {
+        serviceCache.put(incomingService.getId(), incomingService);
+        if(incomingService.getServiceMeta().getType().equalsIgnoreCase(Constants.WEBSOCKET_TYPE)) {
+            WebsocketClient websocketClient = websocketUtils.createWebsocketClient(incomingService);
             if(websocketClient != null) {
-                websocketClientMap.put(websocketClient.getPath(), websocketClient);
+               websocketClientMap.put(websocketClient.getPath(), websocketClient);
             }
         } else {
-            List<String> apiRouteIdList = routeUtils.getAllRouteIdForAGivenApi(incomingApi);
+            List<String> apiRouteIdList = routeUtils.getAllRouteIdForAGivenService(incomingService);
             for(String routeId : apiRouteIdList) {
                 Route existingRoute = camelContext.getRoute(routeId);
                 if(existingRoute == null) {
                     try {
-                        if(incomingApi.getMappingList().size() == 1 || incomingApi.isTenantAware()) {
-                            incomingApi.setRoundRobinEnabled(false);
-                            incomingApi.setFailoverEnabled(false);
-                        }
-                        camelContext.addRoutes(new DirectRouteProcessor(camelContext, incomingApi, routeUtils, metricsProcessor, routeId, stickySessionCacheManager, capiContext, reverseProxyHost));
-                        camelContext.addRoutes(new RestDefinitionProcessor(camelContext, incomingApi, routeUtils, routeId));
+                        camelContext.addRoutes(new DirectRouteProcessor(camelContext, incomingService, routeUtils, metricsProcessor, routeId, stickySessionCacheManager, capiContext, reverseProxyHost));
+                        camelContext.addRoutes(new RestDefinitionProcessor(camelContext, incomingService, routeUtils, routeId));
                     } catch (Exception e) {
                         log.error(e.getMessage(), e);
                     }

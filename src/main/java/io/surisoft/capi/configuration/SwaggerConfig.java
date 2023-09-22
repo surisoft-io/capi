@@ -7,12 +7,15 @@ import io.swagger.v3.oas.models.info.License;
 import io.swagger.v3.oas.models.security.SecurityRequirement;
 import io.swagger.v3.oas.models.security.SecurityScheme;
 ;
+import io.swagger.v3.oas.models.servers.Server;
 import org.springdoc.core.models.GroupedOpenApi;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.info.BuildProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+
+import java.util.List;
 
 @Configuration
 public class SwaggerConfig {
@@ -22,6 +25,12 @@ public class SwaggerConfig {
 
     @Autowired(required = false)
     private BuildProperties buildProperties;
+
+    @Value("${capi.reverse.proxy.enabled}")
+    private boolean capiReverseProxyEnabled;
+
+    @Value("${capi.reverse.proxy.host}")
+    private String capiReverseProxyHost;
 
     @Bean
     public GroupedOpenApi publicApi() {
@@ -36,6 +45,11 @@ public class SwaggerConfig {
     public OpenAPI generateOpenAPI() {
         final String securitySchemeName = "bearerAuth";
         OpenAPI openAPI = new OpenAPI();
+        if(capiReverseProxyEnabled) {
+            Server server = new Server();
+            server.setUrl(capiReverseProxyHost);
+            openAPI.servers(List.of(server));
+        }
         if(capiManagerSecurityEnabled) {
             openAPI
                 .addSecurityItem(new SecurityRequirement().addList(securitySchemeName))

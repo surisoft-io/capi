@@ -1,8 +1,11 @@
 package io.surisoft.capi.schema;
 
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
 import java.io.Serializable;
 
+@Schema(hidden = true)
 public class StickySession implements Serializable {
     private String id;
     private String paramName;

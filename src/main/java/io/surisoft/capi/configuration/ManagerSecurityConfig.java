@@ -17,7 +17,6 @@ import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
 import com.nimbusds.jwt.proc.ConfigurableJWTProcessor;
 import com.nimbusds.jwt.proc.DefaultJWTProcessor;
-import io.surisoft.capi.oidc.OIDCConstants;
 import io.surisoft.capi.utils.Constants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,6 +26,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
@@ -56,14 +56,8 @@ public class ManagerSecurityConfig {
     @Value("${capi.manager.security.issuer}")
     private String capiManagerSecurityIssuer;
 
-    @Value("${oidc.provider.host}")
-    private String oidcProviderHost;
-
-    @Value("${oidc.provider.realm}")
-    private String oidcProviderRealm;
-
-    @Value("${oidc.provider.keys}")
-    private String  oidcProviderKeys;
+    @Value("${oauth2.provider.keys}")
+    private String  oauth2ProviderKeys;
 
     public ManagerSecurityConfig() {
     }
@@ -74,7 +68,7 @@ public class ManagerSecurityConfig {
         log.debug("Configuring security");
         if(capiManagerSecurityEnabled) {
             return http
-                    .csrf((csrf) -> csrf.disable())
+                    .csrf(AbstractHttpConfigurer::disable)
                     .sessionManagement((sessionManagement) ->
                         sessionManagement.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                     )
@@ -91,7 +85,7 @@ public class ManagerSecurityConfig {
                     .build();
         } else {
             return http
-                    .csrf((csrf) -> csrf.disable())
+                    .csrf(AbstractHttpConfigurer::disable)
                     .sessionManagement((sessionManagement) ->
                             sessionManagement.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                     )
@@ -107,7 +101,7 @@ public class ManagerSecurityConfig {
     public DefaultJWTProcessor<SecurityContext> getJwtProcessor() throws IOException, ParseException {
         log.trace("Starting CAPI JWT Processor");
         DefaultJWTProcessor<SecurityContext> jwtProcessor = new DefaultJWTProcessor<>();
-        JWKSet jwkSet = JWKSet.load(new URL(oidcProviderKeys));
+        JWKSet jwkSet = JWKSet.load(new URL(oauth2ProviderKeys));
         ImmutableJWKSet<SecurityContext> keySource = new ImmutableJWKSet<>(jwkSet);
         JWSAlgorithm expectedJWSAlg = JWSAlgorithm.RS256;
         JWSKeySelector<SecurityContext> keySelector = new JWSVerificationKeySelector<>(expectedJWSAlg, keySource);

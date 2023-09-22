@@ -1,8 +1,6 @@
 package io.surisoft.capi.controller;
 
-import io.surisoft.capi.schema.Api;
-import io.surisoft.capi.schema.HttpProtocol;
-import io.surisoft.capi.schema.Mapping;
+import io.surisoft.capi.schema.*;
 import io.surisoft.capi.utils.RouteUtils;
 import org.apache.camel.model.RouteDefinition;
 import org.junit.jupiter.api.Assertions;
@@ -43,9 +41,12 @@ class TestRouteUtils {
         expectedEndpointList.add("https://first.domain:8380/?bridgeEndpoint=true&throwExceptionOnFailure=false");
         expectedEndpointList.add("https://second.domain:8381/?bridgeEndpoint=true&throwExceptionOnFailure=false");
 
-        Api api = new Api();
-        api.setName("test");
-        api.setHttpProtocol(HttpProtocol.HTTPS);
+        Service service = new Service();
+        ServiceMeta serviceMeta = new ServiceMeta();
+        serviceMeta.setSchema("https");
+        service.setServiceMeta(serviceMeta);
+
+        service.setName("test");
         Set<Mapping> mappingList = new HashSet<>();
 
         Mapping mapping1 = new Mapping();
@@ -60,9 +61,9 @@ class TestRouteUtils {
 
         mappingList.add(mapping1);
         mappingList.add(mapping2);
-        api.setMappingList(mappingList);
+        service.setMappingList(mappingList);
 
-        String[] endpoints = routeUtils.buildEndpoints(api);
+        String[] endpoints = routeUtils.buildEndpoints(service);
         for(String endpoint : endpoints) {
             Assertions.assertTrue(expectedEndpointList.contains(endpoint));
         }
@@ -70,21 +71,10 @@ class TestRouteUtils {
 
     @Test
     void testBuildFrom() {
-        Api api = new Api();
-        api.setContext("test");
-        String context = routeUtils.buildFrom(api);
+        Service service = new Service();
+        service.setContext("test");
+        String context = routeUtils.buildFrom(service);
         Assertions.assertEquals(context, "/test");
-    }
-
-    @Test
-    void testGetRouteId() {
-        String expectedId = "unit-test:test:get";
-        Api api = new Api();
-        api.setName("unit-test");
-        api.setContext("test");
-
-        String routeId = routeUtils.getRouteId(api, "get");
-        Assertions.assertEquals(routeId, expectedId);
     }
 
     @Test

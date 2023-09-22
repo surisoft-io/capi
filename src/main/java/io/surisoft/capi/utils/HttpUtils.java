@@ -229,7 +229,7 @@ import java.util.List;
 @Component
 public class HttpUtils {
 
-    @Value("${oidc.cookieName}")
+    @Value("${oauth2.cookieName}")
     private String authorizationCookieName;
 
     private static final Logger log = LoggerFactory.getLogger(HttpUtils.class);
@@ -272,6 +272,20 @@ public class HttpUtils {
         return jwtProcessor.process(accessToken, null);
     }
 
+    public String processAuthorizationAccessToken(Exchange exchange) {
+        String authorization = exchange.getIn().getHeader(Constants.AUTHORIZATION_HEADER, String.class);
+        if(authorization == null) {
+            List<HttpCookie> cookies = getCookiesFromExchange(exchange);
+            String authorizationName = exchange.getIn().getHeader(authorizationCookieName, String.class);
+            if(authorizationName != null) {
+                return getAuthorizationCookieValue(cookies, authorizationName);
+            }
+        } else {
+            return getBearerTokenFromHeader(authorization);
+        }
+        return null;
+    }
+
     public String normalizeHttpEndpoint(String httpEndpoint) {
         if(httpEndpoint.contains("http://")) {
             return httpEndpoint.replace("http://", "");
@@ -288,8 +302,8 @@ public class HttpUtils {
 
     public List<HttpCookie> getCookiesFromExchange(Exchange exchange) {
         List<HttpCookie> httpCookieList = new ArrayList<>();
-        if(exchange.getIn().getHeader("Cookie") != null) {
-            String[] cookieArray = exchange.getIn().getHeader("Cookie", String.class).split(";");
+        if(exchange.getIn().getHeader(Constants.COOKIE_HEADER) != null) {
+            String[] cookieArray = exchange.getIn().getHeader(Constants.COOKIE_HEADER, String.class).split(";");
             for (String cookieString : cookieArray) {
                 String[] cookieKeyValue = cookieString.split("=");
                 HttpCookie httpCookie = new HttpCookie(stripOffSurroundingQuote(cookieKeyValue[0]), stripOffSurroundingQuote(cookieKeyValue[1]));
@@ -297,19 +311,6 @@ public class HttpUtils {
             }
         }
         return httpCookieList;
-    }
-
-    public String getAuthorizationCookieName(List<HttpCookie> httpCookieList) {
-        if(authorizationCookieName != null && !authorizationCookieName.isEmpty()) {
-            for(HttpCookie httpCookie : httpCookieList) {
-                if(httpCookie.getName().equals(authorizationCookieName)) {
-                    return httpCookie.getValue();
-                }
-            }
-        } else {
-            log.warn("No authorization cookie name provided, please make sure you have the property: oidc.cookieName");
-        }
-        return null;
     }
 
     public String getAuthorizationCookieValue(List<HttpCookie> httpCookieList, String authorizationCookie) {

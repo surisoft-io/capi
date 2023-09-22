@@ -3,12 +3,12 @@ package io.surisoft.capi.controller;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
 import io.surisoft.capi.cache.StickySessionCacheManager;
-import io.surisoft.capi.schema.Api;
+import io.surisoft.capi.processor.MetricsProcessor;
+import io.surisoft.capi.schema.Service;
 import io.surisoft.capi.schema.WebsocketClient;
 import io.surisoft.capi.service.ConsulNodeDiscovery;
-import io.surisoft.capi.processor.MetricsProcessor;
-import io.surisoft.capi.utils.ApiUtils;
 import io.surisoft.capi.utils.RouteUtils;
+import io.surisoft.capi.utils.ServiceUtils;
 import org.apache.camel.CamelContext;
 import org.cache2k.Cache;
 import org.junit.jupiter.api.Assertions;
@@ -63,7 +63,7 @@ class TestConsulNodeDiscovery {
             ]""";
 
     @Autowired
-    ApiUtils apiUtils;
+    ServiceUtils serviceUtils;
 
     @Autowired
     RouteUtils routeUtils;
@@ -75,7 +75,7 @@ class TestConsulNodeDiscovery {
     StickySessionCacheManager stickySessionCacheManager;
 
     @Autowired
-    Cache<String, Api> apiCache;
+    Cache<String, Service> serviceCache;
 
     @Autowired
     MetricsProcessor metricsProcessor;
@@ -93,13 +93,13 @@ class TestConsulNodeDiscovery {
         wireMockServer.stubFor(get(urlEqualTo("/v1/catalog/service/dummy")).willReturn(aResponse().withBody(SERVICE_DUMMY_RESPONSE)));
 
         Assertions.assertNotNull(camelContext);
-        Assertions.assertNotNull(apiUtils);
+        Assertions.assertNotNull(serviceUtils);
         Assertions.assertNotNull(routeUtils);
         Assertions.assertNotNull(metricsProcessor);
         Assertions.assertNotNull(stickySessionCacheManager);
-        Assertions.assertNotNull(apiCache);
+        Assertions.assertNotNull(serviceCache);
 
-        ConsulNodeDiscovery consulNodeDiscovery = new ConsulNodeDiscovery(camelContext, apiUtils, routeUtils, metricsProcessor, stickySessionCacheManager, apiCache, websocketClientMap);
+        ConsulNodeDiscovery consulNodeDiscovery = new ConsulNodeDiscovery(camelContext, serviceUtils, routeUtils, metricsProcessor, stickySessionCacheManager, serviceCache, websocketClientMap);
         consulNodeDiscovery.setConsulHost("http://localhost:" + wireMockServer.port());
         consulNodeDiscovery.setCapiContext("/capi/test");
         consulNodeDiscovery.processInfo();

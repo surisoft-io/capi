@@ -16,15 +16,13 @@ public class StickySessionCacheManager {
     private Cache<String, StickySession> stickySessionCache;
 
     public void createStickySession(StickySession stickySession) {
+        stickySession.setId(stickySession.getParamName() + ":" + stickySession.getParamValue());
         stickySessionCache.put(stickySession.getId(), stickySession);
     }
 
     public StickySession getStickySessionById(String paramName, String paramValue) {
-        String stickySessionId = routeUtils.getStickySessionId(paramName, paramValue);
-        if(stickySessionCache.containsKey(stickySessionId)) {
-            return stickySessionCache.get(stickySessionId);
-        }
-        return null;
+        String stickySessionId = paramName + ":" + paramValue;
+        return stickySessionCache.peek(stickySessionId);
     }
 
     public void deleteStickySession(StickySession stickySession) {
