@@ -20,7 +20,7 @@ capi:
         password:
       truststore:
         location:
-        password: 
+        password:
   reverse:
     proxy:
       enabled: false

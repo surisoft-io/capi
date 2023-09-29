@@ -52,6 +52,7 @@ public class CapiCorsFilter implements Filter {
             response.setHeader("Access-Control-Allow-Origin", request.getHeader("Origin"));
             response.setHeader("Access-Control-Allow-Methods", "GET, POST, DELETE, PUT, PATCH   ");
             response.setHeader("Access-Control-Max-Age", "1728000");
+            log.info("Origins:" + response.getHeader("Origin"));
             processAccessControlAllowHeaders(response, accessControlAllowHeaders);
         }
         filterChain.doFilter(servletRequest, servletResponse);
