@@ -300,6 +300,7 @@ public class Constants {
             "Access-Control-Request-Method",
             "Access-Control-Request-Headers",
             "Access-Control-Allow-Origin",
+            "x-referrer",
             "Authorization",
             "Authorization-Propagation",
             "X-Csrf-Request",
