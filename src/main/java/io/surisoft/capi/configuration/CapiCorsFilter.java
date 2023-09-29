@@ -1,7 +1,7 @@
 package io.surisoft.capi.configuration;
 
 import io.surisoft.capi.utils.Constants;
-import io.undertow.servlet.spec.HttpServletResponseImpl;
+import jakarta.annotation.PostConstruct;
 import jakarta.servlet.*;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -9,14 +9,12 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 @Component
@@ -34,6 +32,12 @@ public class CapiCorsFilter implements Filter {
     @Value("${capi.gateway.cors.management.enabled}")
     private boolean gatewayCorsManagementEnabled;
 
+    @PostConstruct
+    public void corsFilterComponent() {
+        if(gatewayCorsManagementEnabled) {
+            log.info("CAPI Gateway CORS Management Enabled");
+        }
+    }
 
     public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain) throws IOException, ServletException {
 
@@ -53,17 +57,19 @@ public class CapiCorsFilter implements Filter {
             response.setHeader("Access-Control-Max-Age", "1728000");
         } else if(request.getRequestURI().startsWith("/capi/") && gatewayCorsManagementEnabled) {
             response.setHeader("Access-Control-Allow-Credentials", "true");
-            response.setHeader("Access-Control-Allow-Origin", request.getHeader("Origin"));
             response.setHeader("Access-Control-Allow-Methods", "GET, POST, DELETE, PUT, PATCH   ");
             response.setHeader("Access-Control-Max-Age", "1728000");
-            processAccessControlAllowHeaders(response, accessControlAllowHeaders);
+            processAccessControlAllowHeaders(response, request, accessControlAllowHeaders);
         }
         filterChain.doFilter(servletRequest, servletResponse);
     }
 
-    private void processAccessControlAllowHeaders(HttpServletResponse response, List<String> accessControlAllowHeaders) {
+    private void processAccessControlAllowHeaders(HttpServletResponse response, HttpServletRequest request, List<String> accessControlAllowHeaders) {
         if(response.getHeader("Access-Control-Allow-Headers") == null) {
             response.setHeader("Access-Control-Allow-Headers", StringUtils.join(accessControlAllowHeaders, ","));
+        }
+        if(response.getHeader("Access-Control-Allow-Origin") == null) {
+            response.setHeader("Access-Control-Allow-Origin", request.getHeader("Origin"));
         }
     }
 }
