@@ -1,6 +1,7 @@
 package io.surisoft.capi.utils;
 
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
+import io.surisoft.capi.cache.StickySessionCacheManager;
 import io.surisoft.capi.processor.AuthorizationProcessor;
 import io.surisoft.capi.processor.HttpErrorProcessor;
 import io.surisoft.capi.schema.*;
@@ -9,14 +10,20 @@ import io.surisoft.capi.tracer.CapiTracer;
 import org.apache.camel.CamelContext;
 import org.apache.camel.Route;
 import org.apache.camel.component.http.HttpComponent;
+import org.apache.camel.component.validator.ValidatorEndpoint;
+import org.apache.camel.model.OnExceptionDefinition;
 import org.apache.camel.model.RouteDefinition;
+import org.apache.hc.core5.http.NoHttpResponseException;
 import org.cache2k.Cache;
+import org.checkerframework.checker.units.qual.A;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+import javax.net.ssl.SSLHandshakeException;
+import java.net.ConnectException;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
@@ -28,6 +35,8 @@ import static org.apache.camel.language.constant.ConstantLanguage.constant;
 public class RouteUtils {
 
     private static final Logger log = LoggerFactory.getLogger(RouteUtils.class);
+    @Value("${server.ssl.enabled}")
+    private boolean sslEnabled;
     @Value("${capi.gateway.error.endpoint}")
     private String capiGatewayErrorEndpoint;
     @Autowired
@@ -65,6 +74,7 @@ public class RouteUtils {
                                            boolean isInternalExceptionMessageVisible,
                                            boolean isInternalExceptionVisible,
                                            String routeID) {
+
         routeDefinition
                 .onException(Exception.class)
                 .handled(true)
@@ -73,7 +83,7 @@ public class RouteUtils {
                 .setHeader(Constants.ERROR_API_SHOW_INTERNAL_ERROR_CLASS, constant(isInternalExceptionVisible))
                 .process(httpErrorProcessor)
                 .setHeader(Constants.ROUTE_ID_HEADER, constant(routeID))
-                .toF(Constants.FAIL_REST_ENDPOINT_OBJECT, capiGatewayErrorEndpoint)
+                .toF((sslEnabled ? Constants.FAIL_HTTPS_REST_ENDPOINT_OBJECT : Constants.FAIL_HTTP_REST_ENDPOINT_OBJECT), capiGatewayErrorEndpoint)
                 .removeHeader(Constants.ERROR_API_SHOW_TRACE_ID)
                 .removeHeader(Constants.ERROR_API_SHOW_INTERNAL_ERROR_MESSAGE)
                 .removeHeader(Constants.ERROR_API_SHOW_INTERNAL_ERROR_CLASS)
@@ -95,7 +105,7 @@ public class RouteUtils {
 
             String endpoint;
             if(mapping.getPort() > -1) {
-                endpoint = httpProtocol.getProtocol() + "://" + mapping.getHostname() + ":" + mapping.getPort() + mapping.getRootContext() + "?bridgeEndpoint=true&throwExceptionOnFailure=false";
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                endpoint = httpProtocol.getProtocol() + "://" + mapping.getHostname() + ":" + mapping.getPort() + mapping.getRootContext() + "?bridgeEndpoint=true&throwExceptionOnFailure=false";
             } else {
                 endpoint = httpProtocol.getProtocol() + "://" + mapping.getHostname() + mapping.getRootContext() + "?bridgeEndpoint=true&throwExceptionOnFailure=false";
             }
@@ -154,8 +164,11 @@ public class RouteUtils {
         return routeIdList;
     }
 
-    public boolean isStickySessionEnabled(Service service) {
-        return service.getServiceMeta().isStickySession() && service.getServiceMeta().getStickySessionKey() != null && service.getServiceMeta().getStickySessionType() != null;
+    public boolean isStickySessionEnabled(Service service, StickySessionCacheManager stickySessionCacheManager) {
+        return service.getServiceMeta().isStickySession() &&
+                service.getServiceMeta().getStickySessionKey() != null &&
+                service.getServiceMeta().getStickySessionType() != null &&
+                stickySessionCacheManager != null;
     }
 
     public boolean isStickySessionOnCookie(Service service) {

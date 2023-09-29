@@ -1,10 +1,15 @@
 server:
   port: 8380
+  ssl:
+    enabled: false
+    key-store-type: PKCS12
+    key-store:
+    key-store-password:
 capi:
   #### Kafka is still experimental ####
   kafka:
     enabled: false
-    host: localhost:9092
+    host:
   reverse:
     proxy:
       enabled: false
@@ -71,15 +76,7 @@ camel:
     mapping:
       context-path: /capi/*
   springboot:
-    name: capi-load-balancer
-
-#### SSL Configuration ####
-#server.ssl.key-store-type=PKCS12
-#server.ssl.key-store=/Users/rodrigo/ext/gsc/capi-lb.p12
-#server.ssl.key-store-password=capi-lb
-#server.ssl.key-alias=capi-lb
-#server.ssl.enabled=true
-
+    name: capi-gateway
 
 #### Actuator Metrics Endpoint Configuration ####
 management:

@@ -11,6 +11,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @ExtendWith(SpringExtension.class)
 @SpringBootTest
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
@@ -60,5 +63,43 @@ class TestServiceUtils {
         Assertions.assertEquals(mapping2.getHostname(), "localhost");
         Assertions.assertEquals(mapping2.getRootContext(), "/unit-test");
         Assertions.assertEquals(mapping2.getPort(), 8888);
+    }
+
+    @Test
+    void testValidateServiceType() {
+        final Service service = new Service();
+        final ServiceMeta serviceMeta = new ServiceMeta();
+        service.setServiceMeta(serviceMeta);
+        serviceUtils.validateServiceType(service);
+        Assertions.assertEquals("rest", service.getServiceMeta().getType());
+    }
+
+    @Test
+    void testIsMappingChanged() {
+        List<Mapping> list1 = new ArrayList<>();
+        List<Mapping> list2 = new ArrayList<>();
+
+        Mapping mapping1 = new Mapping();
+        mapping1.setHostname("localhost");
+        mapping1.setPort(80);
+        mapping1.setRootContext("/");
+
+        list1.add(mapping1);
+        list2.add(mapping1);
+
+        Assertions.assertFalse(serviceUtils.isMappingChanged(list1, list2));
+
+        Mapping mapping2 = new Mapping();
+        mapping2.setHostname("localhost");
+        mapping2.setPort(443);
+        mapping2.setRootContext("/");
+
+        list1.add(mapping2);
+
+        Assertions.assertTrue(serviceUtils.isMappingChanged(list1, list2));
+
+        list1.remove(mapping1);
+
+        Assertions.assertTrue(serviceUtils.isMappingChanged(list1, list2));
     }
 }

@@ -1,5 +1,5 @@
-FROM openjdk:17-jdk
-ARG CAPI_VERSION=4.0.00
+FROM openjdk:21-jdk
+ARG CAPI_VERSION=4.2.01
 
 RUN mkdir /capi
 RUN mkdir /capi/logs

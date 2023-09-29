@@ -1,10 +1,26 @@
 server:
   port: 8380
+  ssl:
+    enabled: false
+    key-store-type: PKCS12
+    key-store:
+    key-store-password:
 capi:
   #### Kafka is still experimental ####
   kafka:
     enabled: false
-    host: localhost:9092
+    host:
+    topic:
+    group-instance:
+    group-id:
+    ssl:
+      enabled: false
+      keystore:
+        location:
+        password:
+      truststore:
+        location:
+        password:
   reverse:
     proxy:
       enabled: false
@@ -87,14 +103,6 @@ camel:
   springboot:
     name: capi-gateway
 
-#### SSL Configuration ####
-#server.ssl.key-store-type=PKCS12
-#server.ssl.key-store=/Users/rodrigo/ext/gsc/capi-lb.p12
-#server.ssl.key-store-password=capi-lb
-#server.ssl.key-alias=capi-lb
-#server.ssl.enabled=true
-
-
 #### Actuator Metrics Endpoint Configuration (Do not change) ####
 management:
   security:
@@ -116,11 +124,11 @@ sticky:
         live: 2
 #### OAUTH2 Support to protect the routes. (Editable properties) ####
 oauth2:
-  cookieName: 
+  cookieName:
   provider:
     enabled: false
     keys: http://localhost:8080/realms/master/protocol/openid-connect/certs
     host: http://localhost:8080
     realm: /realms/master
-    clientId: capi
-    clientSecret: XDeIeoDTYuvuV6xEGtzv1zdGLUENCIGE
+    clientId:
+    clientSecret:

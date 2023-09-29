@@ -71,7 +71,7 @@ class TestConsulNodeDiscovery {
     @Autowired
     CamelContext camelContext;
 
-    @Autowired
+    @Autowired(required = false)
     StickySessionCacheManager stickySessionCacheManager;
 
     @Autowired
@@ -96,10 +96,10 @@ class TestConsulNodeDiscovery {
         Assertions.assertNotNull(serviceUtils);
         Assertions.assertNotNull(routeUtils);
         Assertions.assertNotNull(metricsProcessor);
-        Assertions.assertNotNull(stickySessionCacheManager);
         Assertions.assertNotNull(serviceCache);
 
-        ConsulNodeDiscovery consulNodeDiscovery = new ConsulNodeDiscovery(camelContext, serviceUtils, routeUtils, metricsProcessor, stickySessionCacheManager, serviceCache, websocketClientMap);
+        ConsulNodeDiscovery consulNodeDiscovery = new ConsulNodeDiscovery(camelContext, serviceUtils, routeUtils, metricsProcessor, serviceCache, websocketClientMap);
+        consulNodeDiscovery.setStickySessionCacheManager(stickySessionCacheManager);
         consulNodeDiscovery.setConsulHost("http://localhost:" + wireMockServer.port());
         consulNodeDiscovery.setCapiContext("/capi/test");
         consulNodeDiscovery.processInfo();

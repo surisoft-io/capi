@@ -214,7 +214,8 @@ public class Constants {
 
     public static final String APPLICATION_NAME = "CAPI";
     public static final String SCHEMA_PACKAGES_TO_SCAN = "io.surisoft.capi.schema";
-    public static final String FAIL_REST_ENDPOINT_OBJECT = "http:%s?throwExceptionOnFailure=false&connectTimeout=1000&bridgeEndpoint=true&copyHeaders=true&connectionClose=true";
+    public static final String FAIL_HTTP_REST_ENDPOINT_OBJECT = "http:%s?throwExceptionOnFailure=false&bridgeEndpoint=true&copyHeaders=true&connectionClose=true";
+    public static final String FAIL_HTTPS_REST_ENDPOINT_OBJECT = "https:%s?throwExceptionOnFailure=false&bridgeEndpoint=true&copyHeaders=true&connectionClose=true";
     public static final String REASON_CODE_HEADER = "error-reason-code";
     public static final String REASON_MESSAGE_HEADER = "error-reason-message";
     public static final String ROUTE_ID_HEADER = "routeID";
@@ -291,4 +292,26 @@ public class Constants {
     public static final String CAPI_GROUP_HEADER = "Capi-Group";
     public static final String WEBSOCKET_TYPE = "websocket";
 
+    public static final String[] CAPI_ACCESS_CONTROL_ALLOW_HEADERS = {
+            "Origin",
+            "Accept",
+            "X-Requested-With",
+            "Content-Type",
+            "Access-Control-Request-Method",
+            "Access-Control-Request-Headers",
+            "Access-Control-Allow-Origin",
+            "Authorization",
+            "Authorization-Propagation",
+            "X-Csrf-Request",
+            "Cache-Control",
+            "pragma",
+            "gem-context",
+            "x-syncmode",
+            "X-Total-Count",
+            "Last-Event-ID",
+            "X-B3-Sampled",
+            "X-B3-SpanId",
+            "X-B3-TraceId",
+            "X-B3-ParentSpanId",
+    };
 }

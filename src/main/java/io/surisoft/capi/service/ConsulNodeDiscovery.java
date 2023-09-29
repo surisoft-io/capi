@@ -33,7 +33,7 @@ public class ConsulNodeDiscovery {
     private final ServiceUtils serviceUtils;
     private final RouteUtils routeUtils;
     private final MetricsProcessor metricsProcessor;
-    private final StickySessionCacheManager stickySessionCacheManager;
+    private StickySessionCacheManager stickySessionCacheManager;
     private final HttpClient client;
     private static final String GET_ALL_SERVICES = "/v1/catalog/services";
     private static final String GET_SERVICE_BY_NAME = "/v1/catalog/service/";
@@ -44,11 +44,10 @@ public class ConsulNodeDiscovery {
     private final Map<String, WebsocketClient> websocketClientMap;
     private WebsocketUtils websocketUtils;
 
-    public ConsulNodeDiscovery(CamelContext camelContext, ServiceUtils serviceUtils, RouteUtils routeUtils, MetricsProcessor metricsProcessor, StickySessionCacheManager stickySessionCacheManager, Cache<String, Service> serviceCache, Map<String, WebsocketClient> websocketClientMap) {
+    public ConsulNodeDiscovery(CamelContext camelContext, ServiceUtils serviceUtils, RouteUtils routeUtils, MetricsProcessor metricsProcessor, Cache<String, Service> serviceCache, Map<String, WebsocketClient> websocketClientMap) {
         this.serviceUtils = serviceUtils;
         this.routeUtils = routeUtils;
         this.camelContext = camelContext;
-        this.stickySessionCacheManager = stickySessionCacheManager;
         this.serviceCache = serviceCache;
         this.metricsProcessor = metricsProcessor;
         this.websocketClientMap = websocketClientMap;
@@ -299,5 +298,9 @@ public class ConsulNodeDiscovery {
 
     public void setWebsocketUtils(WebsocketUtils websocketUtils) {
         this.websocketUtils = websocketUtils;
+    }
+
+    public void setStickySessionCacheManager(StickySessionCacheManager stickySessionCacheManager) {
+        this.stickySessionCacheManager = stickySessionCacheManager;
     }
 }

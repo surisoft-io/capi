@@ -63,7 +63,7 @@ public class DirectRouteProcessor extends RouteBuilder {
                     .removeHeader(Constants.AUTHORIZATION_HEADER)
                     .removeHeader(Constants.CAPI_GROUP_HEADER)
                     .routeId(routeId);
-        } else if(routeUtils.isStickySessionEnabled(service)) {
+        } else if(routeUtils.isStickySessionEnabled(service, stickySessionCacheManager)) {
             routeDefinition
                     .process(metricsProcessor)
                     .loadBalance(new StickyLoadBalancer(stickySessionCacheManager, service.getServiceMeta().getStickySessionKey(), routeUtils.isStickySessionOnCookie(service)))

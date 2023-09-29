@@ -103,7 +103,7 @@ public class StickyLoadBalancer extends LoadBalancerSupport implements Traceable
 
     private void persistProcessedIndex(StickySession stickySession) {
         if(stickySession.getParamValue() != null) {
-            stickySessionCacheManager.createStickySession(stickySession);
+            stickySessionCacheManager.createStickySession(stickySession, true);
         }
     }
 

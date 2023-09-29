@@ -48,6 +48,9 @@ public class ConsulAutoConfiguration {
     @Autowired
     private WebsocketUtils websocketUtils;
 
+    @Autowired(required = false)
+    private StickySessionCacheManager stickySessionCacheManager;
+
     @Bean(name = "consulNodeDiscovery")
     @ConditionalOnProperty(prefix = "capi.consul.discovery", name = "enabled", havingValue = "true")
     public ConsulNodeDiscovery consulNodeDiscovery(CamelContext camelContext,
@@ -55,16 +58,19 @@ public class ConsulAutoConfiguration {
                                                    RouteUtils routeUtils,
                                                    MetricsProcessor metricsProcessor,
                                                    HttpUtils httpUtils,
-                                                   StickySessionCacheManager stickySessionCacheManager,
                                                    Cache<String, Service> serviceCache) {
         camelContext.getRestConfiguration().setInlineRoutes(true);
-        ConsulNodeDiscovery consulNodeDiscovery = new ConsulNodeDiscovery(camelContext, serviceUtils, routeUtils, metricsProcessor, stickySessionCacheManager, serviceCache, websocketClientMap);
+        ConsulNodeDiscovery consulNodeDiscovery = new ConsulNodeDiscovery(camelContext, serviceUtils, routeUtils, metricsProcessor, serviceCache, websocketClientMap);
         consulNodeDiscovery.setWebsocketUtils(websocketUtils);
         consulNodeDiscovery.setCapiContext(httpUtils.getCapiContext(capiContext));
         consulNodeDiscovery.setConsulHost(capiConsulHost);
 
         if(reverseProxyEnabled) {
             consulNodeDiscovery.setReverseProxyHost(reverseProxyHost);
+        }
+
+        if(stickySessionCacheManager != null) {
+            consulNodeDiscovery.setStickySessionCacheManager(stickySessionCacheManager);
         }
 
         return consulNodeDiscovery;

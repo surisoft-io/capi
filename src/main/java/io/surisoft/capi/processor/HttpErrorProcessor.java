@@ -207,6 +207,7 @@ package io.surisoft.capi.processor;
 
 import io.surisoft.capi.utils.Constants;
 import org.apache.camel.Exchange;
+import org.apache.camel.Message;
 import org.apache.camel.Processor;
 import org.springframework.stereotype.Component;
 

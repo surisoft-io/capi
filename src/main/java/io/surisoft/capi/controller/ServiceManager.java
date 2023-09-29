@@ -1,10 +1,7 @@
 package io.surisoft.capi.controller;
 
 import io.surisoft.capi.processor.MetricsProcessor;
-import io.surisoft.capi.schema.CapiInfo;
-import io.surisoft.capi.schema.RouteDetailsEndpointInfo;
-import io.surisoft.capi.schema.RouteEndpointInfo;
-import io.surisoft.capi.schema.Service;
+import io.surisoft.capi.schema.*;
 import io.surisoft.capi.utils.RouteUtils;
 import io.surisoft.capi.utils.ServiceUtils;
 import io.swagger.v3.oas.annotations.Operation;
@@ -35,6 +32,9 @@ public class ServiceManager {
 
     @Autowired
     private Cache<String, Service> serviceCache;
+
+    @Autowired
+    private Cache<String, StickySession> stickySessionCache;
 
     @Value("${capi.version}")
     private String capiVersion;
@@ -100,5 +100,15 @@ public class ServiceManager {
             detailsEndpointInfo.setId(detailsEndpointInfo.getId().replaceAll("rd_", ""));
         }
         return new ResponseEntity<>(detailInfoList, HttpStatus.OK);
+    }
+
+    @Operation(summary = "Get all cached Sticky Sessions")
+    @GetMapping(path = "/sticky-session")
+    public ResponseEntity<Iterable<StickySession>> getCachedStickySession() {
+        List<StickySession> stickySessionList = new ArrayList<>();
+        for (CacheEntry<String, StickySession> stringServiceCacheEntry : stickySessionCache.entries()) {
+            stickySessionList.add(stringServiceCacheEntry.getValue());
+        }
+        return new ResponseEntity<>(stickySessionList, HttpStatus.OK);
     }
 }
