@@ -9,6 +9,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
@@ -30,6 +31,9 @@ public class CapiCorsFilter implements Filter {
     @Value("${oauth2.cookieName}")
     private String oauth2CookieName;
 
+    @Value("${capi.gateway.cors.management.enabled}")
+    private boolean gatewayCorsManagementEnabled;
+
 
     public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain) throws IOException, ServletException {
 
@@ -47,12 +51,11 @@ public class CapiCorsFilter implements Filter {
             response.setHeader("Access-Control-Allow-Methods", "GET, POST, DELETE, PUT");
             response.setHeader("Access-Control-Allow-Headers", "Origin, Accept, X-Requested-With, Content-Type, Access-Control-Request-Method, Access-Control-Request-Headers, Authorization");
             response.setHeader("Access-Control-Max-Age", "1728000");
-        } else if((request.getRequestURI().startsWith("/capi/"))) {
+        } else if(request.getRequestURI().startsWith("/capi/") && gatewayCorsManagementEnabled) {
             response.setHeader("Access-Control-Allow-Credentials", "true");
             response.setHeader("Access-Control-Allow-Origin", request.getHeader("Origin"));
             response.setHeader("Access-Control-Allow-Methods", "GET, POST, DELETE, PUT, PATCH   ");
             response.setHeader("Access-Control-Max-Age", "1728000");
-            log.info("Origins:" + response.getHeader("Origin"));
             processAccessControlAllowHeaders(response, accessControlAllowHeaders);
         }
         filterChain.doFilter(servletRequest, servletResponse);

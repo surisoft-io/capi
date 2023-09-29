@@ -299,7 +299,6 @@ public class Constants {
             "Content-Type",
             "Access-Control-Request-Method",
             "Access-Control-Request-Headers",
-            "Access-Control-Allow-Origin",
             "x-referrer",
             "Authorization",
             "Authorization-Propagation",

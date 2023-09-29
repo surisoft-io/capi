@@ -70,6 +70,9 @@ capi:
   spring:
     version: ^project.description^
   gateway:
+    cors:
+      management:
+        enabled: false
     error:
       #### All calls in error will be bridged to this endpoint ####
       endpoint: localhost:8380/capi-error
