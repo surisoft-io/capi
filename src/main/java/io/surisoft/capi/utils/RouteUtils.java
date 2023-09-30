@@ -57,6 +57,8 @@ public class RouteUtils {
     private WebsocketUtils websocketUtils;
     @Autowired(required = false)
     private Map<String, WebsocketClient> websocketClientMap;
+    @Value("${capi.gateway.cors.management.enabled}")
+    private boolean gatewayCorsManagementEnabled;
 
     public void registerMetric(String routeId) {
         meterRegistry.counter(routeId);
@@ -105,7 +107,7 @@ public class RouteUtils {
 
             String endpoint;
             if(mapping.getPort() > -1) {
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                endpoint = httpProtocol.getProtocol() + "://" + mapping.getHostname() + ":" + mapping.getPort() + mapping.getRootContext() + "?bridgeEndpoint=true&throwExceptionOnFailure=false";
+                endpoint = httpProtocol.getProtocol() + "://" + mapping.getHostname() + ":" + mapping.getPort() + mapping.getRootContext() + "?bridgeEndpoint=true&throwExceptionOnFailure=false";
             } else {
                 endpoint = httpProtocol.getProtocol() + "://" + mapping.getHostname() + mapping.getRootContext() + "?bridgeEndpoint=true&throwExceptionOnFailure=false";
             }
@@ -116,6 +118,11 @@ public class RouteUtils {
             if(service.getServiceMeta().isTenantAware()) {
                 endpoint = endpoint + "&" + Constants.TENANT_HEADER + "="  + mapping.getTenandId();
             }
+
+            if(gatewayCorsManagementEnabled) {
+                endpoint = endpoint + "&headerFilterStrategy=#capiCorsFilterStrategy";
+            }
+
             transformedEndpointList.add(endpoint);
         }
         return transformedEndpointList.toArray(String[]::new);

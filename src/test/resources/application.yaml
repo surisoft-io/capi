@@ -41,6 +41,7 @@ capi:
       path:
       password:
   manager:
+    context: /manager
     cors:
       host: http://localhost:4200
     #### Management endpoints security configuration ####

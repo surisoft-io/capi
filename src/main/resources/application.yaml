@@ -46,7 +46,7 @@ capi:
     discovery:
       enabled: false
       timer:
-        interval: 10000
+        interval: 120000
   #### Certificate Management (Editable property) ####
   #### If you want to enable certificate management, please provide a trust store (JKS). ####
   trust:
@@ -57,6 +57,7 @@ capi:
   #### CORS (Manager) (Editable property)
   #### For web applications calling CAPI Manager Endpoint, if you want to restrict who is allowed to call.
   manager:
+    context: /manager
     cors:
       host: http://localhost:4200
     #### Management endpoints security configuration (Editable property) ####

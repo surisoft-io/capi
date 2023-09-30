@@ -116,4 +116,10 @@ public class CapiConfiguration {
         return new OkHttpClient();
     }
 
+    @Bean(name = "capiCorsFilterStrategy")
+    @ConditionalOnProperty(prefix = "capi.gateway.cors", name = "management.enabled", havingValue = "true")
+    public CapiCorsFilterStrategy capiCorsFilterStrategy() {
+        return new CapiCorsFilterStrategy();
+    }
+
 }

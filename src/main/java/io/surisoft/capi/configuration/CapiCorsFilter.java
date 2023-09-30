@@ -1,13 +1,16 @@
 package io.surisoft.capi.configuration;
 
+import io.surisoft.capi.schema.Service;
 import io.surisoft.capi.utils.Constants;
 import jakarta.annotation.PostConstruct;
 import jakarta.servlet.*;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.lang3.StringUtils;
+import org.cache2k.Cache;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
@@ -15,6 +18,7 @@ import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 @Component
@@ -32,44 +36,71 @@ public class CapiCorsFilter implements Filter {
     @Value("${capi.gateway.cors.management.enabled}")
     private boolean gatewayCorsManagementEnabled;
 
+    @Value("${camel.servlet.mapping.context-path}")
+    private String capiContextPath;
+
+    @Value("${capi.manager.context}")
+    private String capiManagerContext;
+
+    @Autowired
+    private Cache<String, Service> serviceCache;
+
     @PostConstruct
     public void corsFilterComponent() {
         if(gatewayCorsManagementEnabled) {
+            capiContextPath = capiContextPath.replaceAll("\\*", "");
             log.info("CAPI Gateway CORS Management Enabled");
         }
     }
 
     public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain) throws IOException, ServletException {
-
         HttpServletRequest request = (HttpServletRequest) servletRequest;
         HttpServletResponse response = (HttpServletResponse) servletResponse;
-
         List<String> accessControlAllowHeaders = new ArrayList<>(List.of(Constants.CAPI_ACCESS_CONTROL_ALLOW_HEADERS));
-        if(oauth2CookieName != null && !oauth2CookieName.isEmpty()) {
-            accessControlAllowHeaders.add(oauth2CookieName);
-        }
 
-        if((request.getRequestURI().startsWith("/manager"))) {
-            response.setHeader("Access-Control-Allow-Credentials", "false");
-            response.setHeader("Access-Control-Allow-Origin", capiManagerCorsHost);
-            response.setHeader("Access-Control-Allow-Methods", "GET, POST, DELETE, PUT");
-            response.setHeader("Access-Control-Allow-Headers", "Origin, Accept, X-Requested-With, Content-Type, Access-Control-Request-Method, Access-Control-Request-Headers, Authorization");
-            response.setHeader("Access-Control-Max-Age", "1728000");
-        } else if(request.getRequestURI().startsWith("/capi/") && gatewayCorsManagementEnabled) {
-            response.setHeader("Access-Control-Allow-Credentials", "true");
-            response.setHeader("Access-Control-Allow-Methods", "GET, POST, DELETE, PUT, PATCH   ");
-            response.setHeader("Access-Control-Max-Age", "1728000");
-            processAccessControlAllowHeaders(response, request, accessControlAllowHeaders);
+        if((request.getRequestURI().startsWith(capiManagerContext))) {
+            processControlledHeaders(accessControlAllowHeaders, response, request, capiManagerCorsHost, false);
+        } else if(request.getRequestURI().startsWith(capiContextPath) && gatewayCorsManagementEnabled) {
+            if(oauth2CookieName != null && !oauth2CookieName.isEmpty()) {
+                accessControlAllowHeaders.add(oauth2CookieName);
+            }
+            processControlledHeaders(accessControlAllowHeaders, response, request, request.getHeader(Constants.ORIGIN_HEADER), true);
         }
         filterChain.doFilter(servletRequest, servletResponse);
     }
 
-    private void processAccessControlAllowHeaders(HttpServletResponse response, HttpServletRequest request, List<String> accessControlAllowHeaders) {
-        if(response.getHeader("Access-Control-Allow-Headers") == null) {
-            response.setHeader("Access-Control-Allow-Headers", StringUtils.join(accessControlAllowHeaders, ","));
+    private void processControlledHeaders(List<String> accessControlAllowHeaders, HttpServletResponse response, HttpServletRequest request, String origin, boolean capiConsumer) {
+        Constants.CAPI_CORS_MANAGED_HEADERS.forEach((k, v) -> {
+            if(k.equals(Constants.ACCESS_CONTROL_ALLOW_HEADERS)) {
+                v = StringUtils.join(accessControlAllowHeaders, ",");
+            }
+            response.setHeader(k, v);
+        });
+        processOrigin(response, request, origin, capiConsumer);
+    }
+
+    private void processOrigin(HttpServletResponse response, HttpServletRequest request, String origin, boolean capiConsumer) {
+        if(capiConsumer) {
+            if(isOriginAllowed(request)) {
+                response.setHeader(Constants.ACCESS_CONTROL_ALLOW_ORIGIN, origin);
+            }
+        } else {
+            response.setHeader(Constants.ACCESS_CONTROL_ALLOW_ORIGIN, origin);
         }
-        if(response.getHeader("Access-Control-Allow-Origin") == null) {
-            response.setHeader("Access-Control-Allow-Origin", request.getHeader("Origin"));
+    }
+
+    private boolean isOriginAllowed(HttpServletRequest request) {
+        String requestURI = request.getRequestURI();
+        String serviceId = requestURI.trim().split("/")[2] + ":" + requestURI.split("/")[3];
+        Service service = serviceCache.peek(serviceId);
+        if(service != null && service.getServiceMeta() != null) {
+            if(service.getServiceMeta().getAllowedOrigins() != null) {
+                List<String> allowedOriginsList = Arrays.asList(service.getServiceMeta().getAllowedOrigins().split(",", -1));
+                return allowedOriginsList.contains(request.getHeader(Constants.ORIGIN_HEADER));
+            } else {
+                return true;
+            }
         }
+        return true;
     }
 }
