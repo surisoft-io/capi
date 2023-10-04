@@ -66,6 +66,12 @@ public class CapiCorsFilter implements Filter {
             }
             processControlledHeaders(accessControlAllowHeaders, response, request, request.getHeader(Constants.ORIGIN_HEADER), true);
         }
+
+        if (request.getMethod().equals(Constants.OPTIONS_METHODS_VALUE)) {
+            response.setStatus(HttpServletResponse.SC_ACCEPTED);
+            return;
+        }
+
         filterChain.doFilter(servletRequest, servletResponse);
     }
 

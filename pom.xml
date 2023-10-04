@@ -241,6 +241,16 @@
       <artifactId>spring-kafka</artifactId>
       <version>3.0.11</version>
     </dependency>
+    <dependency>
+      <groupId>io.grpc</groupId>
+      <artifactId>grpc-api</artifactId>
+      <version>1.57.1</version>
+    </dependency>
+    <dependency>
+      <groupId>io.grpc</groupId>
+      <artifactId>grpc-netty</artifactId>
+      <version>1.57.1</version>
+    </dependency>
   </dependencies>
 <build>
   <resources>

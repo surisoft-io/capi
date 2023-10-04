@@ -112,6 +112,7 @@ public class Constants {
     public static final String ACCESS_CONTROL_ALLOW_ORIGIN = "Access-Control-Allow-Origin";
     public static final String ACCESS_CONTROL_ALLOW_HEADERS = "Access-Control-Allow-Headers";
     public static final String ACCESS_CONTROL_ALLOW_METHODS_VALUE = "GET, POST, DELETE, PUT, PATCH";
+    public static final String OPTIONS_METHODS_VALUE = "OPTIONS";
     public static final String ACCESS_CONTROL_MAX_AGE_VALUE = "1728000";
     public static final Map<String, String> CAPI_CORS_MANAGED_HEADERS = Map.of(
             "Access-Control-Allow-Credentials", "true",
