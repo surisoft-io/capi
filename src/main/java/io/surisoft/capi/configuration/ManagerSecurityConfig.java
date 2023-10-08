@@ -97,7 +97,7 @@ public class ManagerSecurityConfig {
     }
 
     @Bean
-    @ConditionalOnProperty(prefix = "oidc.provider", name = "enabled", havingValue = "true")
+    @ConditionalOnProperty(prefix = "oauth2.provider", name = "enabled", havingValue = "true")
     public DefaultJWTProcessor<SecurityContext> getJwtProcessor() throws IOException, ParseException {
         log.trace("Starting CAPI JWT Processor");
         DefaultJWTProcessor<SecurityContext> jwtProcessor = new DefaultJWTProcessor<>();
