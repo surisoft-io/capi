@@ -24,6 +24,6 @@ jobs:
       run: |
           docker login -u surisoft -p ${{ secrets.DOCKER_HUB_PWD }}
     - name: Build Docker image
-      run: docker build . --build-arg "CAPI_VERSION=${{ env.RELEASE_VERSION }}" --file Dockerfile --tag surisoft/capi-lb:${{ env.RELEASE_VERSION }}
+      run: docker build . --build-arg "CAPI_VERSION=${{ env.RELEASE_VERSION }}" --file Dockerfile --tag surisoft/capi:${{ env.RELEASE_VERSION }}
     - name: Docker Push
-      run: docker push surisoft/capi-lb:${{ env.RELEASE_VERSION }}
+      run: docker push surisoft/capi:${{ env.RELEASE_VERSION }}
