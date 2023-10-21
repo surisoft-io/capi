@@ -22,7 +22,7 @@
     <nimbus-jose-jwt-version>9.31</nimbus-jose-jwt-version>
     <org.postgresql-version>42.6.0</org.postgresql-version>
     <org.springdoc-verion>2.2.0</org.springdoc-verion>
-    <io.micrometer-version>1.11.2</io.micrometer-version>
+    <io.micrometer-version>1.11.4</io.micrometer-version>
     <cache2k-version>2.6.1.Final</cache2k-version>
 
     <wiremock.version>3.0.0-beta-10</wiremock.version>
