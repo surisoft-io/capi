@@ -12,13 +12,17 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
 
 @Controller
 public class CapiErrorInterface implements ErrorController {
 
     private static final Logger log = LoggerFactory.getLogger(CapiErrorInterface.class);
 
-    @RequestMapping(value = "/error", produces = MediaType.APPLICATION_JSON_VALUE)
+    @RequestMapping(value = "/error",
+            produces = MediaType.APPLICATION_JSON_VALUE,
+            method = {  RequestMethod.GET, RequestMethod.POST, RequestMethod.DELETE, RequestMethod.PUT, RequestMethod.PATCH }
+    )
     public ResponseEntity<String> handleError(HttpServletRequest request) {
         Object status = request.getAttribute(RequestDispatcher.ERROR_STATUS_CODE);
         if (status != null) {
