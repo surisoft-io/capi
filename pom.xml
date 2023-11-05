@@ -19,7 +19,7 @@
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <io.zipkin.reporter2-version>2.16.4</io.zipkin.reporter2-version>
     <spring-cloud-sleuth-version>3.1.9</spring-cloud-sleuth-version>
-    <nimbus-jose-jwt-version>9.31</nimbus-jose-jwt-version>
+    <nimbus-jose-jwt-version>9.36</nimbus-jose-jwt-version>
     <org.postgresql-version>42.6.0</org.postgresql-version>
     <org.springdoc-verion>2.2.0</org.springdoc-verion>
     <io.micrometer-version>1.11.2</io.micrometer-version>
