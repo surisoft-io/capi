@@ -3,6 +3,7 @@ package io.surisoft.capi.builder;
 import io.surisoft.capi.cache.StickySessionCacheManager;
 import io.surisoft.capi.processor.MetricsProcessor;
 import io.surisoft.capi.processor.StickyLoadBalancer;
+import io.surisoft.capi.processor.OpenApiProcessor;
 import io.surisoft.capi.processor.TenantAwareLoadBalancer;
 import io.surisoft.capi.schema.Service;
 import io.surisoft.capi.utils.Constants;
@@ -39,6 +40,10 @@ public class DirectRouteProcessor extends RouteBuilder {
                     .setHeader(Constants.X_FORWARDED_HOST, constant(reverseProxyHost));
             routeDefinition
                     .setHeader(Constants.X_FORWARDED_PREFIX, constant(capiContext + service.getContext()));
+        }
+
+        if(service.getServiceMeta().getOpenApiEndpoint() != null && service.getOpenAPI() != null) {
+            routeDefinition.process(new OpenApiProcessor(service.getOpenAPI()));
         }
 
         log.trace("Trying to build and deploy route {}", routeId);
@@ -87,8 +92,10 @@ public class DirectRouteProcessor extends RouteBuilder {
                     .routeId(routeId);
         } else {
             routeDefinition
+                    .to("metrics:timer:simple.timer?action=start")
                     .process(metricsProcessor)
                     .to(routeUtils.buildEndpoints(service))
+                    .to("metrics:timer:simple.timer?action=stop")
                     .end()
                     .removeHeader(Constants.X_FORWARDED_HOST)
                     .removeHeader(Constants.X_FORWARDED_PREFIX)

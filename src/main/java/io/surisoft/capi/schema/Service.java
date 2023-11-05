@@ -1,6 +1,7 @@
 package io.surisoft.capi.schema;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.models.OpenAPI;
 
 import java.io.Serializable;
 import java.util.HashSet;
@@ -18,6 +19,7 @@ public class Service implements Serializable {
     private boolean matchOnUriPrefix;
     private boolean forwardPrefix;
     private String registeredBy;
+    private OpenAPI openAPI;
 
     public String getName() {
         return name;
@@ -97,5 +99,13 @@ public class Service implements Serializable {
 
     public void setRegisteredBy(String registeredBy) {
         this.registeredBy = registeredBy;
+    }
+
+    public OpenAPI getOpenAPI() {
+        return openAPI;
+    }
+
+    public void setOpenAPI(OpenAPI openAPI) {
+        this.openAPI = openAPI;
     }
 }

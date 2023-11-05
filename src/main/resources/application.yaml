@@ -35,6 +35,12 @@ capi:
     server:
       host: localhost
       port: 8381
+  #### gRPC Gateway (Editable Property) ####
+  grpc:
+    enabled: false
+    server:
+      host: localhost
+      port: 8382
   #### Enable Traces (Editable Property) ####
   traces:
     enabled: false
@@ -73,7 +79,7 @@ capi:
   gateway:
     cors:
       management:
-        enabled: false
+        enabled: true
     error:
       #### All calls in error will be bridged to this endpoint ####
       endpoint: localhost:8380/capi-error

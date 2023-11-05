@@ -18,6 +18,15 @@ public class CapiInfo {
     private Integer removedRouteCount;
     private Integer failedExchangeCount;
 
+    private boolean oauth2Enabled;
+    private boolean stickySessionEnabled;
+    private boolean grpcEnabled;
+    private boolean kafkaEnabled;
+    private boolean webSocketEnabled;
+    private boolean traceEnabled;
+    private boolean gatewayCorsManagementEnabled;
+    private String consulHost;
+
     public String getCapiVersion() {
         return capiVersion;
     }

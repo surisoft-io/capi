@@ -209,7 +209,6 @@ public class CapiRestError {
     private String routeID;
     private String errorMessage;
     private int errorCode;
-    private String httpUrl;
     private String httpUri;
     private String exception;
     private String internalExceptionMessage;
@@ -237,14 +236,6 @@ public class CapiRestError {
 
     public void setErrorCode(int errorCode) {
         this.errorCode = errorCode;
-    }
-
-    public String getHttpUrl() {
-        return httpUrl;
-    }
-
-    public void setHttpUrl(String httpUrl) {
-        this.httpUrl = httpUrl;
     }
 
     public String getHttpUri() {

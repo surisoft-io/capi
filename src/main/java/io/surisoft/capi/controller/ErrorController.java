@@ -46,10 +46,6 @@ public class ErrorController {
           capiRestError.setHttpUri(request.getHeader(Constants.CAPI_URI_IN_ERROR));
         }
 
-        if(request.getHeader(Constants.CAPI_URL_IN_ERROR) != null) {
-            capiRestError.setHttpUrl(request.getHeader(Constants.CAPI_URL_IN_ERROR));
-        }
-
         if(Boolean.parseBoolean(request.getHeader(Constants.ERROR_API_SHOW_TRACE_ID))) {
             capiRestError.setTraceID(request.getHeader(Constants.TRACE_ID_HEADER));
         }
@@ -58,13 +54,13 @@ public class ErrorController {
             capiRestError.setException(request.getHeader(Constants.CAPI_INTERNAL_ERROR_CLASS_NAME));
         }
 
-        capiRestError.setErrorMessage(Objects.requireNonNullElse(errorMessage, "There was an exception connecting to your api"));
+        capiRestError.setErrorMessage(Objects.requireNonNullElse(errorMessage, "There was an exception connecting to the requested service, please try again later on."));
 
         if(request.getHeader(Constants.REASON_CODE_HEADER) != null) {
             int returnedCode = Integer.parseInt(request.getHeader(Constants.REASON_CODE_HEADER));
             capiRestError.setErrorCode(returnedCode);
         } else {
-            capiRestError.setErrorCode(HttpStatus.SERVICE_UNAVAILABLE.value());
+            capiRestError.setErrorCode(HttpStatus.BAD_GATEWAY.value());
         }
         return new ResponseEntity<>(capiRestError, HttpStatus.valueOf(capiRestError.getErrorCode()));
     }

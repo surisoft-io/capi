@@ -239,6 +239,7 @@ public class ConsulNodeDiscovery {
         incomingService.setRoundRobinEnabled(incomingService.getMappingList().size() != 1 && !incomingService.getServiceMeta().isTenantAware() && !incomingService.getServiceMeta().isStickySession());
         incomingService.setFailOverEnabled(incomingService.getMappingList().size() != 1 && !incomingService.getServiceMeta().isTenantAware() && !incomingService.getServiceMeta().isStickySession());
 
+        serviceUtils.checkIfOpenApiIsEnabled(incomingService);
         serviceUtils.validateServiceType(incomingService);
         return incomingService;
     }
