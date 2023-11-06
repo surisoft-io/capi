@@ -26,6 +26,10 @@ class RouteEndpointInfoTest {
     void setUp() throws Exception {
         routeEndpointInfoUnderTest = new RouteEndpointInfo(mockRoute);
         ReflectionTestUtils.setField(routeEndpointInfoUnderTest, "properties", mockProperties);
+        ReflectionTestUtils.setField(routeEndpointInfoUnderTest, "group", "group");
+        ReflectionTestUtils.setField(routeEndpointInfoUnderTest, "description", "description");
+        ReflectionTestUtils.setField(routeEndpointInfoUnderTest, "status", "status");
+        ReflectionTestUtils.setField(routeEndpointInfoUnderTest, "uptime", "uptime");
     }
 
     @Test
