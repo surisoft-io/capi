@@ -60,4 +60,28 @@ class ServiceMetaTest {
         serviceMeta.setIngress("ingress");
         assertEquals("ingress", serviceMeta.getIngress());
     }
+
+    @Test
+    void testOpenApiEndpoint() {
+        serviceMeta.setOpenApiEndpoint("http://openapi.com");
+        assertEquals("http://openapi.com", serviceMeta.getOpenApiEndpoint());
+    }
+
+    @Test
+    void testStickySessionEnabled() {
+        serviceMeta.setStickySession(true);
+        assertTrue(serviceMeta.isStickySession());
+    }
+
+    @Test
+    void testStickySessionType() {
+        serviceMeta.setStickySessionType("cookie");
+        assertEquals("cookie", serviceMeta.getStickySessionType());
+    }
+
+    @Test
+    void testStickySessionKey() {
+        serviceMeta.setStickySessionKey("SESSION");
+        assertEquals("SESSION", serviceMeta.getStickySessionKey());
+    }
 }
