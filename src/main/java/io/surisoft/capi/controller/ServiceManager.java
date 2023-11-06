@@ -6,7 +6,6 @@ import io.surisoft.capi.utils.RouteUtils;
 import io.surisoft.capi.utils.ServiceUtils;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.servlet.http.HttpServletRequest;
 import org.apache.camel.CamelContext;
 import org.cache2k.Cache;
 import org.cache2k.CacheEntry;
@@ -15,10 +14,12 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.util.ArrayList;
-import java.util.Enumeration;
 import java.util.List;
 
 @RestController
@@ -81,48 +82,6 @@ public class ServiceManager {
         capiInfo.setCapiVersion(capiVersion);
         capiInfo.setCapiStringVersion(capiSpringVersion);
     return new ResponseEntity<>(capiInfo, HttpStatus.OK);
-    }
-
-    @Operation(summary = "Grafana things")
-    @GetMapping(path = "/grafana", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<String> getGrafanaInfo() {
-        System.out.println("Grafana called the /");
-        return new ResponseEntity<>("OK", HttpStatus.OK);
-    }
-
-    @Operation(summary = "Grafana search")
-    @PostMapping(path = "/grafana/search", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<List<String>> getGrafanaSearch() {
-        System.out.println("Grafana called the search");
-        List<String> availableQueries = new ArrayList<>();
-        availableQueries.add("routesInfo");
-        availableQueries.add("capiInfo");
-        return new ResponseEntity<>(availableQueries, HttpStatus.OK);
-    }
-
-    @Operation(summary = "Grafana query")
-    @PostMapping(path = "/grafana/query", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<List<RouteEndpointInfo>> getGrafanaQuery(@RequestBody String body, HttpServletRequest servletRequest) {
-        Enumeration<String> headers = servletRequest.getHeaderNames();
-
-        List<RouteEndpointInfo> routeEndpointInfoList = camelContext.getRoutes().stream()
-                .map(RouteEndpointInfo::new)
-                .toList();
-
-
-        while(headers.hasMoreElements()) {
-            String header = headers.nextElement();
-            System.out.println(header + " : " + servletRequest.getHeader(header));
-        }
-        System.out.println(body);
-        return new ResponseEntity<>(routeEndpointInfoList, HttpStatus.OK);
-    }
-
-    @Operation(summary = "Grafana annotations")
-    @PostMapping(path = "/grafana/annotations", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<String> getGrafanaAnnotations() {
-        System.out.println("Grafana called the annotations");
-        return new ResponseEntity<>("OK", HttpStatus.OK);
     }
 
     @Operation(summary = "Get Running Routes Statistics")
