@@ -47,8 +47,9 @@ public class OpenApiProcessor implements Processor {
 
     private boolean isPathMatch(String requestPath, String definedPath) {
         // Normalize path by removing leading/trailing slashes
-        requestPath = requestPath.replaceAll("^/|/$", "");
-        definedPath = definedPath.replaceAll("^/|/$", "");
+        requestPath = requestPath.replaceAll("^(?:/|/)$", "");
+        definedPath = definedPath.replaceAll("^(?:/|/)$", "");
+
 
         // Split paths by '/' to handle individual segments
         String[] requestPathSegments = requestPath.split("/");
