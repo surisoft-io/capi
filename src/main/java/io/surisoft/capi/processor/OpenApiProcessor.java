@@ -46,9 +46,24 @@ public class OpenApiProcessor implements Processor {
     }
 
     private boolean isPathMatch(String requestPath, String definedPath) {
-        // Normalize path by removing leading/trailing slashes
-        requestPath = requestPath.replaceAll("^/+", "").replaceAll("/+$", "");
-        definedPath = definedPath.replaceAll("^/+", "").replaceAll("/+$", "");
+        // Remove leading slashes
+        while (requestPath.startsWith("/")) {
+            requestPath = requestPath.substring(1);
+        }
+
+        // Remove trailing slashes
+        while (requestPath.endsWith("/")) {
+            requestPath = requestPath.substring(0, requestPath.length() - 1);
+        }
+
+        while (definedPath.startsWith("/")) {
+            definedPath = definedPath.substring(1);
+        }
+
+        // Remove trailing slashes
+        while (definedPath.endsWith("/")) {
+            definedPath = definedPath.substring(0, requestPath.length() - 1);
+        }
 
         // Split paths by '/' to handle individual segments
         String[] requestPathSegments = requestPath.split("/");
