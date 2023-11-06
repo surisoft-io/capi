@@ -19,7 +19,7 @@ public class Service implements Serializable {
     private boolean matchOnUriPrefix;
     private boolean forwardPrefix;
     private String registeredBy;
-    private OpenAPI openAPI;
+    private transient OpenAPI openAPI;
 
     public String getName() {
         return name;
