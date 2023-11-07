@@ -4,7 +4,8 @@
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=surisoft-io_capi-lb&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=surisoft-io_capi-lb)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 ![Docker Image Version (latest by date)](https://img.shields.io/docker/v/surisoft/capi)
-[![SonarCloud](https://sonarcloud.io/images/project_badges/sonarcloud-white.svg)](https://sonarcloud.io/summary/new_code?id=surisoft-io_capi-lb)
+
+
 <h5 align="center">
   <br>
   <a href="https://github.com/surisoft-io/capi-lb/issues/new?assignees=&labels=use+case&template=use_case.md&title=%5BUSECASE%5D+">
@@ -375,3 +376,4 @@ networks:
   capi-network:
 ```
 
+[![SonarCloud](https://sonarcloud.io/images/project_badges/sonarcloud-white.svg)](https://sonarcloud.io/summary/new_code?id=surisoft-io_capi-lb)
