@@ -18,11 +18,9 @@ class RouteDetailsEndpointInfoTest {
     @Mock
     private RouteDetails mockRouteDetails;
 
-    private RouteDetailsEndpointInfo routeDetailsEndpointInfoUnderTest;
-
     @BeforeEach
     void setUp() throws Exception {
-        routeDetailsEndpointInfoUnderTest = new RouteDetailsEndpointInfo(mockCamelContext, mockRoute);
+        RouteDetailsEndpointInfo routeDetailsEndpointInfoUnderTest = new RouteDetailsEndpointInfo(mockCamelContext, mockRoute);
         ReflectionTestUtils.setField(routeDetailsEndpointInfoUnderTest, "routeDetails", mockRouteDetails);
     }
 }
