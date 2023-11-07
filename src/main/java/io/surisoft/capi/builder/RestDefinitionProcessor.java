@@ -8,7 +8,6 @@ import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.model.rest.RestDefinition;
 
 public class RestDefinitionProcessor extends RouteBuilder {
-
     private final RouteUtils routeUtils;
     private final Service service;
     private final String routeId;

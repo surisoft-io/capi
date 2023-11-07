@@ -54,6 +54,9 @@ public class ServiceMeta {
     @JsonProperty("keep-group")
     private boolean keepGroup;
 
+    @JsonProperty("open-api")
+    private String openApiEndpoint;
+
     public boolean isSecured() {
         return secured;
     }
@@ -174,5 +177,11 @@ public class ServiceMeta {
         this.allowedOrigins = allowedOrigins;
     }
 
+    public String getOpenApiEndpoint() {
+        return openApiEndpoint;
+    }
 
+    public void setOpenApiEndpoint(String openApiEndpoint) {
+        this.openApiEndpoint = openApiEndpoint;
+    }
 }

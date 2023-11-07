@@ -33,12 +33,6 @@ class CapiRestErrorTest {
     }
 
     @Test
-    void testHttpUrl() {
-        capiRestError.setHttpUrl("/unit/test");
-        assertEquals("/unit/test", capiRestError.getHttpUrl());
-    }
-
-    @Test
     void testHttpUri() {
         capiRestError.setHttpUri("/unit/test");
         assertEquals("/unit/test", capiRestError.getHttpUri());

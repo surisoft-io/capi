@@ -7,22 +7,21 @@
   <groupId>io.surisoft.capi</groupId>
   <artifactId>capi</artifactId>
   <packaging>jar</packaging>
-  <version>4.2.01</version>
+  <version>4.3.02</version>
   <description>${spring.boot-version}</description>
   <name>CAPI Gateway</name>
 
   <properties>
-    <org.apache.camel.springboot-version>4.0.1</org.apache.camel.springboot-version>
-    <spring.boot-version>3.1.4</spring.boot-version>
+    <org.apache.camel.springboot-version>4.0.2</org.apache.camel.springboot-version>
+    <spring.boot-version>3.1.5</spring.boot-version>
 
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <io.zipkin.reporter2-version>2.16.4</io.zipkin.reporter2-version>
     <spring-cloud-sleuth-version>3.1.9</spring-cloud-sleuth-version>
-    <nimbus-jose-jwt-version>9.31</nimbus-jose-jwt-version>
-    <org.postgresql-version>42.6.0</org.postgresql-version>
+    <nimbus-jose-jwt-version>9.36</nimbus-jose-jwt-version>
     <org.springdoc-verion>2.2.0</org.springdoc-verion>
-    <io.micrometer-version>1.11.2</io.micrometer-version>
+    <io.micrometer-version>1.11.5</io.micrometer-version>
     <cache2k-version>2.6.1.Final</cache2k-version>
 
     <wiremock.version>3.0.0-beta-10</wiremock.version>
@@ -35,12 +34,16 @@
     <sonar.dynamicAnalysis>reuseReports</sonar.dynamicAnalysis>
     <sonar.jacoco.reportPath>${project.basedir}/../target/jacoco.exec</sonar.jacoco.reportPath>
     <jackson-dataformat-xml.version>2.15.2</jackson-dataformat-xml.version>
+    <spring.kafka.version>3.0.11</spring.kafka.version>
+    <grpc.api.version>1.58.0</grpc.api.version>
+    <com.google.api.grpc.version>2.17.0</com.google.api.grpc.version>
+    <io.swagger.parser.v3.version>2.1.16</io.swagger.parser.v3.version>
   </properties>
 
   <parent>
     <groupId>org.springframework.boot</groupId>
     <artifactId>spring-boot-starter-parent</artifactId>
-    <version>3.1.4</version>
+    <version>3.1.5</version>
     <relativePath/>
   </parent>
 
@@ -239,17 +242,34 @@
     <dependency>
       <groupId>org.springframework.kafka</groupId>
       <artifactId>spring-kafka</artifactId>
-      <version>3.0.11</version>
+      <version>${spring.kafka.version}</version>
     </dependency>
     <dependency>
       <groupId>io.grpc</groupId>
       <artifactId>grpc-api</artifactId>
-      <version>1.57.1</version>
+      <version>${grpc.api.version}</version>
     </dependency>
     <dependency>
       <groupId>io.grpc</groupId>
       <artifactId>grpc-netty</artifactId>
-      <version>1.57.1</version>
+      <version>${grpc.api.version}</version>
+    </dependency>
+    <dependency>
+        <groupId>com.google.api.grpc</groupId>
+        <artifactId>proto-google-common-protos</artifactId>
+        <version>${com.google.api.grpc.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.camel.springboot</groupId>
+      <artifactId>camel-aws2-s3-starter</artifactId>
+      <version>${org.apache.camel.springboot-version}</version>
+    </dependency>
+
+    <!-- Swagger parser dependency-->
+    <dependency>
+      <groupId>io.swagger.parser.v3</groupId>
+      <artifactId>swagger-parser-v3</artifactId>
+      <version>${io.swagger.parser.v3.version}</version>
     </dependency>
   </dependencies>
 <build>
@@ -260,6 +280,33 @@
     </resource>
   </resources>
 <plugins>
+    <plugin>
+      <groupId>org.cyclonedx</groupId>
+      <artifactId>cyclonedx-maven-plugin</artifactId>
+      <version>2.7.1</version>
+      <executions>
+        <execution>
+          <phase>package</phase>
+          <goals>
+            <goal>makeAggregateBom</goal>
+          </goals>
+        </execution>
+      </executions>
+      <configuration>
+        <projectType>library</projectType>
+        <schemaVersion>1.4</schemaVersion>
+        <includeBomSerialNumber>true</includeBomSerialNumber>
+        <includeCompileScope>true</includeCompileScope>
+        <includeProvidedScope>true</includeProvidedScope>
+        <includeRuntimeScope>true</includeRuntimeScope>
+        <includeSystemScope>true</includeSystemScope>
+        <includeTestScope>false</includeTestScope>
+        <includeLicenseText>false</includeLicenseText>
+        <outputReactorProjects>true</outputReactorProjects>
+        <outputFormat>all</outputFormat>
+        <outputName>CycloneDX-Sbom</outputName>
+      </configuration>
+    </plugin>
   <plugin>
     <groupId>org.apache.maven.plugins</groupId>
     <artifactId>maven-resources-plugin</artifactId>
@@ -304,6 +351,14 @@
       </execution>
     </executions>
   </plugin>
+    <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <configuration>
+            <source>21</source>
+            <target>21</target>
+        </configuration>
+    </plugin>
 </plugins>
 </build>
 </project>

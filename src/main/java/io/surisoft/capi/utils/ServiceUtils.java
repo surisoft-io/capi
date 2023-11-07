@@ -5,6 +5,8 @@ import io.surisoft.capi.builder.RestDefinitionProcessor;
 import io.surisoft.capi.cache.StickySessionCacheManager;
 import io.surisoft.capi.processor.MetricsProcessor;
 import io.surisoft.capi.schema.*;
+import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.parser.OpenAPIV3Parser;
 import org.apache.camel.CamelContext;
 import org.cache2k.Cache;
 import org.cache2k.CacheEntry;
@@ -151,6 +153,17 @@ public class ServiceUtils {
                         camelContext.removeRoute(Constants.CAMEL_REST_PREFIX + routeId);
                     }
                 }
+            }
+        }
+    }
+
+    public void checkIfOpenApiIsEnabled(Service service) {
+        if(service.getServiceMeta() != null && service.getServiceMeta().getOpenApiEndpoint() != null && !service.getServiceMeta().getOpenApiEndpoint().isEmpty()) {
+            try {
+                OpenAPI openAPI = new OpenAPIV3Parser().read(service.getServiceMeta().getOpenApiEndpoint());
+                service.setOpenAPI(openAPI);
+            } catch(Exception e) {
+                log.warn("Open API specification is invalid for service {}", service.getId());
             }
         }
     }
