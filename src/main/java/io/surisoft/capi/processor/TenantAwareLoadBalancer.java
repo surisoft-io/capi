@@ -9,9 +9,9 @@ import org.apache.camel.support.ExchangeHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
 import java.util.concurrent.RejectedExecutionException;
 
 public class TenantAwareLoadBalancer extends LoadBalancerSupport implements Traceable, CamelContextAware {
@@ -63,7 +63,7 @@ public class TenantAwareLoadBalancer extends LoadBalancerSupport implements Trac
                 if(runningTenantList.size() == 1) {
                     index = runningTenantList.get(0).getNodeIndex();
                 } else if(runningTenantList.size() > 1) {
-                    Random random = new Random();
+                    SecureRandom random = new SecureRandom();
                     index = runningTenantList.get(random.nextInt(0, runningTenantList.size())).getNodeIndex();
                 }
 
@@ -85,7 +85,7 @@ public class TenantAwareLoadBalancer extends LoadBalancerSupport implements Trac
                         log.debug("Tenant aware complete for exchangeId: {} >>> {}", exchange.getExchangeId(), exchange);
                     }
 
-                    if(exchange.getProperty(Exchange.FAILURE_HANDLED) != null) {
+                    if(exchange.getExchangeExtension().isFailureHandled()) {
                         exchange.getIn().setHeader(Constants.CAPI_INTERNAL_ERROR, "Tenant aware completed in error, tenant " + tenant + " not available, please check the node");
                         log.debug("Tenant aware completed in error, tenant {} not available, please check the node", tenant);
                     }
