@@ -1,5 +1,6 @@
 package io.surisoft.capi.service;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.surisoft.capi.builder.DirectRouteProcessor;
 import io.surisoft.capi.builder.RestDefinitionProcessor;
@@ -29,7 +30,7 @@ public class ConsulNodeDiscovery {
 
     private static final Logger log = LoggerFactory.getLogger(ConsulNodeDiscovery.class);
     private static boolean connectedToConsul = false;
-    private String consulHost;
+    private List<String> consulHostList;
     private final ServiceUtils serviceUtils;
     private final RouteUtils routeUtils;
     private final MetricsProcessor metricsProcessor;
@@ -58,53 +59,59 @@ public class ConsulNodeDiscovery {
     }
 
     public void processInfo() {
-        getAllServices();
+        lookForRemovedServices();
+        Map<String, List<ConsulObject>> serviceListObjects = getAllServices();
+        processServices(serviceListObjects);
     }
 
-    private void getAllServices() {
-        log.trace("Querying Consul for new services");
+    private void lookForRemovedServices() {
+        ObjectMapper objectMapper = new ObjectMapper();
         HttpResponse<String> response;
+        Set<String> services = new HashSet<>();
         try {
-            response = client.send(buildServicesHttpRequest(), HttpResponse.BodyHandlers.ofString());
-            ObjectMapper objectMapper = new ObjectMapper();
-            JsonObject responseObject = objectMapper.readValue(response.body(), JsonObject.class);
-            //We want to ignore the consul array
-            responseObject.remove("consul");
-            Set<String> services = responseObject.keySet();
+            for(String consulHost : consulHostList) {
+                response = client.send(buildServicesHttpRequest(consulHost), HttpResponse.BodyHandlers.ofString());
+                JsonObject responseObject = objectMapper.readValue(response.body(), JsonObject.class);
+                //We want to ignore the consul array
+                responseObject.remove("consul");
+                responseObject.forEach((key, value) -> {
+                    services.add(key);
+                });
+            }
             try {
                 serviceUtils.removeUnusedService(camelContext, routeUtils, serviceCache, services.stream().toList());
             } catch (Exception e) {
                 log.error(e.getMessage(), e);
             }
-            for(String service : services) {
-                    getServiceByName(service);
-            }
-            connectedToConsul = true;
         } catch (IOException e) {
             log.error("Error connecting to Consul, will try again...");
         } catch (InterruptedException e) {
             log.error("Error connecting to Consul, will try again...");
             Thread.currentThread().interrupt();
-
         }
     }
 
-    private void getServiceByName(String serviceName) {
-        log.trace("Processing service name: {}", serviceName);
+    private Map<String, List<ConsulObject>> getAllServices() {
+        ObjectMapper objectMapper = new ObjectMapper();
+        Map<String, List<ConsulObject>> serviceListObjects = new HashMap<>();
+        HttpResponse<String> response;
         try {
-            HttpResponse<String> response = client.send(buildServiceNameHttpRequest(serviceName), HttpResponse.BodyHandlers.ofString());
-            ObjectMapper objectMapper = new ObjectMapper();
-            ConsulObject[] consulResponse = objectMapper.readValue(response.body(), ConsulObject[].class);
-            Map<String, Set<Mapping>> servicesStructure = groupByServiceId(consulResponse);
-
-            for (var entry : servicesStructure.entrySet()) {
-                String serviceId = serviceName + ":" + entry.getKey();
-                Service incomingService = createServiceObject(serviceId, serviceName, entry.getKey(), entry.getValue(), consulResponse);
-                Service existingService = serviceCache.peek(serviceId);
-                if(existingService == null) {
-                    createRoute(incomingService);
-                } else {
-                    serviceUtils.updateExistingService(existingService, incomingService, serviceCache);
+            for(String consulHost : consulHostList) {
+                log.trace("Querying Consul {} for new services", consulHost);
+                response = client.send(buildServicesHttpRequest(consulHost), HttpResponse.BodyHandlers.ofString());
+                JsonObject responseObject = objectMapper.readValue(response.body(), JsonObject.class);
+                //We want to ignore the consul array
+                responseObject.remove("consul");
+                Set<String> services = responseObject.keySet();
+                for(String serviceName : services) {
+                    List<ConsulObject> consulInstanceObjectList = getServiceByName(consulHost, serviceName);
+                    if(consulInstanceObjectList != null) {
+                        if(serviceListObjects.containsKey(serviceName)) {
+                            serviceListObjects.get(serviceName).addAll(consulInstanceObjectList);
+                        } else {
+                            serviceListObjects.put(serviceName, consulInstanceObjectList);
+                        }
+                    }
                 }
             }
         } catch (IOException e) {
@@ -112,10 +119,46 @@ public class ConsulNodeDiscovery {
         } catch (InterruptedException e) {
             log.error("Error connecting to Consul, will try again...");
             Thread.currentThread().interrupt();
+
         }
+        return serviceListObjects;
     }
 
-    private Map<String, Set<Mapping>> groupByServiceId(ConsulObject[] consulService) {
+    private List<ConsulObject> getServiceByName(String consulHost, String serviceName) {
+        log.trace("Getting service name: {} at consul host: {}", serviceName, consulHost);
+        try {
+            HttpResponse<String> response = client.send(buildServiceNameHttpRequest(consulHost, serviceName), HttpResponse.BodyHandlers.ofString());
+            ObjectMapper objectMapper = new ObjectMapper();
+            TypeReference<List<ConsulObject>> typeRef = new TypeReference<>() {};
+            return objectMapper.readValue(response.body(), typeRef);
+        } catch (IOException e) {
+            log.error("Error connecting to Consul, will try again...");
+        } catch (InterruptedException e) {
+            log.error("Error connecting to Consul, will try again...");
+            Thread.currentThread().interrupt();
+        }
+        return null;
+    }
+
+    private void processServices(Map<String, List<ConsulObject>> serviceListObjects) {
+        serviceListObjects.forEach((serviceName, objectList) -> {
+            log.trace("Processing service name: {}", serviceName);
+            Map<String, Set<Mapping>> servicesStructure = groupByServiceId(objectList);
+            for (var entry : servicesStructure.entrySet()) {
+                String serviceId = serviceName + ":" + entry.getKey();
+                Service incomingService = createServiceObject(serviceId, serviceName, entry.getKey(), entry.getValue(), objectList);
+                Service existingService = serviceCache.peek(serviceId);
+                if(existingService == null) {
+                    createRoute(incomingService);
+                } else {
+                    serviceUtils.updateExistingService(existingService, incomingService, serviceCache);
+                }
+            }
+        });
+        connectedToConsul = true;
+    }
+
+    private Map<String, Set<Mapping>> groupByServiceId(List<ConsulObject> consulService) {
         Map<String, Set<Mapping>> groupedService = new HashMap<>();
         Set<String> serviceIdList = new HashSet<>();
         for(ConsulObject serviceIdEntry : consulService) {
@@ -147,7 +190,7 @@ public class ConsulNodeDiscovery {
         return null;
     }
 
-    public HttpProtocol getHttpProtocol(String key, ConsulObject[] consulObject) {
+    /*public HttpProtocol getHttpProtocol(String key, ConsulObject[] consulObject) {
         for(ConsulObject entry : consulObject) {
             if(Objects.equals(getServiceNodeGroup(entry), key)) {
                 if(entry.getServiceMeta().getSchema() == null) {
@@ -159,18 +202,18 @@ public class ConsulNodeDiscovery {
             }
         }
         return HttpProtocol.HTTP;
-    }
+    }*/
 
-    public boolean isSecured(String key, ConsulObject[] consulObject) {
+    /*public boolean isSecured(String key, ConsulObject[] consulObject) {
         for(ConsulObject entry : consulObject) {
             if(Objects.equals(getServiceNodeGroup(entry), key)) {
                 return entry.getServiceMeta().isSecured();
             }
         }
         return false;
-    }
+    }*/
 
-    private boolean showTraceId(String tagName, ConsulObject[] consulObject) {
+    /*private boolean showTraceId(String tagName, ConsulObject[] consulObject) {
         for(ConsulObject entry : consulObject) {
             if(entry.getServiceMeta() != null) {
                 if(entry.getServiceMeta().getGroup() != null && entry.getServiceMeta().getGroup().equals(tagName) && entry.getServiceMeta().isB3TraceId()) {
@@ -179,27 +222,27 @@ public class ConsulNodeDiscovery {
             }
         }
         return false;
-    }
+    }*/
 
-    public boolean isTenantAware(String key, ConsulObject[] consulObject) {
+    /*public boolean isTenantAware(String key, ConsulObject[] consulObject) {
         for(ConsulObject entry : consulObject) {
             if(Objects.equals(getServiceNodeGroup(entry), key)) {
                 return entry.getServiceMeta().isTenantAware();
             }
         }
         return false;
-    }
+    }*/
 
-    public boolean isWebsocket(String key, ConsulObject[] consulObject) {
+    /*public boolean isWebsocket(String key, ConsulObject[] consulObject) {
         for(ConsulObject entry : consulObject) {
             if(Objects.equals(getServiceNodeGroup(entry), key)) {
                 return (entry.getServiceMeta().getType() != null && entry.getServiceMeta().getType().equals("websocket"));
             }
         }
         return false;
-    }
+    }*/
 
-    public List<String> getSubscriptionGroups(String key, ConsulObject[] consulObject) {
+    /*public List<String> getSubscriptionGroups(String key, ConsulObject[] consulObject) {
         for(ConsulObject entry : consulObject) {
             if(Objects.equals(getServiceNodeGroup(entry), key)) {
                 if(entry.getServiceMeta().getSubscriptionGroup() != null && !entry.getServiceMeta().getSubscriptionGroup().isEmpty()) {
@@ -208,9 +251,9 @@ public class ConsulNodeDiscovery {
             }
         }
         return null;
-    }
+    }*/
 
-    public ServiceMeta getServiceMeta(String key, ConsulObject[] consulObject) {
+    public ServiceMeta getServiceMeta(String key, List<ConsulObject> consulObject) {
         for(ConsulObject entry : consulObject) {
             if(Objects.equals(getServiceNodeGroup(entry), key)) {
                 return entry.getServiceMeta();
@@ -219,16 +262,16 @@ public class ConsulNodeDiscovery {
         return null;
     }
 
-    public boolean keepGroup(String key, ConsulObject[] consulObject) {
+    /*public boolean keepGroup(String key, ConsulObject[] consulObject) {
         for(ConsulObject entry : consulObject) {
             if(Objects.equals(getServiceNodeGroup(entry), key)) {
                 return entry.getServiceMeta().isKeepGroup();
             }
         }
         return false;
-    }
+    }*/
 
-    private Service createServiceObject(String serviceId, String serviceName, String key, Set<Mapping> mappingList, ConsulObject[] consulResponse) {
+    private Service createServiceObject(String serviceId, String serviceName, String key, Set<Mapping> mappingList, List<ConsulObject> consulResponse) {
         Service incomingService = new Service();
         incomingService.setId(serviceId);
         incomingService.setName(serviceName);
@@ -267,22 +310,22 @@ public class ConsulNodeDiscovery {
         }
     }
 
-    public void setConsulHost(String consulHost) {
-        this.consulHost = consulHost;
+    public void setConsulHostList(List<String> consulHostList) {
+        this.consulHostList = consulHostList;
     }
 
     public void setCapiContext(String capiContext) {
         this.capiContext = capiContext;
     }
 
-    private HttpRequest buildServicesHttpRequest() {
+    private HttpRequest buildServicesHttpRequest(String consulHost) {
         return HttpRequest.newBuilder()
                 .uri(URI.create(consulHost + GET_ALL_SERVICES))
                 .timeout(Duration.ofMinutes(2))
                 .build();
     }
 
-    private HttpRequest buildServiceNameHttpRequest(String serviceName) {
+    private HttpRequest buildServiceNameHttpRequest(String consulHost, String serviceName) {
         return HttpRequest.newBuilder()
                 .uri(URI.create(consulHost + GET_SERVICE_BY_NAME + serviceName))
                 .timeout(Duration.ofMinutes(2))

@@ -19,6 +19,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
+import java.util.List;
 import java.util.Map;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
@@ -100,7 +101,7 @@ class TestConsulNodeDiscovery {
 
         ConsulNodeDiscovery consulNodeDiscovery = new ConsulNodeDiscovery(camelContext, serviceUtils, routeUtils, metricsProcessor, serviceCache, websocketClientMap);
         consulNodeDiscovery.setStickySessionCacheManager(stickySessionCacheManager);
-        consulNodeDiscovery.setConsulHost("http://localhost:" + wireMockServer.port());
+        consulNodeDiscovery.setConsulHostList(List.of("http://localhost:" + wireMockServer.port()));
         consulNodeDiscovery.setCapiContext("/capi/test");
         consulNodeDiscovery.processInfo();
 
