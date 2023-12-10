@@ -34,9 +34,10 @@ class CapiCorsFilterStrategyTest {
 
 
         // Run the test
-        final boolean result = capiCorsFilterStrategyUnderTest.applyFilterToExternalHeaders("Access-Control-Allow-Origin", "true", exchange);
-
+        final boolean result1 = capiCorsFilterStrategyUnderTest.applyFilterToExternalHeaders("Access-Control-Allow-Origin", "true", exchange);
+        final boolean result2 = capiCorsFilterStrategyUnderTest.applyFilterToExternalHeaders("SomeNonFilteredHeader", "true", exchange);
         // Verify the results
-        assertThat(result).isTrue();
+        assertThat(result1).isTrue();
+        assertThat(result2).isFalse();
     }
 }
