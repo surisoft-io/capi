@@ -7,13 +7,13 @@
   <groupId>io.surisoft.capi</groupId>
   <artifactId>capi</artifactId>
   <packaging>jar</packaging>
-  <version>4.3.02</version>
+  <version>4.4.00</version>
   <description>${spring.boot-version}</description>
   <name>CAPI Gateway</name>
 
   <properties>
-    <org.apache.camel.springboot-version>4.0.2</org.apache.camel.springboot-version>
-    <spring.boot-version>3.1.5</spring.boot-version>
+    <org.apache.camel.springboot-version>4.2.0</org.apache.camel.springboot-version>
+    <spring.boot-version>3.2.0</spring.boot-version>
 
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
@@ -24,7 +24,7 @@
     <io.micrometer-version>1.11.5</io.micrometer-version>
     <cache2k-version>2.6.1.Final</cache2k-version>
 
-    <wiremock.version>3.0.0-beta-10</wiremock.version>
+    <wiremock.version>3.0.1</wiremock.version>
     <org.bouncycastle.version>1.70</org.bouncycastle.version>
     <org.junit.jupiter.version>5.9.3</org.junit.jupiter.version>
     <jacoco.version>0.8.8</jacoco.version>
@@ -43,7 +43,7 @@
   <parent>
     <groupId>org.springframework.boot</groupId>
     <artifactId>spring-boot-starter-parent</artifactId>
-    <version>3.1.5</version>
+    <version>3.2.0</version>
     <relativePath/>
   </parent>
 
@@ -207,7 +207,7 @@
     </dependency>
     <dependency>
       <groupId>com.github.tomakehurst</groupId>
-      <artifactId>wiremock</artifactId>
+      <artifactId>wiremock-standalone</artifactId>
       <version>${wiremock.version}</version>
       <scope>test</scope>
     </dependency>

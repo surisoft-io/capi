@@ -121,5 +121,4 @@ public class CapiConfiguration {
     public CapiCorsFilterStrategy capiCorsFilterStrategy() {
         return new CapiCorsFilterStrategy();
     }
-
 }

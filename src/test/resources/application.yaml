@@ -29,7 +29,7 @@ capi:
     endpoint: https://localhost:9411/api/v2/spans
   #### If you want CAPI to search consul for available APIs to be deployed, enable this feature. ####
   consul:
-    host: http://localhost:8500
+    hosts: http://localhost:8500
     discovery:
       enabled: true
       timer:

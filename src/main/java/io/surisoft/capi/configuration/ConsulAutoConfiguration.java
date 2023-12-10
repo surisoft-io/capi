@@ -20,6 +20,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import java.util.Arrays;
 import java.util.Map;
 
 @Configuration
@@ -30,8 +31,8 @@ public class ConsulAutoConfiguration {
     @Value("${capi.consul.discovery.timer.interval}")
     private int consulTimerInterval;
 
-    @Value("${capi.consul.host}")
-    private String capiConsulHost;
+    @Value("${capi.consul.hosts}")
+    private String capiConsulHosts;
 
     @Value("${camel.servlet.mapping.context-path}")
     private String capiContext;
@@ -63,7 +64,7 @@ public class ConsulAutoConfiguration {
         ConsulNodeDiscovery consulNodeDiscovery = new ConsulNodeDiscovery(camelContext, serviceUtils, routeUtils, metricsProcessor, serviceCache, websocketClientMap);
         consulNodeDiscovery.setWebsocketUtils(websocketUtils);
         consulNodeDiscovery.setCapiContext(httpUtils.getCapiContext(capiContext));
-        consulNodeDiscovery.setConsulHost(capiConsulHost);
+        consulNodeDiscovery.setConsulHostList(Arrays.asList(capiConsulHosts.split("\\s*,\\s*")));
 
         if(reverseProxyEnabled) {
             consulNodeDiscovery.setReverseProxyHost(reverseProxyHost);

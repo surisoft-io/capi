@@ -16,6 +16,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
@@ -64,6 +65,7 @@ public class AuthorizationProcessor implements Processor {
 
     private void sendException(Exchange exchange, String message) {
         exchange.getIn().setHeader(Constants.REASON_MESSAGE_HEADER, message);
+        exchange.getIn().setHeader(Constants.REASON_CODE_HEADER, HttpStatus.UNAUTHORIZED.value());
         exchange.setException(new AuthorizationException(message));
     }
 

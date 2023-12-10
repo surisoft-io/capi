@@ -6,6 +6,7 @@ server:
     key-store:
     key-store-password:
 capi:
+  instance-name:
   #### Kafka is still experimental ####
   kafka:
     enabled: false
@@ -48,11 +49,11 @@ capi:
   #### Consul Integration (Editable Property) ####
   #### If you want CAPI to search consul for available APIs to be deployed, enable this feature. ####
   consul:
-    host: http://localhost:8500
+    hosts: http://localhost:8500,http://localhost:8600
     discovery:
-      enabled: false
+      enabled: true
       timer:
-        interval: 120000
+        interval: 20000
   #### Certificate Management (Editable property) ####
   #### If you want to enable certificate management, please provide a trust store (JKS). ####
   trust:
