@@ -84,4 +84,10 @@ class ServiceMetaTest {
         serviceMeta.setStickySessionKey("SESSION");
         assertEquals("SESSION", serviceMeta.getStickySessionKey());
     }
+
+    @Test
+    void testOpaRego() {
+        serviceMeta.setOpaRego("capi/smk_api/dev");
+        assertEquals("capi/smk_api/dev", serviceMeta.getOpaRego());
+    }
 }

@@ -6,7 +6,9 @@ import com.nimbusds.jose.proc.BadJOSEException;
 import com.nimbusds.jwt.JWTClaimsSet;
 import io.surisoft.capi.exception.AuthorizationException;
 import io.surisoft.capi.oidc.Oauth2Constants;
+import io.surisoft.capi.schema.OpaResult;
 import io.surisoft.capi.schema.Service;
+import io.surisoft.capi.service.OpaService;
 import io.surisoft.capi.utils.Constants;
 import io.surisoft.capi.utils.HttpUtils;
 import org.apache.camel.Exchange;
@@ -36,6 +38,8 @@ public class AuthorizationProcessor implements Processor {
     @Autowired
     private Cache<String, Service> serviceCache;
 
+    @Autowired(required = false)
+    private OpaService opaService;
 
     @Override
     public void process(Exchange exchange) {
@@ -43,14 +47,21 @@ public class AuthorizationProcessor implements Processor {
         String contextPath = (String) exchange.getIn().getHeader(Oauth2Constants.CAMEL_SERVLET_CONTEXT_PATH);
         String accessToken = httpUtils.processAuthorizationAccessToken(exchange);
         Service service = serviceCache.get(contextToRole(contextPath));
+        assert service != null;
 
         if(accessToken != null) {
             try {
-                JWTClaimsSet jwtClaimsSet = httpUtils.authorizeRequest(accessToken);
-                if(!isApiSubscribed(jwtClaimsSet, contextToRole(contextPath))) {
-                    assert service != null;
-                    if(!isTokenInGroup(jwtClaimsSet, service.getServiceMeta().getSubscriptionGroup())) {
+                if(service.getServiceMeta().getOpaRego() != null && opaService != null) {
+                    OpaResult opaResult = opaService.callOpa(service.getServiceMeta().getOpaRego(), accessToken);
+                    if(!opaResult.isAllowed()) {
                         sendException(exchange, "Not subscribed");
+                    }
+                } else {
+                    JWTClaimsSet jwtClaimsSet = httpUtils.authorizeRequest(accessToken);
+                    if(!isApiSubscribed(jwtClaimsSet, contextToRole(contextPath))) {
+                        if(!isTokenInGroup(jwtClaimsSet, service.getServiceMeta().getSubscriptionGroup())) {
+                            sendException(exchange, "Not subscribed");
+                        }
                     }
                 }
             } catch (AuthorizationException | BadJOSEException | ParseException | JOSEException | IOException e) {

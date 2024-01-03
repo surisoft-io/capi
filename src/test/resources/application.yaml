@@ -22,7 +22,7 @@ capi:
     enabled: false
     server:
       host: localhost
-      port: 8381
+      port: 8382
   #### Enable Zipkin
   traces:
     enabled: false
@@ -40,16 +40,6 @@ capi:
       enabled: false
       path:
       password:
-  manager:
-    context: /manager
-    cors:
-      host: http://localhost:4200
-    #### Management endpoints security configuration ####
-    ## CAPI Manager endpoints can be secured by enabling this feature, if you enable, you need to provide the JWK endpoint of your OIDC provider.
-    ## If the OIDC Provider listens on HTTPS, it needs to be trusted by CAPI
-    security:
-      enabled: false
-      issuer:
   version: ^project.version^
   name: ^project.name^
   spring:

@@ -1,4 +1,4 @@
-package io.surisoft.capi.controller;
+package io.surisoft.capi.metrics;
 
 import io.surisoft.capi.service.ConsulNodeDiscovery;
 import org.springframework.boot.actuate.health.Health;

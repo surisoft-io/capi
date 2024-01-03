@@ -57,6 +57,9 @@ public class ServiceMeta {
     @JsonProperty("open-api")
     private String openApiEndpoint;
 
+    @JsonProperty("opa-rego")
+    private String opaRego;
+
     public boolean isSecured() {
         return secured;
     }
@@ -183,5 +186,13 @@ public class ServiceMeta {
 
     public void setOpenApiEndpoint(String openApiEndpoint) {
         this.openApiEndpoint = openApiEndpoint;
+    }
+
+    public String getOpaRego() {
+        return opaRego;
+    }
+
+    public void setOpaRego(String opaRego) {
+        this.opaRego = opaRego;
     }
 }

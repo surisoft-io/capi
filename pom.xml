@@ -7,12 +7,12 @@
   <groupId>io.surisoft.capi</groupId>
   <artifactId>capi</artifactId>
   <packaging>jar</packaging>
-  <version>4.4.00</version>
+  <version>4.4.01</version>
   <description>${spring.boot-version}</description>
   <name>CAPI Gateway</name>
 
   <properties>
-    <org.apache.camel.springboot-version>4.2.0</org.apache.camel.springboot-version>
+    <org.apache.camel.springboot-version>4.3.0</org.apache.camel.springboot-version>
     <spring.boot-version>3.2.0</spring.boot-version>
 
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -160,11 +160,11 @@
       <artifactId>spring-context</artifactId>
     </dependency>
     <!-- Springdoc -->
-    <dependency>
+    <!--dependency>
       <groupId>org.springdoc</groupId>
       <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
       <version>${org.springdoc-verion}</version>
-    </dependency>
+    </dependency-->
     <!-- Metrics-->
     <dependency>
       <groupId>io.micrometer</groupId>

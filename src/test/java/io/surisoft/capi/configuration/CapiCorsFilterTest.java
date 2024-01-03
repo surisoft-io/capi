@@ -32,25 +32,10 @@ class CapiCorsFilterTest {
     @BeforeEach
     void setUp() {
         capiCorsFilterUnderTest.corsFilterComponent();
-        ReflectionTestUtils.setField(capiCorsFilterUnderTest, "capiManagerCorsHost", "http://localhost:4200");
         ReflectionTestUtils.setField(capiCorsFilterUnderTest, "oauth2CookieName", "oauth2CookieName");
         ReflectionTestUtils.setField(capiCorsFilterUnderTest, "gatewayCorsManagementEnabled", true);
         ReflectionTestUtils.setField(capiCorsFilterUnderTest, "capiContextPath", "/capi");
-        ReflectionTestUtils.setField(capiCorsFilterUnderTest, "capiManagerContext", "/manager");
         ReflectionTestUtils.setField(capiCorsFilterUnderTest, "serviceCache", mockServiceCache);
-    }
-
-    @Test
-    void testDoFilterWithManager() throws Exception {
-        // Setup
-        MockHttpServletRequest mockHttpServletRequest = new MockHttpServletRequest();
-        mockHttpServletRequest.setRequestURI("/manager/test/endpoint");
-
-        final MockHttpServletResponse servletResponse = new MockHttpServletResponse();
-        final FilterChain filterChain = Mockito.mock(FilterChain.class);
-
-        capiCorsFilterUnderTest.doFilter(mockHttpServletRequest, servletResponse, filterChain);
-        Assertions.assertEquals(servletResponse.getHeader("Access-Control-Allow-Origin"), "http://localhost:4200");
     }
 
     @Test

@@ -35,13 +35,13 @@ capi:
     enabled: false
     server:
       host: localhost
-      port: 8381
+      port: 8382
   #### gRPC Gateway (Editable Property) ####
   grpc:
     enabled: false
     server:
       host: localhost
-      port: 8382
+      port: 8383
   #### Enable Traces (Editable Property) ####
   traces:
     enabled: false
@@ -49,9 +49,9 @@ capi:
   #### Consul Integration (Editable Property) ####
   #### If you want CAPI to search consul for available APIs to be deployed, enable this feature. ####
   consul:
-    hosts: http://localhost:8500,http://localhost:8600
+    hosts: http://localhost:8500
     discovery:
-      enabled: true
+      enabled: false
       timer:
         interval: 20000
   #### Certificate Management (Editable property) ####
@@ -61,18 +61,6 @@ capi:
       enabled: false
       path:
       password:
-  #### CORS (Manager) (Editable property)
-  #### For web applications calling CAPI Manager Endpoint, if you want to restrict who is allowed to call.
-  manager:
-    context: /manager
-    cors:
-      host: http://localhost:4200
-    #### Management endpoints security configuration (Editable property) ####
-    ## CAPI Manager endpoints can be secured by enabling this feature, if you enable, you need to provide the JWK endpoint of your OIDC provider.
-    ## If the OIDC Provider listens on HTTPS, it needs to be trusted by CAPI
-    security:
-      enabled: false
-      issuer:
   version: ^project.version^
   name: ^project.name^
   spring:
@@ -84,13 +72,6 @@ capi:
     error:
       #### All calls in error will be bridged to this endpoint ####
       endpoint: localhost:8380/capi-error
-
-#### DO NOT CHANGE SPRINGDOC PROPERTIES ####
-#### This is important to disable the default petstore ####
-springdoc:
-  swagger-ui:
-    enabled: true
-    disable.swagger-default-url: true
 #### DO NOT CHANGE THESE SPRING AUTOCONFIGURE EXCLUSIONS #####
 spring:
   #### We want persistence to be optional, so we disable autoconfiguration for JPA ####
@@ -116,6 +97,8 @@ camel:
 
 #### Actuator Metrics Endpoint Configuration (Do not change) ####
 management:
+  server:
+    port: 8381
   security:
     enabled: false
   endpoint:
@@ -123,9 +106,9 @@ management:
       enabled: true
   endpoints:
     web:
-      base-path: /analytics/
+      base-path: /metrics/
       exposure:
-        include: 'health,prometheus'
+        include: 'health,prometheus,routes,capi'
 
 #### Time to live for Sticky Sessions feature ####
 sticky:
@@ -140,6 +123,10 @@ oauth2:
     enabled: false
     keys: http://localhost:8080/realms/master/protocol/openid-connect/certs
     host: http://localhost:8080
-    realm: /realms/master
+    realm: /realms/apigw
     clientId:
     clientSecret:
+
+opa:
+  enabled: false
+  endpoint: http://localhost:8181

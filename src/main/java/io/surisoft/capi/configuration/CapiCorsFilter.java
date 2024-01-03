@@ -27,9 +27,6 @@ public class CapiCorsFilter implements Filter {
 
     private static final Logger log = LoggerFactory.getLogger(CapiCorsFilter.class);
 
-    @Value("${capi.manager.cors.host}")
-    private String capiManagerCorsHost;
-
     @Value("${oauth2.cookieName}")
     private String oauth2CookieName;
 
@@ -38,9 +35,6 @@ public class CapiCorsFilter implements Filter {
 
     @Value("${camel.servlet.mapping.context-path}")
     private String capiContextPath;
-
-    @Value("${capi.manager.context}")
-    private String capiManagerContext;
 
     @Autowired
     private Cache<String, Service> serviceCache;
@@ -58,9 +52,7 @@ public class CapiCorsFilter implements Filter {
         HttpServletResponse response = (HttpServletResponse) servletResponse;
         List<String> accessControlAllowHeaders = new ArrayList<>(List.of(Constants.CAPI_ACCESS_CONTROL_ALLOW_HEADERS));
 
-        if((request.getRequestURI().startsWith(capiManagerContext))) {
-            processControlledHeaders(accessControlAllowHeaders, response, request, capiManagerCorsHost, false);
-        } else if(request.getRequestURI().startsWith(capiContextPath) && gatewayCorsManagementEnabled) {
+        if(request.getRequestURI().startsWith(capiContextPath) && gatewayCorsManagementEnabled) {
             if(oauth2CookieName != null && !oauth2CookieName.isEmpty()) {
                 accessControlAllowHeaders.add(oauth2CookieName);
             }
