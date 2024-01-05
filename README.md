@@ -17,11 +17,11 @@
 
 ## Supports:
 * Light API Gateway / Load Balancer powered by Apache Camel dynamics routes.
-* Optional Spring Security OAUTH2 protected CAPI Manager API.
+* Protect your Services using OAUTH2 or OPA (Open Policy Agent).
 * Distributed tracing system (OpenTelemetry Collector / Jaeger / Zipkin)
 * Metrics (Prometheus)
 * CAPI Browser user interface for route management.
-* Rest API for Route management.
+* Metrics for Route management.
 * Load Balancer (Round robin)
 * Failover (With and without Round Robin)
 * Tenant support (Headers)
@@ -29,6 +29,7 @@
 * Certificate Manager (using the CAPI Manager API)
 * No DB is needed, CAPI uses Hashicorp Consul for service discovery
 * Websocket Gateway (Since version 4.0.11)
+* gRPC (Soon)
 
 ### Enable Hashicorp Consul
 ```yaml
@@ -108,21 +109,11 @@ You need to include all the required Consul dependencies on your project:
 * ```stickySession``` (Default false) - If you enable sticky sessions then you also need to provide ```stickySessionParam``` and ```stickySessionParamInCookie``` (Example: ```stickySession=true```, ```stickySessionParam=X_KEY```,```stickySessionParamInCookie=true```: CAPI will look for a cookie named X_KEY, and associate the value with a random node, subsequent calls with the same cookie value will be forwarded to the same node. If that node becames unavailable CAPI returns a 503 to the client and starts all over again.)
 * ```ingress``` (default false) - If one of your mapping is pointing to a Kubernetes ingress, ```ingress``` should be true. This is because Ingress Controller needs to evaluate the Host header to determine to which service to forward the request. Check the documentation here: https://kubernetes.io/docs/concepts/services-networking/ingress/#ingress-rules
 
-### Manager API
-CAPI Manager is available on http://localhost:8380/swagger-ui.html
-Security to this API is disabled by default, if you need to enable security you need to provide the following properties:
-```yaml
-capi:
-  manager:
-    security:
-      enabled: true
-      issuer: https://localhost:8443/auth/realms/master/protocol/openid-connect/certs
-```
-If security (oauth2) is enabled, CAPI needs the endpoint of your identity provider Public keys.
-###### Read only run time info
-* Get info about the running CAPI instance: `/manager/info`
-* Get all cached (running) API's `/manager/cached`
-* Get statistics about the routes. `/manager/stats/routes`
+### Metrics Endpoint
+CAPI Metrics are available on http://localhost:8381/metrics
+* Get statistics about the routes. `/metrics/routes`
+* Get General info. `/metrics/capi`
+* Certificate Management 
 
 ###### Manage your trust store
 Certificate management is disabled by default, to enable it you need to provide a valid path to a truststore. 
@@ -150,9 +141,9 @@ With the Client Management enabled you can:
 * Subscribe a Client to an API. (CAPI will create a `role` on Keycloak and associate it to your client).
 * Add a client to a group (CAPI will add an existing group to your client). (See `Configure Keycloak to support subscriptions)
 
-## Authorization (REST and Websocket)
+## OAUTH2 Authorization (REST and Websocket)
 There are 2 ways to work with Authorization on CAPI.
-* You have control on your oauth2 provider, and you are able to manage your token claims, so they can be interpreted by CAPI. In this case you only need to provide CAPI with the Public Keys endpoint of your oauth2 provider using the property `oidc.provider.keys`.
+* You have control on your oauth2 provider, and you are able to manage your token claims, so they can be interpreted by CAPI. In this case you only need to provide CAPI with the Public Keys endpoint of your oauth2 provider using the property `oauth2.provider.keys`.
 ```yaml
 #example
 oauth2:
@@ -160,7 +151,7 @@ oauth2:
     enabled: true
     keys: http://localhost:8080/realms/master/protocol/openid-connect/certs
 ```
-* Use Keycloak! In this case, CAPI provides manager endpoints (see `Manager API`) to create roles and groups directly on Keycloak. In this case you need the following properties:
+* Use Keycloak! In this case, CAPI provides manager endpoints (see `Manager`) to create roles and groups directly on Keycloak. In this case you need the following properties:
 ```yaml
 oauth2:
   provider:
@@ -171,25 +162,178 @@ oauth2:
     clientId: <a client with realm management permissions>
     clientSecret: <the secret used by CAPI to authenticate to Keycloak>
 ```
-### After having Authorization enabled, and if your service is protected (See `Protect your API`), CAPI will only route traffic to your service if the following conditions are met:
+### After having Authorization enabled, and if your service is protected, CAPI will only route traffic to your service if the following conditions are met:
 * The token was signed by the oauth2 provider configured: `oauth2.provider.keys`.
 * The token is not expired.
 * The token azp (authorized party) has a role with the same as your service.
-Example: 
+
+Example for a service called `test-service`, available on `/capi/test-service/dev`:
+
+```json
+{
+  "exp": 1695021769,
+  "iat": 1695021709,
+  "iss": "http://localhost:8080/realms/master",
+  "azp": "example-client",
+  "realm_access": {
+    "roles": [
+      "test-service:dev",
+      "default-roles-master",
+      "offline_access",
+      "uma_authorization"
+    ]
+  },
+  "client_id": "example-client"
+}
 ```
-TODO: get a token to put here
-```
-* If the third step fails, CAPI will check if the claim `subscription` is present and if so, if any group in the subscription list matches the subscriptions-groups of your service. `see Api.subscription-groups`
-Example:
-```
-TODO: get a token to put here
+* If the third step fails, CAPI will check if the claim `subscription` is present and if so, if any group in the subscription list matches the subscriptions-groups of your service. `see Service.serviceMeta.subscription-groups`
+  Example for a subscription group called `webapp1`:
+```json
+{
+  "exp": 1695022079,
+  "iat": 1695022019,
+  "iss": "http://localhost:8080/realms/master",
+  "azp": "example-client",
+  "subscriptions": [
+    "/webapp1"
+  ],
+  "client_id": "example-client"
+}
 ```
 
-## Protect your API (REST and Websocket)
-If you want CAPI to perform authorization before routing the traffic to your API, you will have to do the following:
+## Protect your Service (REST and Websocket)
+If you want CAPI to perform authorization before routing the traffic to your Service, you will have to do the following:
 * Enable Authorization (See `Authorization`)
-* Declare your API as protected (`Api.secured`) (This is performed during route creation) (See `How to declare your API to CAPI`)
-* When you declare your API, you can specify a list of groups (subscriptions) allowed to consume your api. (`Api.subscriptionGroup`)
+* Declare your Service as protected (`Service.serviceMeta.secured`) (This is performed during route creation) (See `Consul Integration`)
+* When you declare your Service, you can specify a list of groups (subscriptions) allowed to consume your api. (`Service.serviceMeta.subscriptionGroup`)
+
+## OPA Authorization (REST and Websocket)
+OPA is a Policy-based control for cloud native environments.
+For more information about OPA: https://www.openpolicyagent.org/
+
+CAPI uses OPA Policies.
+
+OPA policies are expressed in a high-level declarative language called Rego. Rego (pronounced “ray-go”) is purpose-built for expressing policies over complex hierarchical data structures. For detailed information on Rego see the Policy Language documentation.
+
+You can provide your own OPA instance or use our helm charts.
+CAPI only needs to be able to access OPA API's.
+
+To start CAPI with support for OPA, please make sure to provide the following environment properties:
+
+```yaml
+opa
+  enabled: true
+  endpoint: http://localhost:8181
+```
+
+Imagine the following scenario:
+###  You want CAPI to only allow traffic to your service if the following conditions are met:
+* Token signed by a spefic key provided by you.
+* Token not expired.
+* The authorized party whith a list that you control.
+
+For these requirements lets design the following REGO.
+```go
+package capi.test.dev
+
+import future.keywords.if
+import future.keywords.in
+
+default allow := false
+
+jwks := `{
+    "keys": [
+        {
+        "kty": "RSA",
+        "e": "AQAB",
+        "use": "sig",
+        "kid": "test",
+        "alg": "RS256",
+        "n": "zYF3UBCfWxTKzkK.........."
+        }
+    ]
+}`
+
+clients := ["my-azp" ]
+
+current_time = time.now_ns() / 1000000000
+
+allow if {
+	clients[_] = claims.azp
+    current_time < claims.exp
+}
+
+claims := payload if {
+	io.jwt.verify_rs256(input.token, jwks)
+	[_, payload, _] := io.jwt.decode(input.token)
+}
+```
+
+After creating this REGO you will need to publish on OPA:
+
+```bash
+curl --request PUT \
+  --url http://localhost:8181/v1/policies/capi/test/dev \
+  --data 'package capi.eu_search.dev
+
+import future.keywords.if
+import future.keywords.in
+
+default allow := false
+
+jwks := `{
+    "keys": [
+        {
+        "kty": "RSA",
+        "e": "AQAB",
+        "use": "sig",
+        "kid": "eucommission",
+        "alg": "RS256",
+        "n": "zYF3UBCfWxTKzkK-CTK--y98RFwa2uXUFXOZAr35AJ-nzfDUvEM8RaoSqFofCSjzWLvd9OWuAGv59jOgE_uLVqZjr52hs32w9YLjL6vct7lh264omqxfpblsIp-yEug8rYNYdfwyM-AR-htkurjMSTK7NmeKODlekwItv1E4u5VfSr3hf8SIq0SbqDjnaW7yrWn0N9p6B37UkPV_Cahrn5_5kPYqHm_zSaghviqQh_RjaH2B0yRSaRKzDZf4VjtlXgrd3AoWxwrkmcKDWy0_nQhlcK2zTNCuu0stInbtJ79EFUKJkAOUhuoZGHuivnXDVGssZpTzNPe54-ajWthEqw"
+        }
+    ]
+}`
+
+clients := ["pAf3YdVriLyTR5r84dvMGL0Cc8Ua" ]
+
+current_time = time.now_ns() / 1000000000
+
+allow if {
+	clients[_] = claims.azp
+    current_time < claims.exp
+}
+
+claims := payload if {
+	io.jwt.verify_rs256(input.token, jwks)
+	[_, payload, _] := io.jwt.decode(input.token)
+}'
+```
+
+You should be ready to protect your service using OPA.
+As always, you will need to register your service on Consul, so CAPI can discover.
+Here is a sample metadata for your service (Spring Boot using Consul Starter).
+
+```yaml
+spring:
+  application:
+    name: test
+  cloud:
+    consul:
+      enabled: true
+      port: 8500
+      host: http://localhost
+      discovery:
+        instance-id: ${info.app.environment}-localhost-${server.port}
+        instance-group: ${info.app.environment}
+        scheme: http
+        hostname: localhost
+        port: 8080
+        metadata:
+          group: dev
+          secured: true
+          opa-rego: capi/test/dev
+        health-check-url: http://localhost:${server.port}/actuator/health
+```
 
 ## CAPI Websocket Support.
 You can have CAPI acting as a Websocket Gateway.
