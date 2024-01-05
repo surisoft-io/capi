@@ -120,7 +120,7 @@ sticky:
 oauth2:
   cookieName:
   provider:
-    enabled: false
+    enabled: true
     keys: http://localhost:8080/realms/master/protocol/openid-connect/certs
     host: http://localhost:8080
     realm: /realms/apigw

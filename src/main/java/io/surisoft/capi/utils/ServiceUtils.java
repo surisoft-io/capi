@@ -5,6 +5,7 @@ import io.surisoft.capi.builder.RestDefinitionProcessor;
 import io.surisoft.capi.cache.StickySessionCacheManager;
 import io.surisoft.capi.processor.MetricsProcessor;
 import io.surisoft.capi.schema.*;
+import io.surisoft.capi.service.OpaService;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.parser.OpenAPIV3Parser;
 import org.apache.camel.CamelContext;
@@ -47,6 +48,9 @@ public class ServiceUtils {
 
     @Value("${capi.reverse.proxy.host}")
     private String reverseProxyHost;
+
+    @Autowired(required = false)
+    private OpaService opaService;
 
     public String getServiceId(Service service) {
         return service.getName() + ":" + service.getServiceMeta().getGroup();
@@ -108,7 +112,11 @@ public class ServiceUtils {
                     existingService.setRoundRobinEnabled(incomingService.getMappingList().size() != 1 && !incomingService.getServiceMeta().isTenantAware());
                     existingService.setFailOverEnabled(incomingService.getMappingList().size() != 1 && !incomingService.getServiceMeta().isTenantAware());
 
-                    camelContext.addRoutes(new DirectRouteProcessor(camelContext, incomingService, routeUtils, metricsProcessor, routeId, stickySessionCacheManager, capiContext, reverseProxyHost));
+                    DirectRouteProcessor directRouteProcessor = new DirectRouteProcessor(camelContext, incomingService, routeUtils, metricsProcessor, routeId, stickySessionCacheManager, capiContext, reverseProxyHost);
+                    directRouteProcessor.setHttpUtils(httpUtils);
+                    directRouteProcessor.setOpaService(opaService);
+                    directRouteProcessor.setServiceCache(serviceCache);
+                    camelContext.addRoutes(directRouteProcessor);
                     camelContext.addRoutes(new RestDefinitionProcessor(camelContext, incomingService, routeUtils, routeId));
 
                     existingService.setMappingList(incomingService.getMappingList());

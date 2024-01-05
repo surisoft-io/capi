@@ -7,6 +7,8 @@ import io.surisoft.capi.processor.MetricsProcessor;
 import io.surisoft.capi.schema.Service;
 import io.surisoft.capi.schema.WebsocketClient;
 import io.surisoft.capi.service.ConsulNodeDiscovery;
+import io.surisoft.capi.service.OpaService;
+import io.surisoft.capi.utils.HttpUtils;
 import io.surisoft.capi.utils.RouteUtils;
 import io.surisoft.capi.utils.ServiceUtils;
 import org.apache.camel.CamelContext;
@@ -81,6 +83,12 @@ class TestConsulNodeDiscovery {
     @Autowired
     MetricsProcessor metricsProcessor;
 
+    @Autowired
+    HttpUtils httpUtils;
+
+    @Autowired(required = false)
+    OpaService opaService;
+
     @Autowired(required = false)
     Map<String, WebsocketClient> websocketClientMap;
 
@@ -100,6 +108,8 @@ class TestConsulNodeDiscovery {
         Assertions.assertNotNull(serviceCache);
 
         ConsulNodeDiscovery consulNodeDiscovery = new ConsulNodeDiscovery(camelContext, serviceUtils, routeUtils, metricsProcessor, serviceCache, websocketClientMap);
+        consulNodeDiscovery.setOpaService(opaService);
+        consulNodeDiscovery.setHttpUtils(httpUtils);
         consulNodeDiscovery.setStickySessionCacheManager(stickySessionCacheManager);
         consulNodeDiscovery.setConsulHostList(List.of("http://localhost:" + wireMockServer.port()));
         consulNodeDiscovery.setCapiContext("/capi/test");

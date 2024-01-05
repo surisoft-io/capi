@@ -6,11 +6,14 @@ import io.surisoft.capi.processor.StickyLoadBalancer;
 import io.surisoft.capi.processor.OpenApiProcessor;
 import io.surisoft.capi.processor.TenantAwareLoadBalancer;
 import io.surisoft.capi.schema.Service;
+import io.surisoft.capi.service.OpaService;
 import io.surisoft.capi.utils.Constants;
+import io.surisoft.capi.utils.HttpUtils;
 import io.surisoft.capi.utils.RouteUtils;
 import org.apache.camel.CamelContext;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.model.RouteDefinition;
+import org.cache2k.Cache;
 
 public class DirectRouteProcessor extends RouteBuilder {
     private final RouteUtils routeUtils;
@@ -20,6 +23,9 @@ public class DirectRouteProcessor extends RouteBuilder {
     private final String capiContext;
     private final MetricsProcessor metricsProcessor;
     private final String reverseProxyHost;
+    private OpaService opaService;
+    private HttpUtils httpUtils;
+    private Cache<String, Service> serviceCache;
 
     public DirectRouteProcessor(CamelContext camelContext, Service service, RouteUtils routeUtils, MetricsProcessor metricsProcessor, String routeId, StickySessionCacheManager stickySessionCacheManager, String capiContext, String reverseProxyHost) {
         super(camelContext);
@@ -43,7 +49,7 @@ public class DirectRouteProcessor extends RouteBuilder {
         }
 
         if(service.getServiceMeta().getOpenApiEndpoint() != null && service.getOpenAPI() != null) {
-            routeDefinition.process(new OpenApiProcessor(service.getOpenAPI()));
+            routeDefinition.process(new OpenApiProcessor(service.getOpenAPI(), httpUtils, serviceCache, opaService));
         }
 
         log.trace("Trying to build and deploy route {}", routeId);
@@ -106,5 +112,17 @@ public class DirectRouteProcessor extends RouteBuilder {
         routeUtils.registerMetric(routeId);
         //api.setRouteId(routeId);
         routeUtils.registerTracer(service);
+    }
+
+    public void setOpaService(OpaService opaService) {
+        this.opaService = opaService;
+    }
+
+    public void setHttpUtils(HttpUtils httpUtils) {
+        this.httpUtils = httpUtils;
+    }
+
+    public void setServiceCache(Cache<String, Service> serviceCache) {
+        this.serviceCache = serviceCache;
     }
 }

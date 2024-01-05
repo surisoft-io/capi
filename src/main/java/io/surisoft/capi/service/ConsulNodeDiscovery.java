@@ -7,10 +7,7 @@ import io.surisoft.capi.builder.RestDefinitionProcessor;
 import io.surisoft.capi.cache.StickySessionCacheManager;
 import io.surisoft.capi.processor.MetricsProcessor;
 import io.surisoft.capi.schema.*;
-import io.surisoft.capi.utils.Constants;
-import io.surisoft.capi.utils.RouteUtils;
-import io.surisoft.capi.utils.ServiceUtils;
-import io.surisoft.capi.utils.WebsocketUtils;
+import io.surisoft.capi.utils.*;
 import org.apache.camel.CamelContext;
 import org.apache.camel.Route;
 import org.apache.camel.util.json.JsonObject;
@@ -44,6 +41,8 @@ public class ConsulNodeDiscovery {
     private final Cache<String, Service> serviceCache;
     private final Map<String, WebsocketClient> websocketClientMap;
     private WebsocketUtils websocketUtils;
+    private OpaService opaService;
+    private HttpUtils httpUtils;
 
     public ConsulNodeDiscovery(CamelContext camelContext, ServiceUtils serviceUtils, RouteUtils routeUtils, MetricsProcessor metricsProcessor, Cache<String, Service> serviceCache, Map<String, WebsocketClient> websocketClientMap) {
         this.serviceUtils = serviceUtils;
@@ -300,7 +299,11 @@ public class ConsulNodeDiscovery {
                 Route existingRoute = camelContext.getRoute(routeId);
                 if(existingRoute == null) {
                     try {
-                        camelContext.addRoutes(new DirectRouteProcessor(camelContext, incomingService, routeUtils, metricsProcessor, routeId, stickySessionCacheManager, capiContext, reverseProxyHost));
+                        DirectRouteProcessor directRouteProcessor = new DirectRouteProcessor(camelContext, incomingService, routeUtils, metricsProcessor, routeId, stickySessionCacheManager, capiContext, reverseProxyHost);
+                        directRouteProcessor.setHttpUtils(httpUtils);
+                        directRouteProcessor.setOpaService(opaService);
+                        directRouteProcessor.setServiceCache(serviceCache);
+                        camelContext.addRoutes(directRouteProcessor);
                         camelContext.addRoutes(new RestDefinitionProcessor(camelContext, incomingService, routeUtils, routeId));
                     } catch (Exception e) {
                         log.error(e.getMessage(), e);
@@ -346,5 +349,13 @@ public class ConsulNodeDiscovery {
 
     public void setStickySessionCacheManager(StickySessionCacheManager stickySessionCacheManager) {
         this.stickySessionCacheManager = stickySessionCacheManager;
+    }
+
+    public void setOpaService(OpaService opaService) {
+        this.opaService = opaService;
+    }
+
+    public void setHttpUtils(HttpUtils httpUtils) {
+        this.httpUtils = httpUtils;
     }
 }

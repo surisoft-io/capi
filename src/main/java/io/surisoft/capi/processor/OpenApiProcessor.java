@@ -1,32 +1,49 @@
 package io.surisoft.capi.processor;
 
 import io.surisoft.capi.exception.AuthorizationException;
+import io.surisoft.capi.oidc.Oauth2Constants;
+import io.surisoft.capi.schema.Service;
+import io.surisoft.capi.service.OpaService;
 import io.surisoft.capi.utils.Constants;
+import io.surisoft.capi.utils.HttpUtils;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.Operation;
 import org.apache.camel.Exchange;
 import org.apache.camel.Processor;
+import org.cache2k.Cache;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 
 public class OpenApiProcessor implements Processor {
+    private static final Logger log = LoggerFactory.getLogger(OpenApiProcessor.class);
     private final OpenAPI openAPI;
-    public OpenApiProcessor(OpenAPI openAPI) {
+    private HttpUtils httpUtils;
+    private Cache<String, Service> serviceCache;
+    private OpaService opaService;
+
+    public OpenApiProcessor(OpenAPI openAPI, HttpUtils httpUtils, Cache<String, Service> serviceCache, OpaService opaService) {
         this.openAPI = openAPI;
+        this.httpUtils = httpUtils;
+        this.serviceCache = serviceCache;
+        this.opaService = opaService;
     }
 
     @Override
     public void process(Exchange exchange) throws Exception {
-        String callingPath = (String) exchange.getIn().getHeader("CamelHttpPath");
-        String callingMethod = (String) exchange.getIn().getHeader("CamelHttpMethod");
-        if(!validateRequest(callingPath, callingMethod)) {
-            sendException(exchange);
+        if(!validateRequest(exchange)) {
+            sendException("Call not allowed", exchange);
         }
     }
 
-    public boolean validateRequest(String requestPath, String httpMethod) {
+    public boolean validateRequest(Exchange exchange) {
+        String callingPath = (String) exchange.getIn().getHeader("CamelHttpPath");
+        String callingMethod = (String) exchange.getIn().getHeader("CamelHttpMethod");
+
         for (String path : openAPI.getPaths().keySet()) {
             // Check if the requestPath matches any of the defined paths
-            if (isPathMatch(requestPath, path)) {
-                Operation operation = switch (httpMethod.toLowerCase()) {
+            if (isPathMatch(callingPath, path)) {
+                Operation operation = switch (callingMethod.toLowerCase()) {
                     case "get" -> openAPI.getPaths().get(path).getGet();
                     case "post" -> openAPI.getPaths().get(path).getPost();
                     case "put" -> openAPI.getPaths().get(path).getPut();
@@ -38,6 +55,22 @@ public class OpenApiProcessor implements Processor {
                     // The provided HTTP method is allowed for this path
                     // You can also perform additional validation for the request here
                     // (e.g., validate path parameters, request body, and response)
+                    if(operation.getSecurity() != null) {
+                        String accessToken = httpUtils.processAuthorizationAccessToken(exchange);
+                        if(accessToken != null) {
+                            String contextPath = (String) exchange.getIn().getHeader(Oauth2Constants.CAMEL_SERVLET_CONTEXT_PATH);
+                            Service service = serviceCache.get(httpUtils.contextToRole(contextPath));
+                            if(service != null) {
+                                if(!httpUtils.isAuthorized(accessToken, contextPath, service, opaService)) {
+                                    sendException("Invalid authentication", exchange);
+                                }
+                            } else {
+                                sendException("Call not allowed", exchange);
+                            }
+                        } else {
+                            sendException("No authorization provided", exchange);
+                        }
+                    }
                     return true;
                 }
             }
@@ -86,8 +119,7 @@ public class OpenApiProcessor implements Processor {
         return pathSegment.matches("\\{.*\\}");
     }
 
-    private void sendException(Exchange exchange) {
-        String message = "Invalid service call";
+    private void sendException(String message, Exchange exchange) {
         exchange.getIn().setHeader(Constants.REASON_MESSAGE_HEADER, message);
         exchange.setException(new AuthorizationException(message));
     }

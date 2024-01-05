@@ -5,6 +5,7 @@ import io.surisoft.capi.processor.MetricsProcessor;
 import io.surisoft.capi.schema.Service;
 import io.surisoft.capi.schema.WebsocketClient;
 import io.surisoft.capi.service.ConsulNodeDiscovery;
+import io.surisoft.capi.service.OpaService;
 import io.surisoft.capi.utils.HttpUtils;
 import io.surisoft.capi.utils.RouteUtils;
 import io.surisoft.capi.utils.ServiceUtils;
@@ -52,6 +53,9 @@ public class ConsulAutoConfiguration {
     @Autowired(required = false)
     private StickySessionCacheManager stickySessionCacheManager;
 
+    @Autowired(required = false)
+    private OpaService opaService;
+
     @Bean(name = "consulNodeDiscovery")
     @ConditionalOnProperty(prefix = "capi.consul.discovery", name = "enabled", havingValue = "true")
     public ConsulNodeDiscovery consulNodeDiscovery(CamelContext camelContext,
@@ -62,6 +66,8 @@ public class ConsulAutoConfiguration {
                                                    Cache<String, Service> serviceCache) {
         camelContext.getRestConfiguration().setInlineRoutes(true);
         ConsulNodeDiscovery consulNodeDiscovery = new ConsulNodeDiscovery(camelContext, serviceUtils, routeUtils, metricsProcessor, serviceCache, websocketClientMap);
+        consulNodeDiscovery.setHttpUtils(httpUtils);
+        consulNodeDiscovery.setOpaService(opaService);
         consulNodeDiscovery.setWebsocketUtils(websocketUtils);
         consulNodeDiscovery.setCapiContext(httpUtils.getCapiContext(capiContext));
         consulNodeDiscovery.setConsulHostList(Arrays.asList(capiConsulHosts.split("\\s*,\\s*")));

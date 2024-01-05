@@ -205,12 +205,17 @@
 
 package io.surisoft.capi.utils;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.proc.BadJOSEException;
 import com.nimbusds.jose.proc.SecurityContext;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.proc.DefaultJWTProcessor;
 import io.surisoft.capi.exception.AuthorizationException;
+import io.surisoft.capi.oidc.Oauth2Constants;
+import io.surisoft.capi.schema.OpaResult;
+import io.surisoft.capi.schema.Service;
+import io.surisoft.capi.service.OpaService;
 import org.apache.camel.Exchange;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -224,7 +229,9 @@ import java.net.http.HttpHeaders;
 import java.net.http.HttpRequest;
 import java.text.ParseException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 @Component
 public class HttpUtils {
@@ -333,5 +340,68 @@ public class HttpUtils {
             return value.substring(1, value.length() - 1);
         }
         return value;
+    }
+
+    public boolean isAuthorized(String accessToken, String contextPath, Service service, OpaService opaService) {
+        try {
+            if(service.getServiceMeta().getOpaRego() != null && opaService != null) {
+                OpaResult opaResult = opaService.callOpa(service.getServiceMeta().getOpaRego(), accessToken);
+                if(!opaResult.isAllowed()) {
+                    return false;
+                }
+            } else {
+                JWTClaimsSet jwtClaimsSet = authorizeRequest(accessToken);
+                if(!isApiSubscribed(jwtClaimsSet, contextToRole(contextPath))) {
+                    if(!isTokenInGroup(jwtClaimsSet, service.getServiceMeta().getSubscriptionGroup())) {
+                        //Not subscribed
+                        return false;
+                    }
+                }
+            }
+        } catch (AuthorizationException | BadJOSEException | ParseException | JOSEException | IOException e) {
+            log.error(e.getMessage());
+            //General Exception
+            return false;
+        }
+        return true;
+    }
+
+    private boolean isApiSubscribed(JWTClaimsSet jwtClaimsSet, String role) throws ParseException, JsonProcessingException {
+        Map<String, Object> claimSetMap = jwtClaimsSet.getJSONObjectClaim(Oauth2Constants.REALMS_CLAIM);
+        if(claimSetMap != null && claimSetMap.containsKey(Oauth2Constants.ROLES_CLAIM)) {
+            List<String> roleList = (List<String>) claimSetMap.get(Oauth2Constants.ROLES_CLAIM);
+            for(String claimRole : roleList) {
+                if(claimRole.equals(role)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    private boolean isTokenInGroup(JWTClaimsSet jwtClaimsSet, String groups) throws ParseException, JsonProcessingException {
+        if(groups != null) {
+            List<String> groupList = Collections.singletonList(groups);
+            List<String> subscriptionGroupList =  jwtClaimsSet.getStringListClaim(Oauth2Constants.SUBSCRIPTIONS_CLAIM);
+            for(String subscriptionGroup : subscriptionGroupList) {
+                for(String apiGroup : groupList) {
+                    if(normalizeGroup(apiGroup).equals(normalizeGroup(subscriptionGroup))) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
+    public String contextToRole(String context) {
+        if(context.startsWith("/")) {
+            context = context.substring(1);
+        }
+        return context.replace("/", ":");
+    }
+
+    private String normalizeGroup(String group) {
+        return group.trim().replaceAll("/", "");
     }
 }
