@@ -98,10 +98,8 @@ public class DirectRouteProcessor extends RouteBuilder {
                     .routeId(routeId);
         } else {
             routeDefinition
-                    .to("metrics:timer:simple.timer?action=start")
                     .process(metricsProcessor)
                     .to(routeUtils.buildEndpoints(service))
-                    .to("metrics:timer:simple.timer?action=stop")
                     .end()
                     .removeHeader(Constants.X_FORWARDED_HOST)
                     .removeHeader(Constants.X_FORWARDED_PREFIX)
