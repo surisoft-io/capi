@@ -14,9 +14,32 @@ public class Info {
 
     @Value("${capi.version}")
     private String capiVersion;
-
+    @Value("${capi.namespace}")
+    private String capiNameSpace;
     @Value("${capi.spring.version}")
     private String capiSpringVersion;
+    @Value("${oauth2.provider.enabled}")
+    private boolean oauth2Enabled;
+    @Value("${oauth2.provider.keys}")
+    private String oauth2Keys;
+    @Value("${opa.enabled}")
+    private boolean opaEnabled;
+    @Value("${opa.endpoint}")
+    private String opaEndpoint;
+    @Value("${capi.consul.discovery.enabled}")
+    private boolean consulEnabled;
+    @Value("${capi.consul.hosts}")
+    private String consulEndpoint;
+    @Value("${capi.consul.discovery.timer.interval}")
+    private int consulTimerInterval;
+    @Value("${camel.servlet.mapping.context-path}")
+    private String routeContextPath;
+    @Value("${management.endpoints.web.base-path}")
+    private String metricsContextPath;
+    @Value("${capi.traces.enabled}")
+    private boolean tracesEnabled;
+    @Value("${capi.traces.endpoint}")
+    private String tracesEndpoint;
 
     @Autowired
     private CamelContext camelContext;
@@ -30,6 +53,18 @@ public class Info {
         capiInfo.setTotalRoutes(camelContext.getRoutesSize());
         capiInfo.setCapiVersion(capiVersion);
         capiInfo.setCapiStringVersion(capiSpringVersion);
+        capiInfo.setCapiNameSpace(capiNameSpace);
+        capiInfo.setOpaEnabled(opaEnabled);
+        capiInfo.setOpaEndpoint(opaEndpoint);
+        capiInfo.setOauth2Enabled(oauth2Enabled);
+        capiInfo.setOauth2Endpoint(oauth2Keys);
+        capiInfo.setConsulEnabled(consulEnabled);
+        capiInfo.setConsulEndpoint(consulEndpoint);
+        capiInfo.setConsulTimerInterval(consulTimerInterval);
+        capiInfo.setRoutesContextPath(routeContextPath);
+        capiInfo.setMetricsContextPath(metricsContextPath);
+        capiInfo.setTracesEnabled(tracesEnabled);
+        capiInfo.setTracesEndpoint(tracesEndpoint);
         return capiInfo;
     }
 }

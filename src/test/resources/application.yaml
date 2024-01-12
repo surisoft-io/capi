@@ -6,6 +6,7 @@ server:
     key-store:
     key-store-password:
 capi:
+  namespace:
   #### Kafka is still experimental ####
   kafka:
     enabled: false
@@ -100,3 +101,7 @@ oauth2:
     realm: /realms/
     clientId:
     clientSecret:
+
+opa:
+  enabled: false
+  endpoint: http://localhost:8181

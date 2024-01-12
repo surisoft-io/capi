@@ -6,7 +6,7 @@ server:
     key-store:
     key-store-password:
 capi:
-  instance-name:
+  namespace:
   #### Kafka is still experimental ####
   kafka:
     enabled: false
@@ -51,7 +51,7 @@ capi:
   consul:
     hosts: http://localhost:8500
     discovery:
-      enabled: false
+      enabled: true
       timer:
         interval: 20000
   #### Certificate Management (Editable property) ####
@@ -128,5 +128,5 @@ oauth2:
     clientSecret:
 
 opa:
-  enabled: false
+  enabled: true
   endpoint: http://localhost:8181

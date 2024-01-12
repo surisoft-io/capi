@@ -17,6 +17,18 @@ public class CapiInfo {
     private Integer stoppedRouteCount;
     private Integer removedRouteCount;
     private Integer failedExchangeCount;
+    private String capiNameSpace;
+    private boolean oauth2Enabled;
+    private String oauth2Endpoint;
+    private boolean opaEnabled;
+    private String opaEndpoint;
+    private boolean consulEnabled;
+    private String consulEndpoint;
+    private int consulTimerInterval;
+    private String routesContextPath;
+    private String metricsContextPath;
+    private boolean tracesEnabled;
+    private String tracesEndpoint;
 
     public String getCapiVersion() {
         return capiVersion;
@@ -116,5 +128,101 @@ public class CapiInfo {
 
     public void setFailedExchangeCount(Integer failedExchangeCount) {
         this.failedExchangeCount = failedExchangeCount;
+    }
+
+    public String getCapiNameSpace() {
+        return capiNameSpace;
+    }
+
+    public void setCapiNameSpace(String capiNameSpace) {
+        this.capiNameSpace = capiNameSpace;
+    }
+
+    public boolean isOauth2Enabled() {
+        return oauth2Enabled;
+    }
+
+    public void setOauth2Enabled(boolean oauth2Enabled) {
+        this.oauth2Enabled = oauth2Enabled;
+    }
+
+    public String getOauth2Endpoint() {
+        return oauth2Endpoint;
+    }
+
+    public void setOauth2Endpoint(String oauth2Endpoint) {
+        this.oauth2Endpoint = oauth2Endpoint;
+    }
+
+    public boolean isOpaEnabled() {
+        return opaEnabled;
+    }
+
+    public void setOpaEnabled(boolean opaEnabled) {
+        this.opaEnabled = opaEnabled;
+    }
+
+    public String getOpaEndpoint() {
+        return opaEndpoint;
+    }
+
+    public void setOpaEndpoint(String opaEndpoint) {
+        this.opaEndpoint = opaEndpoint;
+    }
+
+    public boolean isConsulEnabled() {
+        return consulEnabled;
+    }
+
+    public void setConsulEnabled(boolean consulEnabled) {
+        this.consulEnabled = consulEnabled;
+    }
+
+    public String getConsulEndpoint() {
+        return consulEndpoint;
+    }
+
+    public void setConsulEndpoint(String consulEndpoint) {
+        this.consulEndpoint = consulEndpoint;
+    }
+
+    public int getConsulTimerInterval() {
+        return consulTimerInterval;
+    }
+
+    public void setConsulTimerInterval(int consulTimerInterval) {
+        this.consulTimerInterval = consulTimerInterval;
+    }
+
+    public String getRoutesContextPath() {
+        return routesContextPath;
+    }
+
+    public void setRoutesContextPath(String routesContextPath) {
+        this.routesContextPath = routesContextPath;
+    }
+
+    public String getMetricsContextPath() {
+        return metricsContextPath;
+    }
+
+    public void setMetricsContextPath(String metricsContextPath) {
+        this.metricsContextPath = metricsContextPath;
+    }
+
+    public boolean isTracesEnabled() {
+        return tracesEnabled;
+    }
+
+    public void setTracesEnabled(boolean tracesEnabled) {
+        this.tracesEnabled = tracesEnabled;
+    }
+
+    public String getTracesEndpoint() {
+        return tracesEndpoint;
+    }
+
+    public void setTracesEndpoint(String tracesEndpoint) {
+        this.tracesEndpoint = tracesEndpoint;
     }
 }

@@ -44,32 +44,28 @@ public class Routes {
     private MetricsProcessor metricsProcessor;
 
     @ReadOperation
-    public ResponseEntity<Iterable<Service>> getCachedServices() {
-        List<Service> serviceList = new ArrayList<>();
-        for (CacheEntry<String, Service> stringServiceCacheEntry : serviceCache.entries()) {
-            serviceList.add(stringServiceCacheEntry.getValue());
+    public Service getCachedService(@Selector String serviceName) {
+        if(serviceCache.containsKey(serviceName)) {
+            return serviceCache.get(serviceName);
         }
-        return new ResponseEntity<>(serviceList, HttpStatus.OK);
+        return null;
     }
 
     @ReadOperation
-    public List<RouteDetailsEndpointInfo> getAllRoutesInfo(@Selector String statName) {
-        if(statName.equals("stat")) {
-            List<RouteDetailsEndpointInfo> detailInfoList = new ArrayList<>();
-            List<RouteEndpointInfo> routeEndpointInfoList = camelContext.getRoutes().stream()
-                    .map(RouteEndpointInfo::new)
-                    .toList();
-            for(RouteEndpointInfo routeEndpointInfo : routeEndpointInfoList) {
-                if(routeEndpointInfo.getId().startsWith("rd_"))  {
-                    detailInfoList.add(new RouteDetailsEndpointInfo(camelContext, camelContext.getRoute(routeEndpointInfo.getId())));
-                }
+    public List<RouteDetailsEndpointInfo> getAllRoutesInfo() {
+        List<RouteDetailsEndpointInfo> detailInfoList = new ArrayList<>();
+        List<RouteEndpointInfo> routeEndpointInfoList = camelContext.getRoutes().stream()
+                .map(RouteEndpointInfo::new)
+                .toList();
+        for(RouteEndpointInfo routeEndpointInfo : routeEndpointInfoList) {
+            if(routeEndpointInfo.getId().startsWith("rd_"))  {
+                detailInfoList.add(new RouteDetailsEndpointInfo(camelContext, camelContext.getRoute(routeEndpointInfo.getId())));
             }
-            for(RouteDetailsEndpointInfo detailsEndpointInfo : detailInfoList) {
-                detailsEndpointInfo.setId(detailsEndpointInfo.getId().replaceAll("rd_", ""));
-            }
-            return detailInfoList;
         }
-        return null;
+        for(RouteDetailsEndpointInfo detailsEndpointInfo : detailInfoList) {
+            detailsEndpointInfo.setId(detailsEndpointInfo.getId().replaceAll("rd_", ""));
+        }
+        return detailInfoList;
     }
 
    /*@Operation(summary = "Get all cached Sticky Sessions")
