@@ -18,6 +18,7 @@ public class Constants {
     public static final String ROUTE_ID_HEADER = "routeID";
     public static final String ORIGIN_HEADER = "Origin";
     public static final String AUTHORIZATION_HEADER = "Authorization";
+    public static final String AUTHORIZATION_REQUEST_PARAMETER = "access_token";
     public static final String COOKIE_HEADER = "Cookie";
     public static final String SET_COOKIE_HEADER = "Set-Cookie";
     public static final String AUTHORIZED_PARTY = "azp";

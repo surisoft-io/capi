@@ -282,6 +282,9 @@ public class HttpUtils {
     public String processAuthorizationAccessToken(Exchange exchange) {
         String authorization = exchange.getIn().getHeader(Constants.AUTHORIZATION_HEADER, String.class);
         if(authorization == null) {
+            if(exchange.getIn().getHeader(Constants.AUTHORIZATION_REQUEST_PARAMETER, String.class) != null) {
+                return exchange.getIn().getHeader(Constants.AUTHORIZATION_REQUEST_PARAMETER, String.class);
+            }
             List<HttpCookie> cookies = getCookiesFromExchange(exchange);
             String authorizationName = exchange.getIn().getHeader(authorizationCookieName, String.class);
             if(authorizationName != null) {
