@@ -6,7 +6,7 @@ server:
     key-store:
     key-store-password:
 capi:
-  namespace:
+  namespace: local
   #### Kafka is still experimental ####
   kafka:
     enabled: false

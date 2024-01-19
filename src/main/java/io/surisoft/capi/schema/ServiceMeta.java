@@ -1,10 +1,9 @@
 package io.surisoft.capi.schema;
 
+import com.fasterxml.jackson.annotation.JsonGetter;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
-
-import java.util.List;
-import java.util.Set;
+import com.fasterxml.jackson.annotation.JsonSetter;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class ServiceMeta {
@@ -45,7 +44,6 @@ public class ServiceMeta {
     @JsonProperty("type")
     private String type;
 
-    @JsonProperty("subscription-group")
     private String subscriptionGroup;
 
     @JsonProperty("allowed-origins")
@@ -54,11 +52,11 @@ public class ServiceMeta {
     @JsonProperty("keep-group")
     private boolean keepGroup;
 
-    @JsonProperty("open-api")
     private String openApiEndpoint;
 
-    @JsonProperty("opa-rego")
     private String opaRego;
+
+    private String namespace;
 
     public boolean isSecured() {
         return secured;
@@ -156,10 +154,12 @@ public class ServiceMeta {
         this.type = type;
     }
 
+    @JsonGetter("subscriptionGroup")
     public String getSubscriptionGroup() {
         return subscriptionGroup;
     }
 
+    @JsonSetter("subscription-group")
     public void setSubscriptionGroup(String subscriptionGroup) {
         this.subscriptionGroup = subscriptionGroup;
     }
@@ -180,19 +180,31 @@ public class ServiceMeta {
         this.allowedOrigins = allowedOrigins;
     }
 
+    @JsonGetter("openApi")
     public String getOpenApiEndpoint() {
         return openApiEndpoint;
     }
 
+    @JsonSetter("open-api")
     public void setOpenApiEndpoint(String openApiEndpoint) {
         this.openApiEndpoint = openApiEndpoint;
     }
 
+    @JsonGetter("opaRego")
     public String getOpaRego() {
         return opaRego;
     }
 
+    @JsonSetter("opa-rego")
     public void setOpaRego(String opaRego) {
         this.opaRego = opaRego;
+    }
+
+    public String getNamespace() {
+        return namespace;
+    }
+
+    public void setNamespace(String namespace) {
+        this.namespace = namespace;
     }
 }

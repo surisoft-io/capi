@@ -43,6 +43,7 @@ public class ConsulNodeDiscovery {
     private WebsocketUtils websocketUtils;
     private OpaService opaService;
     private HttpUtils httpUtils;
+    private String capiNamespace;
 
     public ConsulNodeDiscovery(CamelContext camelContext, ServiceUtils serviceUtils, RouteUtils routeUtils, MetricsProcessor metricsProcessor, Cache<String, Service> serviceCache, Map<String, WebsocketClient> websocketClientMap) {
         this.serviceUtils = serviceUtils;
@@ -125,11 +126,24 @@ public class ConsulNodeDiscovery {
 
     private List<ConsulObject> getServiceByName(String consulHost, String serviceName) {
         log.trace("Getting service name: {} at consul host: {}", serviceName, consulHost);
+        List<ConsulObject> servicesToDeploy = new ArrayList<>();
         try {
             HttpResponse<String> response = client.send(buildServiceNameHttpRequest(consulHost, serviceName), HttpResponse.BodyHandlers.ofString());
             ObjectMapper objectMapper = new ObjectMapper();
             TypeReference<List<ConsulObject>> typeRef = new TypeReference<>() {};
-            return objectMapper.readValue(response.body(), typeRef);
+            List<ConsulObject> temporaryList = objectMapper.readValue(response.body(), typeRef);
+            temporaryList.forEach(o -> {
+                if(capiNamespace == null) {
+                    servicesToDeploy.add(o);
+                } else {
+                    if(o.getServiceMeta().getNamespace() == null) {
+                        servicesToDeploy.add(o);
+                    } else if(o.getServiceMeta().getNamespace().equals(capiNamespace)) {
+                        servicesToDeploy.add(o);
+                    }
+                }
+            });
+            return servicesToDeploy;
         } catch (IOException e) {
             log.error("Error connecting to Consul, will try again...");
         } catch (InterruptedException e) {
@@ -357,5 +371,13 @@ public class ConsulNodeDiscovery {
 
     public void setHttpUtils(HttpUtils httpUtils) {
         this.httpUtils = httpUtils;
+    }
+
+    public String getCapiNamespace() {
+        return capiNamespace;
+    }
+
+    public void setCapiNamespace(String capiNamespace) {
+        this.capiNamespace = capiNamespace;
     }
 }

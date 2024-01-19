@@ -56,6 +56,9 @@ public class ConsulAutoConfiguration {
     @Autowired(required = false)
     private OpaService opaService;
 
+    @Value("${capi.namespace}")
+    private String capiNamespace;
+
     @Bean(name = "consulNodeDiscovery")
     @ConditionalOnProperty(prefix = "capi.consul.discovery", name = "enabled", havingValue = "true")
     public ConsulNodeDiscovery consulNodeDiscovery(CamelContext camelContext,
@@ -71,6 +74,9 @@ public class ConsulAutoConfiguration {
         consulNodeDiscovery.setWebsocketUtils(websocketUtils);
         consulNodeDiscovery.setCapiContext(httpUtils.getCapiContext(capiContext));
         consulNodeDiscovery.setConsulHostList(Arrays.asList(capiConsulHosts.split("\\s*,\\s*")));
+        if(capiNamespace != null && !capiNamespace.isEmpty()) {
+            consulNodeDiscovery.setCapiNamespace(capiNamespace);
+        }
 
         if(reverseProxyEnabled) {
             consulNodeDiscovery.setReverseProxyHost(reverseProxyHost);
