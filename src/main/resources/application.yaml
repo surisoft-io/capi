@@ -49,6 +49,7 @@ capi:
   #### Consul Integration (Editable Property) ####
   #### If you want CAPI to search consul for available APIs to be deployed, enable this feature. ####
   consul:
+    token: c23f9832-055d-d24a-e7a0-f1ce8fdf28b8
     hosts: http://localhost:8500
     discovery:
       enabled: true

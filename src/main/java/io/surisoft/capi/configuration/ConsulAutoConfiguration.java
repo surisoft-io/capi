@@ -35,6 +35,9 @@ public class ConsulAutoConfiguration {
     @Value("${capi.consul.hosts}")
     private String capiConsulHosts;
 
+    @Value("${capi.consul.token}")
+    private String consulToken;
+
     @Value("${camel.servlet.mapping.context-path}")
     private String capiContext;
 
@@ -76,6 +79,10 @@ public class ConsulAutoConfiguration {
         consulNodeDiscovery.setConsulHostList(Arrays.asList(capiConsulHosts.split("\\s*,\\s*")));
         if(capiNamespace != null && !capiNamespace.isEmpty()) {
             consulNodeDiscovery.setCapiNamespace(capiNamespace);
+        }
+
+        if(consulToken != null && !consulToken.isEmpty()) {
+            consulNodeDiscovery.setConsulToken(consulToken);
         }
 
         if(reverseProxyEnabled) {

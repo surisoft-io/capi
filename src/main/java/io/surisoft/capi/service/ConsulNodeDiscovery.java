@@ -44,6 +44,7 @@ public class ConsulNodeDiscovery {
     private OpaService opaService;
     private HttpUtils httpUtils;
     private String capiNamespace;
+    private String consulToken;
 
     public ConsulNodeDiscovery(CamelContext camelContext, ServiceUtils serviceUtils, RouteUtils routeUtils, MetricsProcessor metricsProcessor, Cache<String, Service> serviceCache, Map<String, WebsocketClient> websocketClientMap) {
         this.serviceUtils = serviceUtils;
@@ -336,14 +337,22 @@ public class ConsulNodeDiscovery {
     }
 
     private HttpRequest buildServicesHttpRequest(String consulHost) {
-        return HttpRequest.newBuilder()
+        HttpRequest.Builder builder = HttpRequest.newBuilder();
+        if(consulToken != null) {
+            builder.header(Constants.AUTHORIZATION_HEADER, Constants.BEARER + consulToken);
+        }
+        return builder
                 .uri(URI.create(consulHost + GET_ALL_SERVICES))
                 .timeout(Duration.ofMinutes(2))
                 .build();
     }
 
     private HttpRequest buildServiceNameHttpRequest(String consulHost, String serviceName) {
-        return HttpRequest.newBuilder()
+        HttpRequest.Builder builder = HttpRequest.newBuilder();
+        if(consulToken != null) {
+            builder.header(Constants.AUTHORIZATION_HEADER, Constants.BEARER + consulToken);
+        }
+        return builder
                 .uri(URI.create(consulHost + GET_SERVICE_BY_NAME + serviceName))
                 .timeout(Duration.ofMinutes(2))
                 .build();
@@ -373,11 +382,11 @@ public class ConsulNodeDiscovery {
         this.httpUtils = httpUtils;
     }
 
-    public String getCapiNamespace() {
-        return capiNamespace;
-    }
-
     public void setCapiNamespace(String capiNamespace) {
         this.capiNamespace = capiNamespace;
+    }
+
+    public void setConsulToken(String consulToken) {
+        this.consulToken = consulToken;
     }
 }
