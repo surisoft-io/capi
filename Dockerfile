@@ -1,6 +1,6 @@
 FROM openjdk:21-jdk
 
-ARG CAPI_VERSION = 4.4.04
+ARG CAPI_VERSION=4.4.04
 
 RUN mkdir /capi
 RUN mkdir /capi/logs
