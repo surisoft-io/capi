@@ -13,14 +13,13 @@ import org.apache.camel.Processor;
 import org.cache2k.Cache;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 
 public class OpenApiProcessor implements Processor {
     private static final Logger log = LoggerFactory.getLogger(OpenApiProcessor.class);
     private final OpenAPI openAPI;
-    private HttpUtils httpUtils;
-    private Cache<String, Service> serviceCache;
-    private OpaService opaService;
+    private final HttpUtils httpUtils;
+    private final Cache<String, Service> serviceCache;
+    private final OpaService opaService;
 
     public OpenApiProcessor(OpenAPI openAPI, HttpUtils httpUtils, Cache<String, Service> serviceCache, OpaService opaService) {
         this.openAPI = openAPI;

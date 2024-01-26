@@ -47,7 +47,7 @@ public class CapiTracerServerRequestAdapter {
                     span.tag("capi.requester.token.issuer", iss);
                 }
             }
-        } catch (AuthorizationException | BadJOSEException | ParseException | JOSEException | IOException e) {
+        } catch (AuthorizationException | ParseException e) {
             LOG.trace("No Authorization header detected, or access token invalid");
         }
 

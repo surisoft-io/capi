@@ -14,16 +14,15 @@ import org.slf4j.LoggerFactory;
 import java.text.ParseException;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 public class WebsocketAuthorization {
-
-    public WebsocketAuthorization(DefaultJWTProcessor defaultJWTProcessor) {
-        this.jwtProcessor = defaultJWTProcessor;
-    }
-
     private static final Logger log = LoggerFactory.getLogger(WebsocketAuthorization.class);
+    private final List<DefaultJWTProcessor<SecurityContext>> jwtProcessorList;
 
-    private final DefaultJWTProcessor<SecurityContext> jwtProcessor;
+    public WebsocketAuthorization(List<DefaultJWTProcessor<SecurityContext>> jwtProcessorList) {
+        this.jwtProcessorList = jwtProcessorList;
+    }
 
     public boolean isAuthorized(WebsocketClient websocketClient, HttpServerExchange httpServerExchange) {
         if(!websocketClient.requiresSubscription()) {
@@ -50,8 +49,8 @@ public class WebsocketAuthorization {
             removeAuthorizationFromQuery(httpServerExchange);
         }
         try {
-            JWTClaimsSet jwtClaimsSet = jwtProcessor.process(bearerToken, null);
-            Map<String, Object> claimSetMap = jwtClaimsSet.getJSONObjectClaim(Oauth2Constants.REALMS_CLAIM);
+            JWTClaimsSet jwtClaimsSet = tryToValidateToken(bearerToken);
+            Map<String, Object> claimSetMap = Objects.requireNonNull(jwtClaimsSet).getJSONObjectClaim(Oauth2Constants.REALMS_CLAIM);
             if(claimSetMap != null && claimSetMap.containsKey(Oauth2Constants.ROLES_CLAIM)) {
                 List<String> roleList = (List<String>) claimSetMap.get(Oauth2Constants.ROLES_CLAIM);
                 for(String claimRole : roleList) {
@@ -60,7 +59,7 @@ public class WebsocketAuthorization {
                     }
                 }
             }
-        } catch (BadJOSEException | JOSEException | ParseException e) {
+        } catch (ParseException e) {
             log.warn(e.getMessage(), e);
         }
         return false;
@@ -86,5 +85,14 @@ public class WebsocketAuthorization {
         });
         httpServerExchange.getQueryParameters().clear();
         httpServerExchange.setQueryString(queryString.toString());
+    }
+
+    private JWTClaimsSet tryToValidateToken(String bearerToken) {
+        for(DefaultJWTProcessor<SecurityContext> jwtProcessor : jwtProcessorList) {
+            try {
+                return jwtProcessor.process(bearerToken, null);
+            } catch (ParseException | BadJOSEException | JOSEException ignored) {}
+        }
+        return null;
     }
 }

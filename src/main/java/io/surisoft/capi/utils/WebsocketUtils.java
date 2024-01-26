@@ -1,5 +1,6 @@
 package io.surisoft.capi.utils;
 
+import com.nimbusds.jose.proc.SecurityContext;
 import com.nimbusds.jwt.proc.DefaultJWTProcessor;
 import io.surisoft.capi.exception.CapiWebsocketException;
 import io.surisoft.capi.oidc.WebsocketAuthorization;
@@ -11,14 +12,20 @@ import io.undertow.server.handlers.ResponseCodeHandler;
 import io.undertow.server.handlers.proxy.LoadBalancingProxyClient;
 import io.undertow.server.handlers.proxy.ProxyHandler;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.net.URI;
+import java.util.List;
 
 @Component
 public class WebsocketUtils {
+
+    @Value("${camel.servlet.mapping.context-path}")
+    private String capiContextPath;
+
     @Autowired(required = false)
-    private DefaultJWTProcessor defaultJWTProcessor;
+    private List<DefaultJWTProcessor<SecurityContext>> defaultJWTProcessor;
 
     public HttpHandler createClientHttpHandler(WebsocketClient webSocketClient, Service service) {
         LoadBalancingProxyClient loadBalancingProxyClient = new LoadBalancingProxyClient();
@@ -45,6 +52,21 @@ public class WebsocketUtils {
     public String normalizePathForForwarding(WebsocketClient websocketClient, String path) {
         String pathWithoutCapiContext = path.replaceAll(Constants.CAPI_CONTEXT, "");
         return pathWithoutCapiContext.replaceAll(websocketClient.getApiId(), "");
+    }
+
+    public String normalizeBaseContextName() {
+        return capiContextPath.replaceAll("/", "").replaceAll("\\*", "");
+    }
+
+    public String getPathDefinition(String originalRequest) {
+        String[] pathParts = originalRequest.split("/");
+        if(pathParts.length < 4) {
+            return null;
+        }
+        if(!pathParts[1].equals(normalizeBaseContextName())) {
+            return null;
+        }
+        return Constants.CAPI_CONTEXT + "/" + pathParts[2] + "/" + pathParts[3] + "/";
     }
 
     public WebsocketClient createWebsocketClient(Service service) {

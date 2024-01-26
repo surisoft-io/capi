@@ -32,7 +32,7 @@ capi:
     redirect: true
   #### Websocket Gateway (Editable Property) ####
   websocket:
-    enabled: false
+    enabled: true
     server:
       host: localhost
       port: 8382
@@ -49,7 +49,7 @@ capi:
   #### Consul Integration (Editable Property) ####
   #### If you want CAPI to search consul for available APIs to be deployed, enable this feature. ####
   consul:
-    token: c23f9832-055d-d24a-e7a0-f1ce8fdf28b8
+    token:
     hosts: http://localhost:8500
     discovery:
       enabled: true
@@ -75,6 +75,10 @@ capi:
       endpoint: localhost:8380/capi-error
 #### DO NOT CHANGE THESE SPRING AUTOCONFIGURE EXCLUSIONS #####
 spring:
+  servlet:
+    multipart:
+      max-file-size: 200MB
+      max-request-size: 200MB
   #### We want persistence to be optional, so we disable autoconfiguration for JPA ####
   autoconfigure:
     exclude: org.springframework.boot.autoconfigure.security.servlet.UserDetailsServiceAutoConfiguration
@@ -122,12 +126,14 @@ oauth2:
   cookieName:
   provider:
     enabled: true
-    keys: http://localhost:8080/realms/master/protocol/openid-connect/certs
+    keys:
+      - http://localhost:8080/realms/master/protocol/openid-connect/certs
+      - http://localhost:8080/realms/apigw/protocol/openid-connect/certs
     host: http://localhost:8080
     realm: /realms/apigw
     clientId:
     clientSecret:
 
 opa:
-  enabled: true
+  enabled: false
   endpoint: http://localhost:8181

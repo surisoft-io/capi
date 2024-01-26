@@ -8,6 +8,9 @@ import org.springframework.boot.actuate.endpoint.annotation.Endpoint;
 import org.springframework.boot.actuate.endpoint.annotation.ReadOperation;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
 @Component
 @Endpoint(id = "capi")
 public class Info {
@@ -20,8 +23,8 @@ public class Info {
     private String capiSpringVersion;
     @Value("${oauth2.provider.enabled}")
     private boolean oauth2Enabled;
-    @Value("${oauth2.provider.keys}")
-    private String oauth2Keys;
+    @Autowired
+    private List<String> oauth2Keys;
     @Value("${opa.enabled}")
     private boolean opaEnabled;
     @Value("${opa.endpoint}")
@@ -57,7 +60,7 @@ public class Info {
         capiInfo.setOpaEnabled(opaEnabled);
         capiInfo.setOpaEndpoint(opaEndpoint);
         capiInfo.setOauth2Enabled(oauth2Enabled);
-        capiInfo.setOauth2Endpoint(oauth2Keys);
+        capiInfo.setOauth2Endpoint(oauth2Keys.stream().map(String::valueOf).collect(Collectors.joining(",")));
         capiInfo.setConsulEnabled(consulEnabled);
         capiInfo.setConsulEndpoint(consulEndpoint);
         capiInfo.setConsulTimerInterval(consulTimerInterval);

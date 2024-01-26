@@ -97,8 +97,10 @@ oauth2:
   cookieName:
   provider:
     enabled: false
+    keys:
+      - http://localhost:8080/realms/master/protocol/openid-connect/certs
+      - http://localhost:8080/realms/master/protocol/openid-connect/certs
     host: http://localhost:8080
-    keys: http://localhost:8080/realms/master/protocol/openid-connect/certs
     realm: /realms/
     clientId:
     clientSecret:
