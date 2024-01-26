@@ -32,7 +32,7 @@ capi:
     redirect: true
   #### Websocket Gateway (Editable Property) ####
   websocket:
-    enabled: true
+    enabled: false
     server:
       host: localhost
       port: 8382
