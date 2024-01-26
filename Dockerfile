@@ -1,9 +1,11 @@
 FROM openjdk:21-jdk
 
+ARG CAPI_VERSION = os.getenv('INPUT_RELEASE_VERSION')
+
 RUN mkdir /capi
 RUN mkdir /capi/logs
 
-ARG JAR_FILE=target/capi-${{ env.RELEASE_VERSION }}.jar
+ARG JAR_FILE=target/capi-${CAPI_VERSION}.jar
 COPY ${JAR_FILE} /capi/app.jar
 
 ENTRYPOINT  exec java -XX:InitialHeapSize=4g \
