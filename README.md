@@ -1,6 +1,6 @@
-<img src="https://capi.surisoft.io/capi_horizontal.svg" alt="CAPI" width="20%"/>
+<img src="https://capi.surisoft.io/capi-4.4.04.png" alt="CAPI" width="20%"/>
 
-[![CAPI-LB](https://github.com/rodrigoserracoelho/capi-lb/actions/workflows/main.yml/badge.svg)](https://github.com/rodrigoserracoelho/capi-lb/actions/workflows/main.yml)
+[![CAPI-LB](https://github.com/surisoft-io/capi-lb/actions/workflows/main.yml/badge.svg)](https://github.com/rodrigoserracoelho/capi-lb/actions/workflows/main.yml)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 ![Docker Image Version (latest by date)](https://img.shields.io/docker/v/surisoft/capi)
 
