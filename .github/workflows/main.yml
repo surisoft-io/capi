@@ -1,4 +1,4 @@
-name: CAPI-LB
+name: capi
 on:
   push:
     branches: [ master ]
@@ -20,13 +20,10 @@ jobs:
           echo "RELEASE_VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)" >> $GITHUB_ENV
     - name: Build with Maven
       run: mvn package -DskipTests --file pom.xml
-    - name: Log in to the Container registry
-      uses: docker/login-action@65b78e6e13532edd9afa3aa52ac7964289d1a9c1
-      with:
-        registry: ghcr.io
-        username: ${{ github.actor }}
-        password: ${{ secrets.GITHUB_TOKEN }}
-    - name: 'Build Inventory Image'
+    - name: Docker login
       run: |
-         docker build . --tag ghcr.io/surisoft-io/capi:${{ env.RELEASE_VERSION }}
-         docker push ghcr.io/surisoft-io/capi:${{ env.RELEASE_VERSION }}
+          docker login -u surisoft -p ${{ secrets.DOCKER_HUB_PWD }}
+    - name: Build Docker image
+      run: docker build . --build-arg "CAPI_VERSION=${{ env.RELEASE_VERSION }}" --file Dockerfile --tag surisoft/capi:${{ env.RELEASE_VERSION }}
+    - name: Docker Push
+      run: docker push surisoft/capi:${{ env.RELEASE_VERSION }}
