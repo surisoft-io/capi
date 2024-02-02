@@ -21,7 +21,7 @@
     <spring-cloud-sleuth-version>3.1.9</spring-cloud-sleuth-version>
     <nimbus-jose-jwt-version>9.36</nimbus-jose-jwt-version>
     <org.springdoc-verion>2.2.0</org.springdoc-verion>
-    <io.micrometer-version>1.11.5</io.micrometer-version>
+    <io.micrometer-version>1.12.2</io.micrometer-version>
     <cache2k-version>2.6.1.Final</cache2k-version>
 
     <wiremock.version>3.0.1</wiremock.version>
