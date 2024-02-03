@@ -35,7 +35,7 @@
     <sonar.jacoco.reportPath>${project.basedir}/../target/jacoco.exec</sonar.jacoco.reportPath>
     <jackson-dataformat-xml.version>2.15.2</jackson-dataformat-xml.version>
     <spring.kafka.version>3.0.11</spring.kafka.version>
-    <grpc.api.version>1.58.0</grpc.api.version>
+    <grpc.api.version>1.61.0</grpc.api.version>
     <com.google.api.grpc.version>2.17.0</com.google.api.grpc.version>
     <io.swagger.parser.v3.version>2.1.16</io.swagger.parser.v3.version>
   </properties>
