@@ -21,8 +21,6 @@ public class WebsocketGateway {
     private static final Logger log = LoggerFactory.getLogger(WebsocketGateway.class);
     @Value("${capi.websocket.server.port}")
     private int port;
-    @Value("${capi.websocket.server.host}")
-    private String host;
     @Autowired
     private Map<String, WebsocketClient> webSocketClients;
     private WebsocketAuthorization websocketAuthorization;
@@ -38,7 +36,7 @@ public class WebsocketGateway {
         }
 
         Undertow undertow = Undertow.builder()
-                .addHttpListener(port, host)
+                .addHttpListener(port, Constants.WEBSOCKET_LISTENING_ADDRESS)
                 .setHandler(httpServerExchange -> {
                     String requestPath = httpServerExchange.getRequestPath();
                     String serviceDefinitionPath = websocketUtils.getPathDefinition(requestPath);

@@ -163,6 +163,7 @@ public class ConsulNodeDiscovery {
                 Service incomingService = createServiceObject(serviceId, serviceName, entry.getKey(), entry.getValue(), objectList);
                 Service existingService = serviceCache.peek(serviceId);
                 if(existingService == null) {
+                    serviceUtils.checkIfOpenApiIsEnabled(incomingService);
                     createRoute(incomingService);
                 } else {
                     serviceUtils.updateExistingService(existingService, incomingService, serviceCache);
@@ -204,69 +205,6 @@ public class ConsulNodeDiscovery {
         return null;
     }
 
-    /*public HttpProtocol getHttpProtocol(String key, ConsulObject[] consulObject) {
-        for(ConsulObject entry : consulObject) {
-            if(Objects.equals(getServiceNodeGroup(entry), key)) {
-                if(entry.getServiceMeta().getSchema() == null) {
-                    return HttpProtocol.HTTP;
-                }
-                if(entry.getServiceMeta().getSchema().equals(HttpProtocol.HTTPS.getProtocol())) {
-                    return HttpProtocol.HTTPS;
-                }
-            }
-        }
-        return HttpProtocol.HTTP;
-    }*/
-
-    /*public boolean isSecured(String key, ConsulObject[] consulObject) {
-        for(ConsulObject entry : consulObject) {
-            if(Objects.equals(getServiceNodeGroup(entry), key)) {
-                return entry.getServiceMeta().isSecured();
-            }
-        }
-        return false;
-    }*/
-
-    /*private boolean showTraceId(String tagName, ConsulObject[] consulObject) {
-        for(ConsulObject entry : consulObject) {
-            if(entry.getServiceMeta() != null) {
-                if(entry.getServiceMeta().getGroup() != null && entry.getServiceMeta().getGroup().equals(tagName) && entry.getServiceMeta().isB3TraceId()) {
-                    return true;
-                }
-            }
-        }
-        return false;
-    }*/
-
-    /*public boolean isTenantAware(String key, ConsulObject[] consulObject) {
-        for(ConsulObject entry : consulObject) {
-            if(Objects.equals(getServiceNodeGroup(entry), key)) {
-                return entry.getServiceMeta().isTenantAware();
-            }
-        }
-        return false;
-    }*/
-
-    /*public boolean isWebsocket(String key, ConsulObject[] consulObject) {
-        for(ConsulObject entry : consulObject) {
-            if(Objects.equals(getServiceNodeGroup(entry), key)) {
-                return (entry.getServiceMeta().getType() != null && entry.getServiceMeta().getType().equals("websocket"));
-            }
-        }
-        return false;
-    }*/
-
-    /*public List<String> getSubscriptionGroups(String key, ConsulObject[] consulObject) {
-        for(ConsulObject entry : consulObject) {
-            if(Objects.equals(getServiceNodeGroup(entry), key)) {
-                if(entry.getServiceMeta().getSubscriptionGroup() != null && !entry.getServiceMeta().getSubscriptionGroup().isEmpty()) {
-                    return Arrays.asList(entry.getServiceMeta().getSubscriptionGroup().split(",", -1));
-                }
-            }
-        }
-        return null;
-    }*/
-
     public ServiceMeta getServiceMeta(String key, List<ConsulObject> consulObject) {
         for(ConsulObject entry : consulObject) {
             if(Objects.equals(getServiceNodeGroup(entry), key)) {
@@ -275,15 +213,6 @@ public class ConsulNodeDiscovery {
         }
         return null;
     }
-
-    /*public boolean keepGroup(String key, ConsulObject[] consulObject) {
-        for(ConsulObject entry : consulObject) {
-            if(Objects.equals(getServiceNodeGroup(entry), key)) {
-                return entry.getServiceMeta().isKeepGroup();
-            }
-        }
-        return false;
-    }*/
 
     private Service createServiceObject(String serviceId, String serviceName, String key, Set<Mapping> mappingList, List<ConsulObject> consulResponse) {
         Service incomingService = new Service();
@@ -296,7 +225,6 @@ public class ConsulNodeDiscovery {
         incomingService.setRoundRobinEnabled(incomingService.getMappingList().size() != 1 && !incomingService.getServiceMeta().isTenantAware() && !incomingService.getServiceMeta().isStickySession());
         incomingService.setFailOverEnabled(incomingService.getMappingList().size() != 1 && !incomingService.getServiceMeta().isTenantAware() && !incomingService.getServiceMeta().isStickySession());
 
-        serviceUtils.checkIfOpenApiIsEnabled(incomingService);
         serviceUtils.validateServiceType(incomingService);
         return incomingService;
     }
@@ -305,7 +233,7 @@ public class ConsulNodeDiscovery {
         serviceCache.put(incomingService.getId(), incomingService);
         if(incomingService.getServiceMeta().getType().equalsIgnoreCase(Constants.WEBSOCKET_TYPE)) {
             WebsocketClient websocketClient = websocketUtils.createWebsocketClient(incomingService);
-            if(websocketClient != null) {
+            if(websocketClient != null && websocketClientMap != null) {
                websocketClientMap.put(websocketClient.getPath(), websocketClient);
             }
         } else {

@@ -66,8 +66,6 @@ public class CapiTracer extends ServiceSupport implements RoutePolicyFactory, St
     public CapiTracer(HttpUtils httpUtils) {
         exclusions.add("bean://consulNodeDiscovery");
         exclusions.add("timer://consul-inspect");
-        exclusions.add("bean://dbNodeDiscovery");
-        exclusions.add("timer://db-inspect");
         this.httpUtils = httpUtils;
         producerComponentToSpanKind.put("jms", Span.Kind.PRODUCER);
         producerComponentToSpanKind.put("sjms", Span.Kind.PRODUCER);

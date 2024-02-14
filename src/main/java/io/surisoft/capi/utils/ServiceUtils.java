@@ -99,6 +99,7 @@ public class ServiceUtils {
 
         if(isMappingChanged(existingService.getMappingList().stream().toList(), incomingService.getMappingList().stream().toList())) {
             log.trace("Changes detected for Service: {}, redeploying routes.", existingService.getId());
+            checkIfOpenApiIsEnabled(incomingService);
             try {
                 List<String> apiRouteIdList = routeUtils.getAllRouteIdForAGivenService(existingService);
                 for(String routeId : apiRouteIdList) {
@@ -149,9 +150,8 @@ public class ServiceUtils {
             Service service = stringServiceCacheEntry.getValue();
             if (!serviceNameList.contains(service.getName())) {
                 serviceCache.remove(service.getId());
-                if(service.getServiceMeta().getType().equals("websocket")) {
-                    // websocketClientMap.remove()
-
+                if(service.getServiceMeta().getType().equals("websocket") && websocketClientMap != null) {
+                    websocketClientMap.remove(service.getContext());
                 } else {
                     List<String> serviceRouteIdList = routeUtils.getAllRouteIdForAGivenService(service);
                     for (String routeId : serviceRouteIdList) {
@@ -168,6 +168,7 @@ public class ServiceUtils {
     public void checkIfOpenApiIsEnabled(Service service) {
         if(service.getServiceMeta() != null && service.getServiceMeta().getOpenApiEndpoint() != null && !service.getServiceMeta().getOpenApiEndpoint().isEmpty()) {
             try {
+                log.trace("Calling Remote Open API Spec: {}", service.getServiceMeta().getOpenApiEndpoint());
                 OpenAPI openAPI = new OpenAPIV3Parser().read(service.getServiceMeta().getOpenApiEndpoint());
                 service.setOpenAPI(openAPI);
             } catch(Exception e) {

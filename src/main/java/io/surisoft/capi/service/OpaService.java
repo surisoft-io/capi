@@ -47,9 +47,6 @@ public class OpaService {
         tokenObject.put("token", accessToken);
         JsonObject inputObject = new JsonObject();
         inputObject.put("input", tokenObject);
-
-        log.info(inputObject.toJson());
-
         return RequestBody.create(inputObject.toJson(), JSON);
     }
 }

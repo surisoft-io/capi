@@ -69,6 +69,7 @@ public class OpenApiProcessor implements Processor {
                         } else {
                             sendException("No authorization provided", exchange);
                         }
+                        propagateAuthorization(exchange, accessToken);
                     }
                     return true;
                 }
@@ -121,5 +122,11 @@ public class OpenApiProcessor implements Processor {
     private void sendException(String message, Exchange exchange) {
         exchange.getIn().setHeader(Constants.REASON_MESSAGE_HEADER, message);
         exchange.setException(new AuthorizationException(message));
+    }
+
+    private void propagateAuthorization(Exchange exchange, String accessToken) {
+        if(accessToken != null) {
+            exchange.getIn().setHeader(Constants.AUTHORIZATION_HEADER, Constants.BEARER + accessToken);
+        }
     }
 }

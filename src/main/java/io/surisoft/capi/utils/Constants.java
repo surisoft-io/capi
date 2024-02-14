@@ -2,7 +2,6 @@ package io.surisoft.capi.utils;
 
 import io.undertow.util.HttpString;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.util.Strings;
 
 import java.util.Map;
 
@@ -123,4 +122,5 @@ public class Constants {
             "Access-Control-Max-Age", ACCESS_CONTROL_MAX_AGE_VALUE,
             "Access-Control-Allow-Headers", StringUtils.join(CAPI_ACCESS_CONTROL_ALLOW_HEADERS, ",")
     );
+    public static final String WEBSOCKET_LISTENING_ADDRESS = "0.0.0.0";
 }

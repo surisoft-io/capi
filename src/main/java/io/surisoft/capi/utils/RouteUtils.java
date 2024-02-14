@@ -33,12 +33,13 @@ import static org.apache.camel.language.constant.ConstantLanguage.constant;
 
 @Component
 public class RouteUtils {
-
     private static final Logger log = LoggerFactory.getLogger(RouteUtils.class);
     @Value("${server.ssl.enabled}")
     private boolean sslEnabled;
     @Value("${capi.gateway.error.endpoint}")
     private String capiGatewayErrorEndpoint;
+    @Value("${capi.gateway.error.ssl}")
+    private boolean capiGatewayErrorEndpointSsl;
     @Autowired
     private HttpErrorProcessor httpErrorProcessor;
     @Autowired
@@ -85,7 +86,7 @@ public class RouteUtils {
                 .setHeader(Constants.ERROR_API_SHOW_INTERNAL_ERROR_CLASS, constant(isInternalExceptionVisible))
                 .process(httpErrorProcessor)
                 .setHeader(Constants.ROUTE_ID_HEADER, constant(routeID))
-                .toF((sslEnabled ? Constants.FAIL_HTTPS_REST_ENDPOINT_OBJECT : Constants.FAIL_HTTP_REST_ENDPOINT_OBJECT), capiGatewayErrorEndpoint)
+                .toF((capiGatewayErrorEndpointSsl ? Constants.FAIL_HTTPS_REST_ENDPOINT_OBJECT : Constants.FAIL_HTTP_REST_ENDPOINT_OBJECT), capiGatewayErrorEndpoint)
                 .removeHeader(Constants.ERROR_API_SHOW_TRACE_ID)
                 .removeHeader(Constants.ERROR_API_SHOW_INTERNAL_ERROR_MESSAGE)
                 .removeHeader(Constants.ERROR_API_SHOW_INTERNAL_ERROR_CLASS)

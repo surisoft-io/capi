@@ -1,4 +1,4 @@
-FROM openjdk:21-jdk
+FROM eclipse-temurin:21-jdk-alpine
 
 ARG CAPI_VERSION=4.4.04
 

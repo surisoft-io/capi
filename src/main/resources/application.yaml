@@ -52,7 +52,7 @@ capi:
     token:
     hosts: http://localhost:8500
     discovery:
-      enabled: true
+      enabled: false
       timer:
         interval: 20000
   #### Certificate Management (Editable property) ####
@@ -73,6 +73,7 @@ capi:
     error:
       #### All calls in error will be bridged to this endpoint ####
       endpoint: localhost:8380/capi-error
+      ssl: false
 #### DO NOT CHANGE THESE SPRING AUTOCONFIGURE EXCLUSIONS #####
 spring:
   servlet:
@@ -125,7 +126,7 @@ sticky:
 oauth2:
   cookieName:
   provider:
-    enabled: true
+    enabled: false
     keys:
       - http://localhost:8080/realms/master/protocol/openid-connect/certs
       - http://localhost:8080/realms/apigw/protocol/openid-connect/certs

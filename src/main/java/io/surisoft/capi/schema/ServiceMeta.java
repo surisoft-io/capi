@@ -8,55 +8,55 @@ import com.fasterxml.jackson.annotation.JsonSetter;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class ServiceMeta {
 
-    @JsonProperty("root-context")
-    private String rootContext;
+        @JsonProperty("root-context")
+        private String rootContext;
 
-    @JsonProperty("schema")
-    private String schema;
+        @JsonProperty("schema")
+        private String schema;
 
-    @JsonProperty("secured")
-    private boolean secured;
+        @JsonProperty("secured")
+        private boolean secured;
 
-    @JsonProperty("tenant_aware")
-    private boolean tenantAware;
+        @JsonProperty("tenant_aware")
+        private boolean tenantAware;
 
-    @JsonProperty("tenant_id")
-    private String tenantId;
+        @JsonProperty("tenant_id")
+        private String tenantId;
 
-    @JsonProperty("group")
-    private String group;
+        @JsonProperty("group")
+        private String group;
 
-    @JsonProperty("X-B3-TraceId")
-    private boolean b3TraceId;
+        @JsonProperty("X-B3-TraceId")
+        private boolean b3TraceId;
 
-    @JsonProperty("ingress")
-    private String ingress;
+        @JsonProperty("ingress")
+        private String ingress;
 
-    @JsonProperty("sticky_session_enabled")
-    private boolean stickySession;
+        @JsonProperty("sticky_session_enabled")
+        private boolean stickySession;
 
-    @JsonProperty("sticky_session_type")
-    private String stickySessionType;
+        @JsonProperty("sticky_session_type")
+        private String stickySessionType;
 
-    @JsonProperty("sticky_session_key")
-    private String stickySessionKey;
+        @JsonProperty("sticky_session_key")
+        private String stickySessionKey;
 
-    @JsonProperty("type")
-    private String type;
+        @JsonProperty("type")
+        private String type;
 
-    private String subscriptionGroup;
+        private String subscriptionGroup;
 
-    @JsonProperty("allowed-origins")
-    private String allowedOrigins;
+        @JsonProperty("allowed-origins")
+        private String allowedOrigins;
 
-    @JsonProperty("keep-group")
-    private boolean keepGroup;
+        @JsonProperty("keep-group")
+        private boolean keepGroup;
 
-    private String openApiEndpoint;
+        private String openApiEndpoint;
 
-    private String opaRego;
+        private String opaRego;
 
-    private String namespace;
+        private String namespace;
 
     public boolean isSecured() {
         return secured;

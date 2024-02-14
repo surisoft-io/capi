@@ -53,6 +53,7 @@ capi:
     error:
       #### All calls in error will be bridged to this endpoint ####
       endpoint: localhost:8380/capi-error
+      ssl: false
 
 spring:
   #### We want persistence to be optional, so we disable autoconfiguration for JPA ####
