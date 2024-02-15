@@ -2,6 +2,7 @@ package io.surisoft.capi.controller;
 
 import io.surisoft.capi.schema.CapiRestError;
 import io.surisoft.capi.utils.Constants;
+import io.vavr.collection.List;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -49,12 +50,12 @@ public class ErrorController {
         if(Boolean.parseBoolean(request.getHeader(Constants.ERROR_API_SHOW_TRACE_ID))) {
             capiRestError.setTraceID(request.getHeader(Constants.TRACE_ID_HEADER));
         }
-        if(Boolean.parseBoolean(request.getHeader(Constants.ERROR_API_SHOW_INTERNAL_ERROR_MESSAGE))) {
-            capiRestError.setInternalExceptionMessage(request.getHeader(Constants.CAPI_INTERNAL_ERROR));
-            capiRestError.setException(request.getHeader(Constants.CAPI_INTERNAL_ERROR_CLASS_NAME));
-        }
 
         capiRestError.setErrorMessage(Objects.requireNonNullElse(errorMessage, "There was an exception connecting to the requested service, please try again later on."));
+
+        if(request.getHeader(Constants.TRACE_ID_HEADER) != null) {
+            capiRestError.setTraceID(request.getHeader(Constants.TRACE_ID_HEADER));
+        }
 
         if(request.getHeader(Constants.REASON_CODE_HEADER) != null) {
             int returnedCode = Integer.parseInt(request.getHeader(Constants.REASON_CODE_HEADER));

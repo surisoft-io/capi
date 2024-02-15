@@ -74,10 +74,12 @@ public class Constants {
     public static final String CAMEL_SERVER_EXCHANGE_ID = "capi.server.exchange.id";
     public static final String CAMEL_CLIENT_EXCHANGE_ID = "capi.client.exchange.id";
     public static final String CAMEL_SERVER_EXCHANGE_FAILURE = "camel.server.exchange.failure";
-    public static final String CAPI_EXCHANGE_REQUESTER_ID = "capi.requester.id";
+    public static final String CAPI_EXCHANGE_REQUESTER_ID = "capi.token.requester.id";
+    public static final String CAPI_TOKEN_EXPIRED = "capi.token.expired";
     public static final String CAPI_REQUEST_METHOD = "capi.request.method";
     public static final String CAPI_REQUEST_CONTENT_TYPE = "capi.request.content.type";
     public static final String CAPI_REQUEST_CONTENT_LENGTH = "capi.request.content.length";
+    public static final String CAPI_REQUEST_ERROR_MESSAGE = "capi.request.error.message";
     public static final String CAPI_SERVER_EXCHANGE_MESSAGE_RESPONSE_CODE = "capi.server.exchange.message.response.code";
     public static final String CONTENT_TYPE = "Content-Type";
     public static final int HTTPS_PORT = 443;
@@ -123,4 +125,8 @@ public class Constants {
             "Access-Control-Allow-Headers", StringUtils.join(CAPI_ACCESS_CONTROL_ALLOW_HEADERS, ",")
     );
     public static final String WEBSOCKET_LISTENING_ADDRESS = "0.0.0.0";
+    public static final int UNAUTHORIZED_CODE = 401;
+    public static final int FORBIDDEN_CODE = 403;
+    public static final int BAD_REQUEST_CODE = 400;
+
 }

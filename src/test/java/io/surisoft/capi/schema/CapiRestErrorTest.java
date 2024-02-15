@@ -39,18 +39,6 @@ class CapiRestErrorTest {
     }
 
     @Test
-    void testException() {
-        capiRestError.setException("exception");
-        assertEquals("exception", capiRestError.getException());
-    }
-
-    @Test
-    void testInternalExceptionMessage() {
-        capiRestError.setInternalExceptionMessage("internal-exception");
-        assertEquals("internal-exception", capiRestError.getInternalExceptionMessage());
-    }
-
-    @Test
     void testZipkinTraceID() {
         capiRestError.setTraceID("ID");
         assertEquals("ID", capiRestError.getTraceID());

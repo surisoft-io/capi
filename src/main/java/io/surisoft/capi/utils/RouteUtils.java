@@ -74,16 +74,12 @@ public class RouteUtils {
 
     public void buildOnExceptionDefinition(RouteDefinition routeDefinition,
                                            boolean isTraceIdVisible,
-                                           boolean isInternalExceptionMessageVisible,
-                                           boolean isInternalExceptionVisible,
                                            String routeID) {
 
         routeDefinition
                 .onException(Exception.class)
                 .handled(true)
                 .setHeader(Constants.ERROR_API_SHOW_TRACE_ID, constant(isTraceIdVisible))
-                .setHeader(Constants.ERROR_API_SHOW_INTERNAL_ERROR_MESSAGE, constant(isInternalExceptionMessageVisible))
-                .setHeader(Constants.ERROR_API_SHOW_INTERNAL_ERROR_CLASS, constant(isInternalExceptionVisible))
                 .process(httpErrorProcessor)
                 .setHeader(Constants.ROUTE_ID_HEADER, constant(routeID))
                 .toF((capiGatewayErrorEndpointSsl ? Constants.FAIL_HTTPS_REST_ENDPOINT_OBJECT : Constants.FAIL_HTTP_REST_ENDPOINT_OBJECT), capiGatewayErrorEndpoint)

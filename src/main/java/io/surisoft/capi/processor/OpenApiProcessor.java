@@ -8,11 +8,13 @@ import io.surisoft.capi.utils.Constants;
 import io.surisoft.capi.utils.HttpUtils;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.Operation;
+import io.vavr.collection.List;
 import org.apache.camel.Exchange;
 import org.apache.camel.Processor;
 import org.cache2k.Cache;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatusCode;
 
 public class OpenApiProcessor implements Processor {
     private static final Logger log = LoggerFactory.getLogger(OpenApiProcessor.class);
@@ -31,7 +33,7 @@ public class OpenApiProcessor implements Processor {
     @Override
     public void process(Exchange exchange) throws Exception {
         if(!validateRequest(exchange)) {
-            sendException("Call not allowed", exchange);
+            sendException("Call not allowed", Constants.BAD_REQUEST_CODE, exchange);
         }
     }
 
@@ -61,13 +63,13 @@ public class OpenApiProcessor implements Processor {
                             Service service = serviceCache.get(httpUtils.contextToRole(contextPath));
                             if(service != null) {
                                 if(!httpUtils.isAuthorized(accessToken, contextPath, service, opaService)) {
-                                    sendException("Invalid authentication", exchange);
+                                    sendException("Invalid authentication", Constants.FORBIDDEN_CODE, exchange);
                                 }
                             } else {
-                                sendException("Call not allowed", exchange);
+                                sendException("Call not allowed", Constants.BAD_REQUEST_CODE, exchange);
                             }
                         } else {
-                            sendException("No authorization provided", exchange);
+                            sendException("No authorization provided", Constants.UNAUTHORIZED_CODE, exchange);
                         }
                         propagateAuthorization(exchange, accessToken);
                     }
@@ -119,7 +121,8 @@ public class OpenApiProcessor implements Processor {
         return pathSegment.matches("\\{.*\\}");
     }
 
-    private void sendException(String message, Exchange exchange) {
+    private void sendException(String message, int errorCode, Exchange exchange) {
+        exchange.getIn().setHeader(Constants.REASON_CODE_HEADER, errorCode);
         exchange.getIn().setHeader(Constants.REASON_MESSAGE_HEADER, message);
         exchange.setException(new AuthorizationException(message));
     }

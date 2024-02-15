@@ -7,7 +7,7 @@
   <groupId>io.surisoft.capi</groupId>
   <artifactId>capi</artifactId>
   <packaging>jar</packaging>
-  <version>4.4.04</version>
+  <version>4.4.05</version>
   <description>${spring.boot-version}</description>
   <name>CAPI Gateway</name>
 
@@ -26,7 +26,7 @@
     <wiremock.version>3.0.1</wiremock.version>
     <org.bouncycastle.version>1.70</org.bouncycastle.version>
     <org.junit.jupiter.version>5.9.3</org.junit.jupiter.version>
-    <jacoco.version>0.8.8</jacoco.version>
+    <jacoco.version>0.8.11</jacoco.version>
     <sonar.organization>surisoft-io</sonar.organization>
     <sonar.host.url>https://sonarcloud.io</sonar.host.url>
     <sonar.java.coveragePlugin>jacoco</sonar.java.coveragePlugin>
@@ -268,7 +268,7 @@
     <plugin>
       <groupId>org.cyclonedx</groupId>
       <artifactId>cyclonedx-maven-plugin</artifactId>
-      <version>2.7.1</version>
+      <version>2.7.11</version>
       <executions>
         <execution>
           <phase>package</phase>

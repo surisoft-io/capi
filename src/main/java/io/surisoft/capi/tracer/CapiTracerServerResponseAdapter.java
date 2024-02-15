@@ -49,6 +49,10 @@ public class CapiTracerServerResponseAdapter {
             span.tag(Constants.CAPI_REQUEST_CONTENT_LENGTH, Integer.toString(httpServletRequest.getContentLength()));
         }
 
+        if(exchange.getIn().getHeader(Constants.REASON_MESSAGE_HEADER) != null) {
+            span.tag(Constants.CAPI_REQUEST_ERROR_MESSAGE, (String) exchange.getIn().getHeader(Constants.REASON_MESSAGE_HEADER));
+        }
+
         // lets capture http response code for http based components
         String responseCode = exchange.getMessage().getHeader(Exchange.HTTP_RESPONSE_CODE, String.class);
         if (responseCode != null) {

@@ -40,7 +40,7 @@ class ErrorControllerTest {
 
         // Verify the results
         assertThat(response.getStatus()).isEqualTo(HttpStatus.BAD_GATEWAY.value());
-        assertThat(response.getContentAsString()).isEqualTo("{\"routeID\":null,\"errorMessage\":\"There was an exception connecting to the requested service, please try again later on.\",\"errorCode\":502,\"httpUri\":null,\"exception\":null,\"internalExceptionMessage\":null,\"traceID\":null}");
+        assertThat(response.getContentAsString()).isEqualTo("{\"routeID\":null,\"errorMessage\":\"There was an exception connecting to the requested service, please try again later on.\",\"errorCode\":502,\"httpUri\":null,\"traceID\":null}");
     }
 
     @Test
@@ -54,7 +54,7 @@ class ErrorControllerTest {
 
         // Verify the results
         assertThat(response.getStatus()).isEqualTo(HttpStatus.BAD_GATEWAY.value());
-        assertThat(response.getContentAsString()).isEqualTo("{\"routeID\":null,\"errorMessage\":\"There was an exception connecting to the requested service, please try again later on.\",\"errorCode\":502,\"httpUri\":null,\"exception\":null,\"internalExceptionMessage\":null,\"traceID\":null}");
+        assertThat(response.getContentAsString()).isEqualTo("{\"routeID\":null,\"errorMessage\":\"There was an exception connecting to the requested service, please try again later on.\",\"errorCode\":502,\"httpUri\":null,\"traceID\":null}");
     }
 
     @Test
@@ -68,7 +68,7 @@ class ErrorControllerTest {
 
         // Verify the results
         assertThat(response.getStatus()).isEqualTo(HttpStatus.BAD_GATEWAY.value());
-        assertThat(response.getContentAsString()).isEqualTo("{\"routeID\":null,\"errorMessage\":\"There was an exception connecting to the requested service, please try again later on.\",\"errorCode\":502,\"httpUri\":null,\"exception\":null,\"internalExceptionMessage\":null,\"traceID\":null}");
+        assertThat(response.getContentAsString()).isEqualTo("{\"routeID\":null,\"errorMessage\":\"There was an exception connecting to the requested service, please try again later on.\",\"errorCode\":502,\"httpUri\":null,\"traceID\":null}");
     }
 
     @Test
@@ -81,6 +81,6 @@ class ErrorControllerTest {
 
         // Verify the results
         assertThat(response.getStatus()).isEqualTo(HttpStatus.BAD_GATEWAY.value());
-        assertThat(response.getContentAsString()).isEqualTo("{\"routeID\":null,\"errorMessage\":\"There was an exception connecting to the requested service, please try again later on.\",\"errorCode\":502,\"httpUri\":null,\"exception\":null,\"internalExceptionMessage\":null,\"traceID\":null}");
+        assertThat(response.getContentAsString()).isEqualTo("{\"routeID\":null,\"errorMessage\":\"There was an exception connecting to the requested service, please try again later on.\",\"errorCode\":502,\"httpUri\":null,\"traceID\":null}");
     }
 }

@@ -30,7 +30,7 @@ class TestRouteUtils {
     void testBuildException() {
         RouteDefinition routeDefinition = new RouteDefinition();
         String routeId = "unit-test:unit-test-context";
-        routeUtils.buildOnExceptionDefinition(routeDefinition, false, false, false, routeId);
+        routeUtils.buildOnExceptionDefinition(routeDefinition, false, routeId);
         Assertions.assertNotNull(routeDefinition);
     }
 

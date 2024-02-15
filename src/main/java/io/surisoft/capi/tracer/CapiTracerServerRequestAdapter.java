@@ -4,6 +4,7 @@ import brave.SpanCustomizer;
 import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.proc.BadJOSEException;
 import com.nimbusds.jwt.JWTClaimsSet;
+import com.nimbusds.jwt.SignedJWT;
 import io.surisoft.capi.exception.AuthorizationException;
 import io.surisoft.capi.utils.Constants;
 import org.apache.camel.Endpoint;
@@ -14,6 +15,8 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.text.ParseException;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.Locale;
 
 public class CapiTracerServerRequestAdapter {
@@ -33,7 +36,14 @@ public class CapiTracerServerRequestAdapter {
         try {
             String accessToken = capiTracer.getHttpUtils().processAuthorizationAccessToken(exchange);
             if(accessToken != null) {
-                JWTClaimsSet jwtClaimsSet = capiTracer.getHttpUtils().authorizeRequest(accessToken);
+                SignedJWT signedJWT = SignedJWT.parse(accessToken);
+                JWTClaimsSet jwtClaimsSet = signedJWT.getJWTClaimsSet();
+                Date expirationTime = jwtClaimsSet.getExpirationTime();
+                if(expirationTime.before(Calendar.getInstance().getTime())) {
+                    span.tag(Constants.CAPI_TOKEN_EXPIRED, Boolean.toString(true));
+                } else {
+                    span.tag(Constants.CAPI_TOKEN_EXPIRED, Boolean.toString(false));
+                }
                 String authorizedParty = jwtClaimsSet.getStringClaim(Constants.AUTHORIZED_PARTY);
                 if(authorizedParty != null) {
                     span.tag(Constants.CAPI_EXCHANGE_REQUESTER_ID, authorizedParty);
@@ -47,7 +57,7 @@ public class CapiTracerServerRequestAdapter {
                     span.tag("capi.requester.token.issuer", iss);
                 }
             }
-        } catch (AuthorizationException | ParseException e) {
+        } catch (ParseException e) {
             LOG.trace("No Authorization header detected, or access token invalid");
         }
 

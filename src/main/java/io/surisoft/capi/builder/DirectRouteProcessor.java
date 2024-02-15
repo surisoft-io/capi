@@ -53,7 +53,7 @@ public class DirectRouteProcessor extends RouteBuilder {
         }
 
         log.trace("Trying to build and deploy route {}", routeId);
-        routeUtils.buildOnExceptionDefinition(routeDefinition, service.getServiceMeta().isB3TraceId(), true, false, routeId);
+        routeUtils.buildOnExceptionDefinition(routeDefinition, service.getServiceMeta().isB3TraceId(), routeId);
         if(service.getServiceMeta().isSecured()) {
             routeUtils.enableAuthorization(service.getId(), routeDefinition);
         }
@@ -108,7 +108,6 @@ public class DirectRouteProcessor extends RouteBuilder {
                     .routeId(routeId);
         }
         routeUtils.registerMetric(routeId);
-        //api.setRouteId(routeId);
         routeUtils.registerTracer(service);
     }
 

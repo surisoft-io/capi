@@ -15,6 +15,17 @@ import java.util.stream.Collectors;
 @Endpoint(id = "capi")
 public class Info {
 
+    //@Autowired
+    private final List<String> oauth2Keys;
+
+    //@Autowired
+    private final CamelContext camelContext;
+
+    public Info(List<String> oauth2Keys, CamelContext camelContext) {
+        this.oauth2Keys = oauth2Keys;
+        this.camelContext = camelContext;
+    }
+
     @Value("${capi.version}")
     private String capiVersion;
     @Value("${capi.namespace}")
@@ -23,8 +34,7 @@ public class Info {
     private String capiSpringVersion;
     @Value("${oauth2.provider.enabled}")
     private boolean oauth2Enabled;
-    @Autowired
-    private List<String> oauth2Keys;
+
     @Value("${opa.enabled}")
     private boolean opaEnabled;
     @Value("${opa.endpoint}")
@@ -44,8 +54,6 @@ public class Info {
     @Value("${capi.traces.endpoint}")
     private String tracesEndpoint;
 
-    @Autowired
-    private CamelContext camelContext;
 
     @ReadOperation
     public CapiInfo getInfo() {
