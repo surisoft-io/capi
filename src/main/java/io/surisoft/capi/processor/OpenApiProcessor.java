@@ -57,21 +57,26 @@ public class OpenApiProcessor implements Processor {
                     // You can also perform additional validation for the request here
                     // (e.g., validate path parameters, request body, and response)
                     if(operation.getSecurity() != null) {
-                        String accessToken = httpUtils.processAuthorizationAccessToken(exchange);
-                        if(accessToken != null) {
-                            String contextPath = (String) exchange.getIn().getHeader(Oauth2Constants.CAMEL_SERVLET_CONTEXT_PATH);
-                            Service service = serviceCache.get(httpUtils.contextToRole(contextPath));
-                            if(service != null) {
-                                if(!httpUtils.isAuthorized(accessToken, contextPath, service, opaService)) {
-                                    sendException("Invalid authentication", Constants.FORBIDDEN_CODE, exchange);
+                        String accessToken;
+                        try {
+                            accessToken = httpUtils.processAuthorizationAccessToken(exchange);
+                            if(accessToken != null) {
+                                String contextPath = (String) exchange.getIn().getHeader(Oauth2Constants.CAMEL_SERVLET_CONTEXT_PATH);
+                                Service service = serviceCache.get(httpUtils.contextToRole(contextPath));
+                                if(service != null) {
+                                    if(!httpUtils.isAuthorized(accessToken, contextPath, service, opaService)) {
+                                        sendException("Invalid authentication", Constants.FORBIDDEN_CODE, exchange);
+                                    }
+                                } else {
+                                    sendException("Call not allowed", Constants.BAD_REQUEST_CODE, exchange);
                                 }
                             } else {
-                                sendException("Call not allowed", Constants.BAD_REQUEST_CODE, exchange);
+                                sendException("No authorization provided", Constants.UNAUTHORIZED_CODE, exchange);
                             }
-                        } else {
-                            sendException("No authorization provided", Constants.UNAUTHORIZED_CODE, exchange);
+                            propagateAuthorization(exchange, accessToken);
+                        } catch (AuthorizationException e) {
+                            sendException(e.getMessage(), Constants.BAD_REQUEST_CODE, exchange);
                         }
-                        propagateAuthorization(exchange, accessToken);
                     }
                     return true;
                 }

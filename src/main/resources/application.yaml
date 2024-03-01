@@ -7,6 +7,7 @@ server:
     key-store-password:
 capi:
   namespace: local
+  public-endpoint: http://localhost:8380/capi/
   #### Kafka is still experimental ####
   kafka:
     enabled: false
@@ -52,7 +53,7 @@ capi:
     token:
     hosts: http://localhost:8500
     discovery:
-      enabled: false
+      enabled: true
       timer:
         interval: 20000
   #### Certificate Management (Editable property) ####
@@ -114,7 +115,7 @@ management:
     web:
       base-path: /metrics/
       exposure:
-        include: 'health,prometheus,routes,capi'
+        include: 'health,prometheus,routes,capi,openapi'
 
 #### Time to live for Sticky Sessions feature ####
 sticky:
@@ -136,5 +137,5 @@ oauth2:
     clientSecret:
 
 opa:
-  enabled: false
+  enabled: true
   endpoint: http://localhost:8181

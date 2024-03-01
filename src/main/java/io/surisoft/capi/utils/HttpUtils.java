@@ -64,8 +64,12 @@ public class HttpUtils {
         return endpoint;
     }
 
-    public String getBearerTokenFromHeader(String authorizationHeader) {
-        return authorizationHeader.substring(7);
+    public String getBearerTokenFromHeader(String authorizationHeader) throws AuthorizationException {
+        try {
+            return authorizationHeader.substring(7);
+        } catch(Exception e) {
+            throw new AuthorizationException("Invalid authorization provided");
+        }
     }
 
     public JWTClaimsSet authorizeRequest(String accessToken) throws AuthorizationException {
@@ -83,7 +87,7 @@ public class HttpUtils {
         return null;
     }
 
-    public String processAuthorizationAccessToken(Exchange exchange) {
+    public String processAuthorizationAccessToken(Exchange exchange) throws AuthorizationException {
         String authorization = exchange.getIn().getHeader(Constants.AUTHORIZATION_HEADER, String.class);
         if(authorization == null) {
             if(exchange.getIn().getHeader(Constants.AUTHORIZATION_REQUEST_PARAMETER, String.class) != null) {

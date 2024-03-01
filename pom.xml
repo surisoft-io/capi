@@ -7,13 +7,13 @@
   <groupId>io.surisoft.capi</groupId>
   <artifactId>capi</artifactId>
   <packaging>jar</packaging>
-  <version>4.4.05</version>
+  <version>4.4.06</version>
   <description>${spring.boot-version}</description>
   <name>CAPI Gateway</name>
 
   <properties>
-    <org.apache.camel.springboot-version>4.3.0</org.apache.camel.springboot-version>
-    <spring.boot-version>3.2.2</spring.boot-version>
+    <org.apache.camel.springboot-version>4.4.0</org.apache.camel.springboot-version>
+    <spring.boot-version>3.2.3</spring.boot-version>
 
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
@@ -42,7 +42,7 @@
   <parent>
     <groupId>org.springframework.boot</groupId>
     <artifactId>spring-boot-starter-parent</artifactId>
-    <version>3.2.2</version>
+    <version>3.2.3</version>
     <relativePath/>
   </parent>
 
@@ -170,6 +170,12 @@
       <groupId>org.apache.camel</groupId>
       <artifactId>camel-micrometer</artifactId>
       <version>${org.apache.camel.springboot-version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>net.logstash.logback</groupId>
+      <artifactId>logstash-logback-encoder</artifactId>
+      <version>4.11</version>
     </dependency>
 
     <dependency>

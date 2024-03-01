@@ -34,17 +34,22 @@ public class AuthorizationProcessor implements Processor {
     public void process(Exchange exchange) {
 
         String contextPath = (String) exchange.getIn().getHeader(Oauth2Constants.CAMEL_SERVLET_CONTEXT_PATH);
-        String accessToken = httpUtils.processAuthorizationAccessToken(exchange);
-        Service service = serviceCache.get(httpUtils.contextToRole(contextPath));
-        assert service != null;
+        String accessToken;
+        try {
+            accessToken = httpUtils.processAuthorizationAccessToken(exchange);
+            Service service = serviceCache.get(httpUtils.contextToRole(contextPath));
+            assert service != null;
 
-        if(accessToken != null) {
-            if(!httpUtils.isAuthorized(accessToken, contextPath, service, opaService)) {
-                sendException(exchange, "Not subscribed");
+            if(accessToken != null) {
+                if(!httpUtils.isAuthorized(accessToken, contextPath, service, opaService)) {
+                    sendException(exchange, "Not subscribed");
+                }
+                propagateAuthorization(exchange, accessToken);
+            } else {
+                sendException(exchange, "No authorization header provided");
             }
-            propagateAuthorization(exchange, accessToken);
-        } else {
-            sendException(exchange, "No authorization header provided");
+        } catch (AuthorizationException e) {
+            sendException(exchange, e.getMessage());
         }
     }
 

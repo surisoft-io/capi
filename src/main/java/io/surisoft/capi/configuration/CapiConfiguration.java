@@ -32,7 +32,6 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import static org.apache.camel.component.micrometer.MicrometerConstants.DISTRIBUTION_SUMMARIES;
 import static org.apache.camel.component.micrometer.messagehistory.MicrometerMessageHistoryNamingStrategy.MESSAGE_HISTORIES;
 import static org.apache.camel.component.micrometer.routepolicy.MicrometerRoutePolicyNamingStrategy.ROUTE_POLICIES;
 
@@ -93,7 +92,6 @@ public class CapiConfiguration {
                 .setMaximumExpectedDuration(Duration.ofMillis(150L));
 
         DistributionStatisticConfigFilter summaryMeterFilter = new DistributionStatisticConfigFilter()
-                .andAppliesTo(DISTRIBUTION_SUMMARIES)
                 .setPublishPercentileHistogram(true)
                 .setMinimumExpectedValue(1L)
                 .setMaximumExpectedValue(100L);
