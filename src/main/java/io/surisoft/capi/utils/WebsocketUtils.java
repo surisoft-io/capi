@@ -11,21 +11,24 @@ import io.undertow.server.HttpHandler;
 import io.undertow.server.handlers.ResponseCodeHandler;
 import io.undertow.server.handlers.proxy.LoadBalancingProxyClient;
 import io.undertow.server.handlers.proxy.ProxyHandler;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.net.URI;
 import java.util.List;
+import java.util.Optional;
 
 @Component
 public class WebsocketUtils {
 
-    @Value("${camel.servlet.mapping.context-path}")
-    private String capiContextPath;
+    private final String capiContextPath;
+    private final Optional<List<DefaultJWTProcessor<SecurityContext>>> defaultJWTProcessor;
 
-    @Autowired(required = false)
-    private List<DefaultJWTProcessor<SecurityContext>> defaultJWTProcessor;
+    public WebsocketUtils(@Value("${camel.servlet.mapping.context-path}") String capiContextPath,
+                          Optional<List<DefaultJWTProcessor<SecurityContext>>> defaultJWTProcessor) {
+        this.capiContextPath = capiContextPath;
+        this.defaultJWTProcessor = defaultJWTProcessor;
+    }
 
     public HttpHandler createClientHttpHandler(WebsocketClient webSocketClient, Service service) {
         LoadBalancingProxyClient loadBalancingProxyClient = new LoadBalancingProxyClient();
@@ -43,8 +46,8 @@ public class WebsocketUtils {
     }
 
     public WebsocketAuthorization createWebsocketAuthorization() throws CapiWebsocketException {
-        if(defaultJWTProcessor != null) {
-            return new WebsocketAuthorization(defaultJWTProcessor);
+        if(defaultJWTProcessor.isPresent()) {
+            return new WebsocketAuthorization(defaultJWTProcessor.get());
         }
         throw new CapiWebsocketException("No OIDC provider enabled, consider enabling OIDC");
     }

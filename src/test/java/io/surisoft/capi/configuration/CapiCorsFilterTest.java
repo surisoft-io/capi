@@ -9,14 +9,16 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mockito;
-import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
-@ExtendWith(MockitoExtension.class)
+@ExtendWith(SpringExtension.class)
+@SpringBootTest
 class CapiCorsFilterTest {
 
     private final Cache<String, Service> mockServiceCache = new Cache2kBuilder<String, Service>(){}
@@ -26,7 +28,7 @@ class CapiCorsFilterTest {
                                                             .storeByReference(true)
                                                             .build();
 
-    @InjectMocks
+    @Autowired
     private CapiCorsFilter capiCorsFilterUnderTest;
 
     @BeforeEach

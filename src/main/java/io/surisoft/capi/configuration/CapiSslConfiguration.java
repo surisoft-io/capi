@@ -25,7 +25,10 @@ public class CapiSslConfiguration {
     private final ResourceLoader resourceLoader;
     private final CamelContext camelContext;
 
-    public CapiSslConfiguration(CamelContext camelContext, ResourceLoader resourceLoader, @Value("${capi.trust.store.path}") String capiTrustStorePath, @Value("${capi.trust.store.password}") String capiTrustStorePassword) {
+    public CapiSslConfiguration(CamelContext camelContext,
+                                ResourceLoader resourceLoader,
+                                @Value("${capi.trust.store.path}") String capiTrustStorePath,
+                                @Value("${capi.trust.store.password}") String capiTrustStorePassword) {
         this.camelContext = camelContext;
         this.resourceLoader = resourceLoader;
         this.capiTrustStorePath = capiTrustStorePath;
@@ -48,6 +51,7 @@ public class CapiSslConfiguration {
                 sslContextParameters.setTrustManagers(trustManagersParameters);
                 sslContextParameters.createSSLContext(camelContext);
                 httpComponent.setSslContextParameters(sslContextParameters);
+
             } else {
                 log.warn("Could not create SSL Context, the provided certificate path is invalid");
             }

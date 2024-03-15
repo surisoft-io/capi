@@ -11,24 +11,25 @@ import org.apache.camel.Processor;
 import org.cache2k.Cache;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
+
+import java.util.Optional;
 
 @Component
 @ConditionalOnProperty(prefix = "oauth2.provider", name = "enabled", havingValue = "true")
 public class AuthorizationProcessor implements Processor {
     private static final Logger log = LoggerFactory.getLogger(AuthorizationProcessor.class);
+    private final HttpUtils httpUtils;
+    private final Cache<String, Service> serviceCache;
+    private final Optional<OpaService> opaService;
 
-    @Autowired
-    private HttpUtils httpUtils;
-
-    @Autowired
-    private Cache<String, Service> serviceCache;
-
-    @Autowired(required = false)
-    private OpaService opaService;
+    public AuthorizationProcessor(HttpUtils httpUtils, Cache<String, Service> serviceCache, Optional<OpaService> opaService) {
+        this.httpUtils = httpUtils;
+        this.serviceCache = serviceCache;
+        this.opaService = opaService;
+    }
 
     @Override
     public void process(Exchange exchange) {
@@ -41,7 +42,7 @@ public class AuthorizationProcessor implements Processor {
             assert service != null;
 
             if(accessToken != null) {
-                if(!httpUtils.isAuthorized(accessToken, contextPath, service, opaService)) {
+                if(!httpUtils.isAuthorized(accessToken, contextPath, service, (opaService.orElse(null)))) {
                     sendException(exchange, "Not subscribed");
                 }
                 propagateAuthorization(exchange, accessToken);

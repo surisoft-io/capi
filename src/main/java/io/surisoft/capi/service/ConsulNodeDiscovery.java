@@ -163,10 +163,15 @@ public class ConsulNodeDiscovery {
                 Service incomingService = createServiceObject(serviceId, serviceName, entry.getKey(), entry.getValue(), objectList);
                 Service existingService = serviceCache.peek(serviceId);
                 if(existingService == null) {
-                    serviceUtils.checkIfOpenApiIsEnabled(incomingService);
-                    createRoute(incomingService);
+                    if(serviceUtils.checkIfOpenApiIsEnabled(incomingService)) {
+                        createRoute(incomingService);
+                    }
                 } else {
-                    serviceUtils.updateExistingService(existingService, incomingService, serviceCache);
+                    if(serviceUtils.updateExistingService(existingService, incomingService, serviceCache)) {
+                        if(serviceUtils.checkIfOpenApiIsEnabled(incomingService)) {
+                            createRoute(incomingService);
+                        }
+                    }
                 }
             }
         });
@@ -214,6 +219,15 @@ public class ConsulNodeDiscovery {
         return null;
     }
 
+    public String getServiceIdConsul(String key, List<ConsulObject> consulObject) {
+        for(ConsulObject entry : consulObject) {
+            if(Objects.equals(getServiceNodeGroup(entry), key)) {
+                return entry.getServiceId();
+            }
+        }
+        return null;
+    }
+
     private Service createServiceObject(String serviceId, String serviceName, String key, Set<Mapping> mappingList, List<ConsulObject> consulResponse) {
         Service incomingService = new Service();
         incomingService.setId(serviceId);
@@ -222,6 +236,7 @@ public class ConsulNodeDiscovery {
         incomingService.setContext("/" + serviceName + "/" + key);
         incomingService.setMappingList(mappingList);
         incomingService.setServiceMeta(getServiceMeta(key, consulResponse));
+        incomingService.setServiceIdConsul(getServiceIdConsul(key, consulResponse));
         incomingService.setRoundRobinEnabled(incomingService.getMappingList().size() != 1 && !incomingService.getServiceMeta().isTenantAware() && !incomingService.getServiceMeta().isStickySession());
         incomingService.setFailOverEnabled(incomingService.getMappingList().size() != 1 && !incomingService.getServiceMeta().isTenantAware() && !incomingService.getServiceMeta().isStickySession());
 
@@ -242,9 +257,10 @@ public class ConsulNodeDiscovery {
                 Route existingRoute = camelContext.getRoute(routeId);
                 if(existingRoute == null) {
                     try {
-                        DirectRouteProcessor directRouteProcessor = new DirectRouteProcessor(camelContext, incomingService, routeUtils, metricsProcessor, routeId, stickySessionCacheManager, capiContext, reverseProxyHost);
+                        DirectRouteProcessor directRouteProcessor = new DirectRouteProcessor(camelContext, incomingService, routeUtils, metricsProcessor, routeId, capiContext, reverseProxyHost);
                         directRouteProcessor.setHttpUtils(httpUtils);
                         directRouteProcessor.setOpaService(opaService);
+                        directRouteProcessor.setStickySessionCacheManager(stickySessionCacheManager);
                         directRouteProcessor.setServiceCache(serviceCache);
                         camelContext.addRoutes(directRouteProcessor);
                         camelContext.addRoutes(new RestDefinitionProcessor(camelContext, incomingService, routeUtils, routeId));

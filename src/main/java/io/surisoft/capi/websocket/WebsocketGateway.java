@@ -8,7 +8,6 @@ import io.surisoft.capi.utils.WebsocketUtils;
 import io.undertow.Undertow;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
@@ -19,13 +18,18 @@ import java.util.Map;
 @ConditionalOnProperty(prefix = "capi.websocket", name = "enabled", havingValue = "true")
 public class WebsocketGateway {
     private static final Logger log = LoggerFactory.getLogger(WebsocketGateway.class);
-    @Value("${capi.websocket.server.port}")
-    private int port;
-    @Autowired
-    private Map<String, WebsocketClient> webSocketClients;
+    private final int port;
+    private final Map<String, WebsocketClient> webSocketClients;
     private WebsocketAuthorization websocketAuthorization;
-    @Autowired
-    private WebsocketUtils websocketUtils;
+    private final WebsocketUtils websocketUtils;
+
+    public WebsocketGateway(@Value("${capi.websocket.server.port}") int port,
+                            Map<String, WebsocketClient> webSocketClients,
+                            WebsocketUtils websocketUtils) {
+        this.port = port;
+        this.webSocketClients = webSocketClients;
+        this.websocketUtils = websocketUtils;
+    }
 
     public void runProxy() {
 

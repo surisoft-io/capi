@@ -58,4 +58,8 @@ public final class CapiTrustManager implements X509TrustManager {
             }
         }
     }
+
+    public X509TrustManager getTrustManager() {
+        return trustManager;
+    }
 }

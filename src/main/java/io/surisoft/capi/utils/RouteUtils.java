@@ -10,65 +10,71 @@ import io.surisoft.capi.tracer.CapiTracer;
 import org.apache.camel.CamelContext;
 import org.apache.camel.Route;
 import org.apache.camel.component.http.HttpComponent;
-import org.apache.camel.component.validator.ValidatorEndpoint;
-import org.apache.camel.model.OnExceptionDefinition;
 import org.apache.camel.model.RouteDefinition;
-import org.apache.hc.core5.http.NoHttpResponseException;
 import org.cache2k.Cache;
-import org.checkerframework.checker.units.qual.A;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-import javax.net.ssl.SSLHandshakeException;
-import java.net.ConnectException;
-import java.util.ArrayList;
-import java.util.Base64;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static org.apache.camel.language.constant.ConstantLanguage.constant;
 
 @Component
 public class RouteUtils {
     private static final Logger log = LoggerFactory.getLogger(RouteUtils.class);
-    @Value("${server.ssl.enabled}")
     private boolean sslEnabled;
-    @Value("${capi.gateway.error.endpoint}")
-    private String capiGatewayErrorEndpoint;
-    @Value("${capi.gateway.error.ssl}")
-    private boolean capiGatewayErrorEndpointSsl;
-    @Autowired
-    private HttpErrorProcessor httpErrorProcessor;
-    @Autowired
-    private HttpUtils httpUtils;
-    @Autowired
-    private CompositeMeterRegistry meterRegistry;
-    @Autowired(required = false)
-    private CapiTracer capiTracer;
-    @Autowired
-    private CamelContext camelContext;
-    @Autowired
+    private final String capiGatewayErrorEndpoint;
+    private final boolean capiGatewayErrorEndpointSsl;
+    private final HttpErrorProcessor httpErrorProcessor;
+    private final HttpUtils httpUtils;
+    private final CompositeMeterRegistry meterRegistry;
+    private final Optional<CapiTracer> capiTracer;
+    private final CamelContext camelContext;
     private Cache<String, Service> serviceCache;
-    @Autowired(required = false)
-    private AuthorizationProcessor authorizationProcessor;
-    @Autowired
+    private final Optional<AuthorizationProcessor> authorizationProcessor;
     private WebsocketUtils websocketUtils;
-    @Autowired(required = false)
     private Map<String, WebsocketClient> websocketClientMap;
-    @Value("${capi.gateway.cors.management.enabled}")
-    private boolean gatewayCorsManagementEnabled;
+    private final boolean gatewayCorsManagementEnabled;
+
+    public RouteUtils(@Value("${server.ssl.enabled}") boolean sslEnabled,
+                      @Value("${capi.gateway.error.endpoint}") String capiGatewayErrorEndpoint,
+                      @Value("${capi.gateway.error.ssl}") boolean capiGatewayErrorEndpointSsl,
+                      HttpErrorProcessor httpErrorProcessor,
+                      HttpUtils httpUtils,
+                      CompositeMeterRegistry meterRegistry,
+                      Optional<CapiTracer> capiTracer,
+                      CamelContext camelContext,
+                      Cache<String, Service> serviceCache,
+                      Optional<AuthorizationProcessor> authorizationProcessor,
+                      WebsocketUtils websocketUtils,
+                      Map<String, WebsocketClient> websocketClientMap,
+                      @Value("${capi.gateway.cors.management.enabled}") boolean gatewayCorsManagementEnabled) {
+        this.sslEnabled = sslEnabled;
+        this.capiGatewayErrorEndpoint = capiGatewayErrorEndpoint;
+        this.capiGatewayErrorEndpointSsl = capiGatewayErrorEndpointSsl;
+        this.httpErrorProcessor = httpErrorProcessor;
+        this.httpUtils = httpUtils;
+        this.meterRegistry = meterRegistry;
+        this.capiTracer = capiTracer;
+        this.camelContext = camelContext;
+        this.serviceCache = serviceCache;
+        this.authorizationProcessor = authorizationProcessor;
+        this.websocketUtils = websocketUtils;
+        this.websocketClientMap = websocketClientMap;
+        this.gatewayCorsManagementEnabled = gatewayCorsManagementEnabled;
+
+    }
 
     public void registerMetric(String routeId) {
         meterRegistry.counter(routeId);
     }
 
     public void registerTracer(Service service) {
-        if (capiTracer != null) {
+        if (capiTracer.isPresent()) {
             log.debug("Adding API to tracer as {}", service.getId());
-            capiTracer.addServerServiceMapping(service.getId(), service.getName());
+            capiTracer.get().addServerServiceMapping(service.getId(), service.getName());
         }
     }
 
@@ -185,24 +191,14 @@ public class RouteUtils {
             HttpComponent httpComponent = (HttpComponent) camelContext.getComponent("https");
             CapiTrustManager capiTrustManager = (CapiTrustManager) httpComponent.getSslContextParameters().getTrustManagers().getTrustManager();
             capiTrustManager.reloadTrustManager();
-            if(undeploy) {
-                List<String> routeIdList = getAllRouteIdForAGivenService(serviceId);
-                for(String routeId : routeIdList) {
-                    camelContext.getRouteController().stopRoute(Constants.CAMEL_REST_PREFIX + routeId);
-                    camelContext.removeRoute(Constants.CAMEL_REST_PREFIX + routeId);
-                    camelContext.getRouteController().stopRoute(routeId);
-                    camelContext.removeRoute(routeId);
-                }
-               serviceCache.remove(serviceId);
-            }
         } catch(Exception e) {
             log.error(e.getMessage(), e);
         }
     }
 
     public void enableAuthorization(String apiId, RouteDefinition routeDefinition) {
-        if(this.authorizationProcessor != null) {
-            routeDefinition.process(this.authorizationProcessor);
+        if(authorizationProcessor.isPresent()) {
+            routeDefinition.process(this.authorizationProcessor.get());
         } else {
             log.warn("The api with id {} is marked to protect but there is no OIDC provider enabled.", apiId);
         }

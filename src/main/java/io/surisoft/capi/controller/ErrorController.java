@@ -2,7 +2,6 @@ package io.surisoft.capi.controller;
 
 import io.surisoft.capi.schema.CapiRestError;
 import io.surisoft.capi.utils.Constants;
-import io.vavr.collection.List;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;

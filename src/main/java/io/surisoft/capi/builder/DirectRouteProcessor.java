@@ -15,10 +15,12 @@ import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.model.RouteDefinition;
 import org.cache2k.Cache;
 
+import java.util.Optional;
+
 public class DirectRouteProcessor extends RouteBuilder {
     private final RouteUtils routeUtils;
     private final Service service;
-    private final StickySessionCacheManager stickySessionCacheManager;
+    private StickySessionCacheManager stickySessionCacheManager;
     private final String routeId;
     private final String capiContext;
     private final MetricsProcessor metricsProcessor;
@@ -27,11 +29,10 @@ public class DirectRouteProcessor extends RouteBuilder {
     private HttpUtils httpUtils;
     private Cache<String, Service> serviceCache;
 
-    public DirectRouteProcessor(CamelContext camelContext, Service service, RouteUtils routeUtils, MetricsProcessor metricsProcessor, String routeId, StickySessionCacheManager stickySessionCacheManager, String capiContext, String reverseProxyHost) {
+    public DirectRouteProcessor(CamelContext camelContext, Service service, RouteUtils routeUtils, MetricsProcessor metricsProcessor, String routeId, String capiContext, String reverseProxyHost) {
         super(camelContext);
         this.service = service;
         this.routeUtils = routeUtils;
-        this.stickySessionCacheManager = stickySessionCacheManager;
         this.routeId = routeId;
         this.capiContext = capiContext;
         this.metricsProcessor = metricsProcessor;
@@ -121,5 +122,9 @@ public class DirectRouteProcessor extends RouteBuilder {
 
     public void setServiceCache(Cache<String, Service> serviceCache) {
         this.serviceCache = serviceCache;
+    }
+
+    public void setStickySessionCacheManager(StickySessionCacheManager stickySessionCacheManager) {
+        this.stickySessionCacheManager = stickySessionCacheManager;
     }
 }

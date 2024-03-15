@@ -7,33 +7,34 @@ import org.cache2k.Cache;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.event.ApplicationStartedEvent;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.event.ContextClosedEvent;
 import org.springframework.stereotype.Component;
 
+import java.util.Optional;
+
 @Component
 public class CapiApplicationListener implements ApplicationListener<ApplicationEvent> {
 
     private static final Logger log = LoggerFactory.getLogger(CapiApplicationListener.class);
+    private final Cache<String, Service> serviceCache;
+    private final Cache<String, StickySession> stickySessionCache;
+    private final Optional<WebsocketGateway> websocketGateway;
 
-    @Autowired
-    private Cache<String, Service> serviceCache;
-
-    @Autowired
-    private Cache<String, StickySession> stickySessionCache;
-
-    @Autowired(required = false)
-    private WebsocketGateway websocketGateway;
+    public CapiApplicationListener(Cache<String, Service> serviceCache, Cache<String, StickySession> stickySessionCache, Optional<WebsocketGateway> websocketGateway) {
+        this.serviceCache = serviceCache;
+        this.stickySessionCache = stickySessionCache;
+        this.websocketGateway = websocketGateway;
+    }
 
     @Override
     public void onApplicationEvent(@NotNull ApplicationEvent applicationEvent) {
         if(applicationEvent instanceof ApplicationStartedEvent) {
-            if(websocketGateway != null) {
+            if(websocketGateway.isPresent()) {
                 log.info("Capi Websocket Gateway starting.");
-                websocketGateway.runProxy();
+                websocketGateway.get().runProxy();
             }
         }
         if(applicationEvent instanceof ContextClosedEvent) {

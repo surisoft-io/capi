@@ -21,6 +21,9 @@ public class ConsulObject {
     @JsonProperty("ServicePort")
     private int servicePort;
 
+    @JsonProperty("ServiceID")
+    private String serviceId;
+
     public String getID() {
         return ID;
     }
@@ -59,5 +62,13 @@ public class ConsulObject {
 
     public void setServiceMeta(ServiceMeta serviceMeta) {
         this.serviceMeta = serviceMeta;
+    }
+
+    public String getServiceId() {
+        return serviceId;
+    }
+
+    public void setServiceId(String serviceId) {
+        this.serviceId = serviceId;
     }
 }

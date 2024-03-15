@@ -2,7 +2,6 @@ package io.surisoft.capi.metrics;
 
 import io.surisoft.capi.schema.CapiInfo;
 import org.apache.camel.CamelContext;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.actuate.endpoint.annotation.Endpoint;
 import org.springframework.boot.actuate.endpoint.annotation.ReadOperation;
@@ -15,10 +14,7 @@ import java.util.stream.Collectors;
 @Endpoint(id = "capi")
 public class Info {
 
-    //@Autowired
     private final List<String> oauth2Keys;
-
-    //@Autowired
     private final CamelContext camelContext;
 
     public Info(List<String> oauth2Keys, CamelContext camelContext) {

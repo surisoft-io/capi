@@ -9,13 +9,9 @@ import io.surisoft.capi.utils.RouteUtils;
 import io.surisoft.capi.utils.ServiceUtils;
 import org.apache.camel.CamelContext;
 import org.cache2k.Cache;
-import org.cache2k.CacheEntry;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.actuate.endpoint.annotation.Endpoint;
 import org.springframework.boot.actuate.endpoint.annotation.ReadOperation;
 import org.springframework.boot.actuate.endpoint.annotation.Selector;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
@@ -25,23 +21,26 @@ import java.util.List;
 @Endpoint(id = "routes")
 public class Routes {
 
-    @Autowired
-    private ServiceUtils serviceUtils;
+    private final ServiceUtils serviceUtils;
+    private final Cache<String, Service> serviceCache;
+    private final Cache<String, StickySession> stickySessionCache;
+    private final CamelContext camelContext;
+    private final RouteUtils routeUtils;
+    private final MetricsProcessor metricsProcessor;
 
-    @Autowired
-    private Cache<String, Service> serviceCache;
-
-    @Autowired
-    private Cache<String, StickySession> stickySessionCache;
-
-    @Autowired
-    private CamelContext camelContext;
-
-    @Autowired
-    private RouteUtils routeUtils;
-
-    @Autowired
-    private MetricsProcessor metricsProcessor;
+    public Routes(ServiceUtils serviceUtils,
+                  Cache<String, Service> serviceCache,
+                  Cache<String, StickySession> stickySessionCache,
+                  CamelContext camelContext,
+                  RouteUtils routeUtils,
+                  MetricsProcessor metricsProcessor) {
+        this.serviceUtils = serviceUtils;
+        this.serviceCache = serviceCache;
+        this.stickySessionCache = stickySessionCache;
+        this.camelContext = camelContext;
+        this.routeUtils = routeUtils;
+        this.metricsProcessor = metricsProcessor;
+    }
 
     @ReadOperation
     public Service getCachedService(@Selector String serviceName) {

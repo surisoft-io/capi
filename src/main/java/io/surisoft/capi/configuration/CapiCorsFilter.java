@@ -10,7 +10,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.cache2k.Cache;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
@@ -26,18 +25,20 @@ import java.util.List;
 public class CapiCorsFilter implements Filter {
 
     private static final Logger log = LoggerFactory.getLogger(CapiCorsFilter.class);
-
-    @Value("${oauth2.cookieName}")
-    private String oauth2CookieName;
-
-    @Value("${capi.gateway.cors.management.enabled}")
-    private boolean gatewayCorsManagementEnabled;
-
-    @Value("${camel.servlet.mapping.context-path}")
+    private final String oauth2CookieName;
+    private final boolean gatewayCorsManagementEnabled;
     private String capiContextPath;
+    private final Cache<String, Service> serviceCache;
 
-    @Autowired
-    private Cache<String, Service> serviceCache;
+    public CapiCorsFilter(@Value("${oauth2.cookieName}") String oauth2CookieName,
+                          @Value("${capi.gateway.cors.management.enabled}") boolean gatewayCorsManagementEnabled,
+                          @Value("${camel.servlet.mapping.context-path}") String capiContextPath,
+                          Cache<String, Service> serviceCache) {
+        this.oauth2CookieName = oauth2CookieName;
+        this.gatewayCorsManagementEnabled = gatewayCorsManagementEnabled;
+        this.capiContextPath = capiContextPath;
+        this.serviceCache = serviceCache;
+    }
 
     @PostConstruct
     public void corsFilterComponent() {

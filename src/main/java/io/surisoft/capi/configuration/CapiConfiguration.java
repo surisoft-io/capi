@@ -18,7 +18,6 @@ import org.apache.camel.component.micrometer.DistributionStatisticConfigFilter;
 import org.apache.hc.client5.http.impl.classic.HttpClientBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
@@ -26,6 +25,9 @@ import org.springframework.context.annotation.Configuration;
 import zipkin2.reporter.AsyncReporter;
 import zipkin2.reporter.okhttp3.OkHttpSender;
 
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -39,12 +41,13 @@ import static org.apache.camel.component.micrometer.routepolicy.MicrometerRouteP
 public class CapiConfiguration {
 
     private static final Logger log = LoggerFactory.getLogger(CapiConfiguration.class);
+    private final String tracesEndpoint;
+    private final HttpUtils httpUtils;
 
-    @Value("${capi.traces.endpoint}")
-    private String tracesEndpoint;
-
-    @Autowired
-    HttpUtils httpUtils;
+    public CapiConfiguration(@Value("${capi.traces.endpoint}") String tracesEndpoint, HttpUtils httpUtils) {
+        this.tracesEndpoint = tracesEndpoint;
+        this.httpUtils = httpUtils;
+    }
 
     @Bean
     @ConditionalOnProperty(prefix = "capi.websocket", name = "enabled", havingValue = "true")
@@ -96,7 +99,6 @@ public class CapiConfiguration {
                 .setMinimumExpectedValue(1L)
                 .setMaximumExpectedValue(100L);
 
-
         CompositeMeterRegistry compositeMeterRegistry = new CompositeMeterRegistry();
         compositeMeterRegistry.config().commonTags(Tags.of("application", Constants.APPLICATION_NAME))
                 .meterFilter(timerMeterFilter)
@@ -110,8 +112,34 @@ public class CapiConfiguration {
     }
 
     @Bean
-    public OkHttpClient httpClient() {
-        return new OkHttpClient();
+    public OkHttpClient httpClient()  {
+        try {
+            OkHttpClient.Builder builder = new OkHttpClient.Builder();
+            TrustManager[] trustAllCerts = new TrustManager[]{
+                    new X509TrustManager() {
+                        @Override
+                        public void checkClientTrusted(java.security.cert.X509Certificate[] chain, String authType) {
+                        }
+
+                        @Override
+                        public void checkServerTrusted(java.security.cert.X509Certificate[] chain, String authType) {
+                        }
+
+                        @Override
+                        public java.security.cert.X509Certificate[] getAcceptedIssuers() {
+                            return new java.security.cert.X509Certificate[]{};
+                        }
+                    }
+            };
+            SSLContext sslContext = SSLContext.getInstance("SSL");
+            sslContext.init(null, trustAllCerts, new java.security.SecureRandom());
+            builder.sslSocketFactory(sslContext.getSocketFactory(), (X509TrustManager) trustAllCerts[0]);
+            builder.hostnameVerifier((hostname, session) -> true);
+            return builder.build();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+
     }
 
     @Bean(name = "capiCorsFilterStrategy")

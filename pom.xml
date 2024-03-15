@@ -7,7 +7,7 @@
   <groupId>io.surisoft.capi</groupId>
   <artifactId>capi</artifactId>
   <packaging>jar</packaging>
-  <version>4.4.06</version>
+  <version>4.4.07</version>
   <description>${spring.boot-version}</description>
   <name>CAPI Gateway</name>
 
@@ -104,7 +104,6 @@
       <artifactId>camel-metrics-starter</artifactId>
       <version>${org.apache.camel.springboot-version}</version>
     </dependency>
-
     <dependency>
       <groupId>org.apache.camel.springboot</groupId>
       <artifactId>camel-zipkin-starter</artifactId>

@@ -40,7 +40,7 @@ class AliasInfoTest {
 
     @Test
     void testApiId() {
-        aliasInfo.setApiId("api");
-        assertEquals("api", aliasInfo.getApiId());
+        aliasInfo.setServiceId("api");
+        assertEquals("api", aliasInfo.getServiceId());
     }
 }

@@ -14,28 +14,27 @@ import io.surisoft.capi.service.OpaService;
 import org.apache.camel.Exchange;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.net.HttpCookie;
 import java.text.ParseException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Component
 public class HttpUtils {
-
-    @Value("${oauth2.cookieName}")
-    private String authorizationCookieName;
-
     private static final Logger log = LoggerFactory.getLogger(HttpUtils.class);
 
-    @Autowired(required = false)
-    private List<DefaultJWTProcessor<SecurityContext>> jwtProcessorList;
+    private final String authorizationCookieName;
+    private final Optional<List<DefaultJWTProcessor<SecurityContext>>> jwtProcessorList;
+
+    public HttpUtils(@Value("${oauth2.cookieName}") String authorizationCookieName,
+                     Optional<List<DefaultJWTProcessor<SecurityContext>>> jwtProcessorList) {
+        this.authorizationCookieName = authorizationCookieName;
+        this.jwtProcessorList = jwtProcessorList;
+
+    }
 
     public String setHttpConnectTimeout(String endpoint, int timeout) {
         return prepareEndpoint(endpoint) + Constants.HTTP_CONNECT_TIMEOUT + timeout;
@@ -74,15 +73,17 @@ public class HttpUtils {
 
     public JWTClaimsSet authorizeRequest(String accessToken) throws AuthorizationException {
         Exception exception = null;
-        for(DefaultJWTProcessor<SecurityContext> jwtProcessor : jwtProcessorList) {
-            try {
-                return jwtProcessor.process(accessToken, null);
-            } catch(BadJOSEException | ParseException | JOSEException e)  {
-                exception = e;
+        if(jwtProcessorList.isPresent()) {
+            for(DefaultJWTProcessor<SecurityContext> jwtProcessor : jwtProcessorList.get()) {
+                try {
+                    return jwtProcessor.process(accessToken, null);
+                } catch(BadJOSEException | ParseException | JOSEException e)  {
+                    exception = e;
+                }
             }
-        }
-        if(exception != null) {
-            throw new AuthorizationException(exception.getMessage());
+            if(exception != null) {
+                throw new AuthorizationException(exception.getMessage());
+            }
         }
         return null;
     }

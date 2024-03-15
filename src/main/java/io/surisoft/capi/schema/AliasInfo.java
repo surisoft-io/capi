@@ -9,7 +9,7 @@ public class AliasInfo {
     private String issuerDN;
     private String subjectDN;
     private String additionalInfo;
-    private String apiId;
+    private String serviceId;
 
     public String getAlias() {
         return alias;
@@ -43,11 +43,11 @@ public class AliasInfo {
         this.additionalInfo = additionalInfo;
     }
 
-    public String getApiId() {
-        return apiId;
+    public String getServiceId() {
+        return serviceId;
     }
 
-    public void setApiId(String apiId) {
-        this.apiId = apiId;
+    public void setServiceId(String serviceId) {
+        this.serviceId = serviceId;
     }
 }

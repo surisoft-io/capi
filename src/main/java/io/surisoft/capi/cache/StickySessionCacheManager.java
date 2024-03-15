@@ -4,9 +4,7 @@ import io.surisoft.capi.kafka.CapiInstance;
 import io.surisoft.capi.kafka.CapiKafkaEvent;
 import io.surisoft.capi.schema.CapiEvent;
 import io.surisoft.capi.schema.StickySession;
-import io.surisoft.capi.utils.RouteUtils;
 import org.cache2k.Cache;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.kafka.core.KafkaTemplate;
@@ -17,21 +15,20 @@ import java.util.UUID;
 @Component
 @ConditionalOnProperty(value = "capi.kafka.enabled", havingValue = "true")
 public class StickySessionCacheManager {
+    private final Cache<String, StickySession> stickySessionCache;
+    private final KafkaTemplate<String, CapiEvent> kafkaTemplate;
+    private final CapiInstance capiInstance;
+    private final String capiKafkaTopic;
 
-    @Autowired
-    private RouteUtils routeUtils;
-
-    @Autowired
-    private Cache<String, StickySession> stickySessionCache;
-
-    @Autowired
-    private KafkaTemplate<String, CapiEvent> kafkaTemplate;
-
-    @Autowired
-    private CapiInstance capiInstance;
-
-    @Value("${capi.kafka.topic}")
-    private String capiKafkaTopic;
+    public StickySessionCacheManager(Cache<String, StickySession> stickySessionCache,
+                                     KafkaTemplate<String, CapiEvent> kafkaTemplate,
+                                     CapiInstance capiInstance,
+                                     @Value("${capi.kafka.topic}") String capiKafkaTopic) {
+        this.stickySessionCache = stickySessionCache;
+        this.kafkaTemplate = kafkaTemplate;
+        this.capiInstance = capiInstance;
+        this.capiKafkaTopic = capiKafkaTopic;
+    }
 
     public void createStickySession(StickySession stickySession, boolean notifyOtherInstances) {
         notifyOtherInstances(notifyOtherInstances, stickySession);
@@ -59,6 +56,5 @@ public class StickySessionCacheManager {
             capiEvent.setType(CapiKafkaEvent.STICKY_SESSION_EVENT_TYPE);
             kafkaTemplate.send(capiKafkaTopic, capiEvent);
         }
-
     }
 }
