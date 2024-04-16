@@ -53,9 +53,9 @@ capi:
     token:
     hosts: http://localhost:8500
     discovery:
-      enabled: true
+      enabled: false
       timer:
-        interval: 20000
+        interval: 40000
   #### Certificate Management (Editable property) ####
   #### If you want to enable certificate management, please provide a trust store (JKS). ####
   trust:
@@ -93,15 +93,15 @@ spring:
   main:
     allow-bean-definition-overriding: true
 camel:
+  main:
+    name: capi-gateway
+    tracing: false
   component:
     metrics:
       enabled: true
   servlet:
     mapping:
       context-path: /capi/*
-  springboot:
-    name: capi-gateway
-
 #### Actuator Metrics Endpoint Configuration (Do not change) ####
 management:
   server:
@@ -115,7 +115,7 @@ management:
     web:
       base-path: /metrics/
       exposure:
-        include: 'health,prometheus,routes,capi,openapi'
+        include: 'health,prometheus,routes,capi,openapi,truststore'
 
 #### Time to live for Sticky Sessions feature ####
 sticky:
@@ -130,12 +130,11 @@ oauth2:
     enabled: false
     keys:
       - http://localhost:8080/realms/master/protocol/openid-connect/certs
-      - http://localhost:8080/realms/apigw/protocol/openid-connect/certs
     host: http://localhost:8080
-    realm: /realms/apigw
+    realm: /realms/master
     clientId:
     clientSecret:
 
 opa:
-  enabled: true
+  enabled: false
   endpoint: http://localhost:8181

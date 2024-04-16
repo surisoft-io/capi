@@ -28,7 +28,7 @@ public class CapiTracerServerRequestAdapter {
     public CapiTracerServerRequestAdapter(Exchange exchange, String serviceName, CapiTracer capiTracer) {
         Endpoint endpoint = exchange.getFromEndpoint();
         this.spanName = URISupport.sanitizeUri(endpoint.getEndpointKey()).toLowerCase(Locale.ROOT);
-        this.url = serviceName;
+        this.url = exchange.getIn().getHeader("CamelHttpUri", String.class);
         this.capiTracer = capiTracer;
     }
 

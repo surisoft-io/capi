@@ -5,6 +5,7 @@ import brave.Tracing;
 import brave.context.slf4j.MDCScopeDecorator;
 import brave.propagation.*;
 import brave.sampler.Sampler;
+import io.surisoft.capi.utils.Constants;
 import io.surisoft.capi.utils.HttpUtils;
 import org.apache.camel.*;
 import org.apache.camel.api.management.ManagedAttribute;
@@ -286,7 +287,12 @@ public class CapiTracer extends ServiceSupport implements RoutePolicyFactory, St
         String sanitizedServiceName = sanitizeUri(serviceName);
         if (sanitizedServiceName != null) {
             if(sanitizedServiceName.startsWith(REST_ROUTE)) {
-                sanitizedServiceName = normalizeServiceName(sanitizedServiceName);
+                sanitizedServiceName = normalizeServiceName(sanitizedServiceName, false);
+                LOG.trace("Using serviceName: {}", sanitizedServiceName);
+            }
+            if(sanitizedServiceName.startsWith("http://") || sanitizedServiceName.startsWith("https://")) {
+                String httpUri = exchange.getIn().getHeader("CamelHttpUri", String.class);
+                sanitizedServiceName = normalizeServiceName(httpUri, true);
                 LOG.trace("Using serviceName: {}", sanitizedServiceName);
             }
         }
@@ -560,12 +566,21 @@ public class CapiTracer extends ServiceSupport implements RoutePolicyFactory, St
         return true;
     }
 
-    private String normalizeServiceName(String key) {
-        key = key.replaceAll("rest://", "");
-        String[] keyParts = key.split(":");
-        if(keyParts.length > 1) {
-            return keyParts[1];
+    private String normalizeServiceName(String key, boolean isUri) {
+        if(isUri) {
+            String[] keyParts = key.split("/");
+            key = keyParts[1] + "-forward" + ":" + keyParts[2] + ":" + keyParts[3];
+            return key;
         } else {
+            key = key.replaceAll("rest://", "");
+            String[] keyParts = key.split(":");
+            if(keyParts.length > 1) {
+                key = keyParts[1];
+            } /*else {
+            return key;
+        }*/
+            key = key.replaceAll("/", ":");
+            key = "capi" + key;
             return key;
         }
     }

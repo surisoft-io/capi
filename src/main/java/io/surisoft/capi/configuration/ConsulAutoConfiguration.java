@@ -12,7 +12,6 @@ import io.surisoft.capi.utils.ServiceUtils;
 import io.surisoft.capi.utils.WebsocketUtils;
 import org.apache.camel.CamelContext;
 import org.apache.camel.builder.RouteBuilder;
-import org.apache.camel.spi.StreamCachingStrategy;
 import org.cache2k.Cache;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -83,7 +82,7 @@ public class ConsulAutoConfiguration {
                                                    MetricsProcessor metricsProcessor,
                                                    HttpUtils httpUtils,
                                                    Cache<String, Service> serviceCache) {
-        camelContext.getRestConfiguration().setInlineRoutes(true);
+
         ConsulNodeDiscovery consulNodeDiscovery = new ConsulNodeDiscovery(camelContext, serviceUtils, routeUtils, metricsProcessor, serviceCache, websocketClientMap);
         consulNodeDiscovery.setHttpUtils(httpUtils);
 

@@ -137,6 +137,7 @@ public class RouteUtils {
         }
         return service.getContext();
     }
+
     public List<String> getAllRouteIdForAGivenService(Service service) {
         List<String> routeIdList = new ArrayList<>();
         routeIdList.add(service.getId() + ":" + HttpMethod.DELETE.getMethod());

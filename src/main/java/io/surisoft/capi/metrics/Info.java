@@ -54,9 +54,8 @@ public class Info {
     @ReadOperation
     public CapiInfo getInfo() {
         CapiInfo capiInfo = new CapiInfo();
-        capiInfo.setUptime(camelContext.getUptime());
+        capiInfo.setUptime(camelContext.getUptime().toString());
         capiInfo.setCamelVersion(camelContext.getVersion());
-        capiInfo.setStartTimestamp(camelContext.getStartDate());
         capiInfo.setTotalRoutes(camelContext.getRoutesSize());
         capiInfo.setCapiVersion(capiVersion);
         capiInfo.setCapiStringVersion(capiSpringVersion);

@@ -3,7 +3,6 @@ package io.surisoft.capi.service;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.surisoft.capi.builder.DirectRouteProcessor;
-import io.surisoft.capi.builder.RestDefinitionProcessor;
 import io.surisoft.capi.cache.StickySessionCacheManager;
 import io.surisoft.capi.processor.MetricsProcessor;
 import io.surisoft.capi.schema.*;
@@ -263,7 +262,6 @@ public class ConsulNodeDiscovery {
                         directRouteProcessor.setStickySessionCacheManager(stickySessionCacheManager);
                         directRouteProcessor.setServiceCache(serviceCache);
                         camelContext.addRoutes(directRouteProcessor);
-                        camelContext.addRoutes(new RestDefinitionProcessor(camelContext, incomingService, routeUtils, routeId));
                     } catch (Exception e) {
                         log.error(e.getMessage(), e);
                     }

@@ -3,6 +3,8 @@ package io.surisoft.capi.utils;
 import io.undertow.util.HttpString;
 import org.apache.commons.lang3.StringUtils;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 
 public class Constants {
@@ -44,6 +46,7 @@ public class Constants {
     public static final String STICKY_SESSION_IMAP_NAME = "stickySession";
     public static final String TENANT_HEADER = "tenant";
     public static final HttpString PROTOCOL_HTTP = new HttpString("HTTP/1.1");
+    public static final String MAP_HTTP_MESSAGE_FORM_URL_ENCODED_BODY = "&mapHttpMessageFormUrlEncodedBody=false";
     public static final String[] CAPI_WHITELISTED_PATHS = {
             //Swagger UI v2
             "/v2/api-docs",
@@ -61,10 +64,7 @@ public class Constants {
             "/analytics/**",
             "/swagger/**"
     };
-    public static final String[] CAPI_INTERNAL_ROUTES_PREFIX = {
-            "rd_",
-            "consul-discovery"
-    };
+    public static final List<String> CAPI_INTERNAL_ROUTES_PREFIX = List.of("consul-discovery-service");
     public static final String CAMEL_HTTP_SERVLET_REQUEST = "CamelHttpServletRequest";
     public static final String CACHE_ROUTE_STOPPED_EVENT = "RouteStoppedEvent";
     public static final String CACHE_ROUTE_REMOVED_EVENT = "RouteRemovedEvent";

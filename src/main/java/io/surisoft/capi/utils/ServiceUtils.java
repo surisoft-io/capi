@@ -1,7 +1,5 @@
 package io.surisoft.capi.utils;
 
-import io.surisoft.capi.builder.DirectRouteProcessor;
-import io.surisoft.capi.builder.RestDefinitionProcessor;
 import io.surisoft.capi.cache.StickySessionCacheManager;
 import io.surisoft.capi.processor.MetricsProcessor;
 import io.surisoft.capi.schema.ConsulObject;
@@ -131,29 +129,6 @@ public class ServiceUtils {
             for(String routeId : apiRouteIdList) {
                 camelContext.getRouteController().stopRoute(routeId);
                 camelContext.removeRoute(routeId);
-                camelContext.getRouteController().stopRoute(Constants.CAMEL_REST_PREFIX + routeId);
-                camelContext.removeRoute(Constants.CAMEL_REST_PREFIX + routeId);
-
-                /*if(checkIfOpenApiIsEnabled(incomingService)) {
-
-                    incomingService.setRoundRobinEnabled(incomingService.getMappingList().size() != 1 && !incomingService.getServiceMeta().isTenantAware());
-                    incomingService.setFailOverEnabled(incomingService.getMappingList().size() != 1 && !incomingService.getServiceMeta().isTenantAware());
-                    existingService.setRoundRobinEnabled(incomingService.getMappingList().size() != 1 && !incomingService.getServiceMeta().isTenantAware());
-                    existingService.setFailOverEnabled(incomingService.getMappingList().size() != 1 && !incomingService.getServiceMeta().isTenantAware());
-
-                    DirectRouteProcessor directRouteProcessor = new DirectRouteProcessor(camelContext, incomingService, routeUtils, metricsProcessor, routeId, capiContext, reverseProxyHost);
-                    directRouteProcessor.setHttpUtils(httpUtils);
-                    opaService.ifPresent(directRouteProcessor::setOpaService);
-                    stickySessionCacheManager.ifPresent(directRouteProcessor::setStickySessionCacheManager);
-                    directRouteProcessor.setServiceCache(serviceCache);
-                    camelContext.addRoutes(directRouteProcessor);
-                    camelContext.addRoutes(new RestDefinitionProcessor(camelContext, incomingService, routeUtils, routeId));
-
-                    existingService.setMappingList(incomingService.getMappingList());
-                    serviceCache.put(existingService.getId(), existingService);
-                } else {
-                    serviceCache.remove(existingService.getId());
-                }*/
             }
         } catch (Exception e) {
             log.error(e.getMessage(), e);
@@ -184,8 +159,6 @@ public class ServiceUtils {
                     for (String routeId : serviceRouteIdList) {
                         camelContext.getRouteController().stopRoute(routeId);
                         camelContext.removeRoute(routeId);
-                        camelContext.getRouteController().stopRoute(Constants.CAMEL_REST_PREFIX + routeId);
-                        camelContext.removeRoute(Constants.CAMEL_REST_PREFIX + routeId);
                     }
                 }
             }

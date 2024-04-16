@@ -2,8 +2,8 @@ package io.surisoft.capi.builder;
 
 import io.surisoft.capi.cache.StickySessionCacheManager;
 import io.surisoft.capi.processor.MetricsProcessor;
-import io.surisoft.capi.processor.StickyLoadBalancer;
 import io.surisoft.capi.processor.OpenApiProcessor;
+import io.surisoft.capi.processor.StickyLoadBalancer;
 import io.surisoft.capi.processor.TenantAwareLoadBalancer;
 import io.surisoft.capi.schema.Service;
 import io.surisoft.capi.service.OpaService;
@@ -13,9 +13,8 @@ import io.surisoft.capi.utils.RouteUtils;
 import org.apache.camel.CamelContext;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.model.RouteDefinition;
+import org.apache.camel.model.rest.RestDefinition;
 import org.cache2k.Cache;
-
-import java.util.Optional;
 
 public class DirectRouteProcessor extends RouteBuilder {
     private final RouteUtils routeUtils;
@@ -110,6 +109,19 @@ public class DirectRouteProcessor extends RouteBuilder {
         }
         routeUtils.registerMetric(routeId);
         routeUtils.registerTracer(service);
+
+        //build the rest definition for the inline route, default since 4.5.0
+        String restRouteId = Constants.CAMEL_REST_PREFIX + routeId;
+        RestDefinition restDefinition = getRestDefinition(service);
+        if(restDefinition != null) {
+            restDefinition.to(Constants.CAMEL_DIRECT + routeId);
+            restDefinition.routeId(restRouteId);
+            routeUtils.registerMetric(restRouteId);
+        } else {
+            log.warn("Bad definition for service name: {}, please make sure the service context does not contain colons", service.getContext());
+        }
+
+
     }
 
     public void setOpaService(OpaService opaService) {
@@ -126,5 +138,34 @@ public class DirectRouteProcessor extends RouteBuilder {
 
     public void setStickySessionCacheManager(StickySessionCacheManager stickySessionCacheManager) {
         this.stickySessionCacheManager = stickySessionCacheManager;
+    }
+
+    private RestDefinition getRestDefinition(Service service) {
+        RestDefinition restDefinition;
+        service.setMatchOnUriPrefix(true);
+
+        switch (routeUtils.getMethodFromRouteId(routeId)) {
+            case "get" -> restDefinition = rest().get(routeUtils.buildFrom(service)
+                    + Constants.MATCH_ON_URI_PREFIX
+                    + service.isMatchOnUriPrefix());
+            case "post" -> restDefinition = rest().post(routeUtils.buildFrom(service)
+                    + Constants.MATCH_ON_URI_PREFIX
+                    + service.isMatchOnUriPrefix()
+                    + Constants.MAP_HTTP_MESSAGE_FORM_URL_ENCODED_BODY);
+            case "put" -> restDefinition = rest().put(routeUtils.buildFrom(service)
+                    + Constants.MATCH_ON_URI_PREFIX
+                    + service.isMatchOnUriPrefix()
+                    + Constants.MAP_HTTP_MESSAGE_FORM_URL_ENCODED_BODY);
+            case "delete" -> restDefinition = rest().delete(routeUtils.buildFrom(service)
+                    + Constants.MATCH_ON_URI_PREFIX
+                    + service.isMatchOnUriPrefix());
+            case "patch" -> restDefinition = rest().patch(routeUtils.buildFrom(service)
+                    + Constants.MATCH_ON_URI_PREFIX
+                    + service.isMatchOnUriPrefix());
+            default -> {
+                return null;
+            }
+        }
+        return restDefinition;
     }
 }
