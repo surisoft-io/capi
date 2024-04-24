@@ -46,7 +46,7 @@ capi:
   #### Enable Traces (Editable Property) ####
   traces:
     enabled: false
-    endpoint: http://localhost:9411/api/v2/spans
+    endpoint: http://localhost:9411
   #### Consul Integration (Editable Property) ####
   #### If you want CAPI to search consul for available APIs to be deployed, enable this feature. ####
   consul:

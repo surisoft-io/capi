@@ -26,7 +26,7 @@ import java.util.Objects;
 public class Oauth2ClientManager {
 
     private static final Logger log = LoggerFactory.getLogger(Oauth2ClientManager.class);
-    @Autowired
+    //@Autowired
     private OkHttpClient httpClient;
     private final ObjectMapper objectMapper = new ObjectMapper();
     @Value("${oauth2.provider.clientId}")

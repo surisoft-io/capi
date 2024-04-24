@@ -7,21 +7,26 @@
   <groupId>io.surisoft.capi</groupId>
   <artifactId>capi</artifactId>
   <packaging>jar</packaging>
-  <version>4.5.07</version>
+  <version>4.5.08</version>
   <description>${spring.boot-version}</description>
   <name>CAPI Gateway</name>
 
   <properties>
     <org.apache.camel.springboot-version>4.5.0</org.apache.camel.springboot-version>
-    <spring.boot-version>3.2.4</spring.boot-version>
+    <spring.boot-version>3.2.5</spring.boot-version>
 
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-    <io.zipkin.reporter2-version>2.16.4</io.zipkin.reporter2-version>
-    <spring-cloud-sleuth-version>3.1.10</spring-cloud-sleuth-version>
+    <io.zipkin.reporter2-version>3.4.0</io.zipkin.reporter2-version>
+    <spring-cloud-sleuth-version>3.1.11</spring-cloud-sleuth-version>
     <nimbus-jose-jwt-version>9.37.3</nimbus-jose-jwt-version>
-    <io.micrometer-version>1.12.2</io.micrometer-version>
+    <io.micrometer-version>1.12.5</io.micrometer-version>
     <cache2k-version>2.6.1.Final</cache2k-version>
+    <io.swagger.parser.v3.version>2.1.22</io.swagger.parser.v3.version>
+
+    <jackson-dataformat-xml.version>2.17.0</jackson-dataformat-xml.version>
+    <spring.kafka.version>3.0.11</spring.kafka.version>
+    <camel-zipkin-starter.version>3.22.1</camel-zipkin-starter.version>
 
     <wiremock.version>3.0.1</wiremock.version>
     <org.bouncycastle.version>1.70</org.bouncycastle.version>
@@ -32,17 +37,16 @@
     <sonar.java.coveragePlugin>jacoco</sonar.java.coveragePlugin>
     <sonar.dynamicAnalysis>reuseReports</sonar.dynamicAnalysis>
     <sonar.jacoco.reportPath>${project.basedir}/../target/jacoco.exec</sonar.jacoco.reportPath>
-    <jackson-dataformat-xml.version>2.15.2</jackson-dataformat-xml.version>
-    <spring.kafka.version>3.0.11</spring.kafka.version>
+
     <grpc.api.version>1.58.0</grpc.api.version>
     <com.google.api.grpc.version>2.17.0</com.google.api.grpc.version>
-    <io.swagger.parser.v3.version>2.1.16</io.swagger.parser.v3.version>
+
   </properties>
 
   <parent>
     <groupId>org.springframework.boot</groupId>
     <artifactId>spring-boot-starter-parent</artifactId>
-    <version>3.2.3</version>
+    <version>3.2.5</version>
     <relativePath/>
   </parent>
 
@@ -107,7 +111,7 @@
     <dependency>
       <groupId>org.apache.camel.springboot</groupId>
       <artifactId>camel-zipkin-starter</artifactId>
-      <version>3.21.0</version>
+      <version>${camel-zipkin-starter.version}</version>
     </dependency>
     <dependency>
       <groupId>org.apache.camel</groupId>
@@ -170,13 +174,6 @@
       <artifactId>camel-micrometer</artifactId>
       <version>${org.apache.camel.springboot-version}</version>
     </dependency>
-
-    <dependency>
-      <groupId>net.logstash.logback</groupId>
-      <artifactId>logstash-logback-encoder</artifactId>
-      <version>4.11</version>
-    </dependency>
-
     <dependency>
       <groupId>io.micrometer</groupId>
       <artifactId>micrometer-registry-jmx</artifactId>

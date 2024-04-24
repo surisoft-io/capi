@@ -1,8 +1,6 @@
 package io.surisoft.capi.tracer;
 
 import brave.SpanCustomizer;
-import com.nimbusds.jose.JOSEException;
-import com.nimbusds.jose.proc.BadJOSEException;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
 import io.surisoft.capi.exception.AuthorizationException;
@@ -13,7 +11,6 @@ import org.apache.camel.util.URISupport;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.text.ParseException;
 import java.util.Calendar;
 import java.util.Date;
@@ -25,7 +22,7 @@ public class CapiTracerServerRequestAdapter {
     private final String url;
     private final CapiTracer capiTracer;
 
-    public CapiTracerServerRequestAdapter(Exchange exchange, String serviceName, CapiTracer capiTracer) {
+    public CapiTracerServerRequestAdapter(Exchange exchange, CapiTracer capiTracer) {
         Endpoint endpoint = exchange.getFromEndpoint();
         this.spanName = URISupport.sanitizeUri(endpoint.getEndpointKey()).toLowerCase(Locale.ROOT);
         this.url = exchange.getIn().getHeader("CamelHttpUri", String.class);

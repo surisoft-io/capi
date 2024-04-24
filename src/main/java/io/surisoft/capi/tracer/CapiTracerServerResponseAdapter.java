@@ -1,26 +1,14 @@
 package io.surisoft.capi.tracer;
 
 import brave.SpanCustomizer;
-import com.nimbusds.jose.JOSEException;
-import com.nimbusds.jose.proc.BadJOSEException;
-import com.nimbusds.jwt.JWTClaimsSet;
-import io.surisoft.capi.exception.AuthorizationException;
 import io.surisoft.capi.utils.Constants;
 import jakarta.servlet.http.HttpServletRequest;
 import org.apache.camel.Exchange;
 import org.apache.camel.util.ObjectHelper;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.io.IOException;
-import java.text.ParseException;
 
 public class CapiTracerServerResponseAdapter {
-    private static final Logger LOG = LoggerFactory.getLogger(CapiTracerServerResponseAdapter.class);
-    private final CapiTracer capiTracer;
     private final String url;
-    public CapiTracerServerResponseAdapter(CapiTracer capiTracer, String url) {
-        this.capiTracer = capiTracer;
+    public CapiTracerServerResponseAdapter(String url) {
         this.url = url;
     }
 
@@ -39,6 +27,7 @@ public class CapiTracerServerResponseAdapter {
 
         if(httpServletRequest != null && httpServletRequest.getMethod() != null) {
             span.tag(Constants.CAPI_REQUEST_METHOD, httpServletRequest.getMethod());
+            span.name(httpServletRequest.getMethod());
         }
 
         if(httpServletRequest != null && httpServletRequest.getHeader(Constants.CONTENT_TYPE) != null) {
@@ -53,7 +42,6 @@ public class CapiTracerServerResponseAdapter {
             span.tag(Constants.CAPI_REQUEST_ERROR_MESSAGE, (String) exchange.getIn().getHeader(Constants.REASON_MESSAGE_HEADER));
         }
 
-        // lets capture http response code for http based components
         String responseCode = exchange.getMessage().getHeader(Exchange.HTTP_RESPONSE_CODE, String.class);
         if (responseCode != null) {
             span.tag(Constants.CAPI_SERVER_EXCHANGE_MESSAGE_RESPONSE_CODE, responseCode);
