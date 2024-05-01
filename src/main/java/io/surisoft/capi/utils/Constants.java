@@ -3,7 +3,6 @@ package io.surisoft.capi.utils;
 import io.undertow.util.HttpString;
 import org.apache.commons.lang3.StringUtils;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -128,5 +127,8 @@ public class Constants {
     public static final int UNAUTHORIZED_CODE = 401;
     public static final int FORBIDDEN_CODE = 403;
     public static final int BAD_REQUEST_CODE = 400;
-
+    public static final String CLIENT_START_TIME = "ClientStartTime";
+    public static final String CLIENT_END_TIME = "ClientEndTime";
+    public static final String CLIENT_ENDPOINT = "ClientEndpoint";
+    public static final String CLIENT_RESPONSE_CODE = "ClientResponseCode";
 }

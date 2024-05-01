@@ -46,5 +46,13 @@ public class CapiTracerServerResponseAdapter {
         if (responseCode != null) {
             span.tag(Constants.CAPI_SERVER_EXCHANGE_MESSAGE_RESPONSE_CODE, responseCode);
         }
+
+        long clientStart = (Long) exchange.getProperty(Constants.CLIENT_START_TIME);
+        long clientEnd = (Long) exchange.getProperty(Constants.CLIENT_END_TIME);
+        double clientResponseTime = clientEnd - clientStart;
+        String clientEndpoint = (String) exchange.getProperty(Constants.CLIENT_ENDPOINT);
+        span.tag("capi.client.response.time", clientResponseTime+"ms");
+        span.tag("capi.client.endpoint", (clientEndpoint.contains("/capi-error") ? "-" : clientEndpoint));
+        span.tag("capi.client.response.code", (String) exchange.getProperty(Constants.CLIENT_RESPONSE_CODE));
     }
 }

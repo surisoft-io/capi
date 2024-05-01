@@ -53,9 +53,9 @@ capi:
     token:
     hosts: http://localhost:8500
     discovery:
-      enabled: false
+      enabled: true
       timer:
-        interval: 40000
+        interval: 50000
   #### Certificate Management (Editable property) ####
   #### If you want to enable certificate management, please provide a trust store (JKS). ####
   trust:

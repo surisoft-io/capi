@@ -33,7 +33,6 @@ public class HttpUtils {
                      Optional<List<DefaultJWTProcessor<SecurityContext>>> jwtProcessorList) {
         this.authorizationCookieName = authorizationCookieName;
         this.jwtProcessorList = jwtProcessorList;
-
     }
 
     public String setHttpConnectTimeout(String endpoint, int timeout) {
@@ -191,16 +190,21 @@ public class HttpUtils {
         return false;
     }
 
-    private boolean isTokenInGroup(JWTClaimsSet jwtClaimsSet, String groups) throws ParseException, JsonProcessingException {
+    private boolean isTokenInGroup(JWTClaimsSet jwtClaimsSet, String groups) {
         if(groups != null) {
-            List<String> groupList = Collections.singletonList(groups);
-            List<String> subscriptionGroupList =  jwtClaimsSet.getStringListClaim(Oauth2Constants.SUBSCRIPTIONS_CLAIM);
-            for(String subscriptionGroup : subscriptionGroupList) {
-                for(String apiGroup : groupList) {
-                    if(normalizeGroup(apiGroup).equals(normalizeGroup(subscriptionGroup))) {
-                        return true;
+            try {
+                List<String> groupList = Collections.singletonList(groups);
+                List<String> subscriptionGroupList = null;
+                subscriptionGroupList = jwtClaimsSet.getStringListClaim(Oauth2Constants.SUBSCRIPTIONS_CLAIM);
+                for(String subscriptionGroup : subscriptionGroupList) {
+                    for(String apiGroup : groupList) {
+                        if(normalizeGroup(apiGroup).equals(normalizeGroup(subscriptionGroup))) {
+                            return true;
+                        }
                     }
                 }
+            } catch (Exception e) {
+                return false;
             }
         }
         return false;

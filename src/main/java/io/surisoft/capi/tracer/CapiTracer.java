@@ -5,12 +5,15 @@ import brave.Tracing;
 import brave.context.slf4j.MDCScopeDecorator;
 import brave.propagation.*;
 import brave.sampler.Sampler;
+import io.surisoft.capi.utils.Constants;
 import io.surisoft.capi.utils.HttpUtils;
 import org.apache.camel.*;
 import org.apache.camel.api.management.ManagedAttribute;
 import org.apache.camel.api.management.ManagedResource;
+import org.apache.camel.spi.CamelEvent;
 import org.apache.camel.spi.RoutePolicy;
 import org.apache.camel.spi.RoutePolicyFactory;
+import org.apache.camel.support.EventNotifierSupport;
 import org.apache.camel.support.RoutePolicySupport;
 import org.apache.camel.support.service.ServiceHelper;
 import org.apache.camel.support.service.ServiceSupport;
@@ -25,6 +28,9 @@ import zipkin2.reporter.Reporter;
 import zipkin2.reporter.brave.ZipkinSpanHandler;
 
 import java.io.Closeable;
+import java.time.Instant;
+import java.time.temporal.ChronoField;
+import java.time.temporal.TemporalField;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -50,6 +56,8 @@ public class CapiTracer extends ServiceSupport implements RoutePolicyFactory, St
     private boolean includeMessageBody;
     private boolean includeMessageBodyStreams;
     private final List<String> exclusions = new ArrayList<>();
+
+    private final CapiEventNotifier eventNotifier = new CapiEventNotifier();
 
     public CapiTracer(HttpUtils httpUtils) {
         exclusions.add("bean://consulNodeDiscovery");
@@ -131,6 +139,8 @@ public class CapiTracer extends ServiceSupport implements RoutePolicyFactory, St
 
     @Override
     protected void doInit() throws Exception {
+        camelContext.getManagementStrategy().addEventNotifier(eventNotifier);
+
         ObjectHelper.notNull(camelContext, "CamelContext", this);
         ObjectHelper.notNull(spanReporter, "Reporter<zipkin2.Span>", this);
         if (!camelContext.getRoutePolicyFactories().contains(this)) {
@@ -296,5 +306,34 @@ public class CapiTracer extends ServiceSupport implements RoutePolicyFactory, St
         key = key.replaceAll("/", ":");
         key = "capi" + key;
         return key;
+    }
+
+    private static final class CapiEventNotifier extends EventNotifierSupport {
+        @Override
+        public void notify(CamelEvent camelEvent) throws Exception {
+            if (camelEvent instanceof CamelEvent.ExchangeSendingEvent exchangeSendingEvent) {
+                LOG.trace("NOTIFY CamelEvent.ExchangeSendingEvent");
+                Endpoint endpoint = exchangeSendingEvent.getEndpoint();
+                exchangeSendingEvent.getExchange().setProperty(Constants.CLIENT_START_TIME, System.currentTimeMillis());
+                exchangeSendingEvent.getExchange().setProperty(Constants.CLIENT_ENDPOINT, endpoint.getEndpointKey());
+            } else if (camelEvent instanceof CamelEvent.ExchangeSentEvent exchangeSentEvent) {
+                LOG.trace("NOTIFY CamelEvent.ExchangeSentEvent");
+                exchangeSentEvent.getExchange().setProperty(Constants.CLIENT_RESPONSE_CODE, exchangeSentEvent.getExchange().getMessage().getHeader(Exchange.HTTP_RESPONSE_CODE, String.class));
+                exchangeSentEvent.getExchange().setProperty(Constants.CLIENT_END_TIME, System.currentTimeMillis());
+            }
+        }
+
+        @Override
+        public boolean isEnabled(CamelEvent event) {
+            return switch (event.getType()) {
+                case ExchangeSending, ExchangeSent, ExchangeCreated, ExchangeCompleted, ExchangeFailed -> true;
+                default -> false;
+            };
+        }
+
+        @Override
+        public String toString() {
+            return "CapiEventNotifier";
+        }
     }
 }
