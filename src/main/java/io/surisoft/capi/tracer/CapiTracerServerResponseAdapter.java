@@ -5,8 +5,11 @@ import io.surisoft.capi.utils.Constants;
 import jakarta.servlet.http.HttpServletRequest;
 import org.apache.camel.Exchange;
 import org.apache.camel.util.ObjectHelper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class CapiTracerServerResponseAdapter {
+    private static final Logger LOG = LoggerFactory.getLogger(CapiTracerServerResponseAdapter.class);
     private final String url;
     public CapiTracerServerResponseAdapter(String url) {
         this.url = url;
@@ -47,12 +50,29 @@ public class CapiTracerServerResponseAdapter {
             span.tag(Constants.CAPI_SERVER_EXCHANGE_MESSAGE_RESPONSE_CODE, responseCode);
         }
 
-        long clientStart = (Long) exchange.getProperty(Constants.CLIENT_START_TIME);
-        long clientEnd = (Long) exchange.getProperty(Constants.CLIENT_END_TIME);
-        double clientResponseTime = clientEnd - clientStart;
-        String clientEndpoint = (String) exchange.getProperty(Constants.CLIENT_ENDPOINT);
-        span.tag("capi.client.response.time", clientResponseTime+"ms");
-        span.tag("capi.client.endpoint", (clientEndpoint.contains("/capi-error") ? "-" : clientEndpoint));
-        span.tag("capi.client.response.code", (String) exchange.getProperty(Constants.CLIENT_RESPONSE_CODE));
+        String clientResponseTime = getClientResponseTime(exchange);
+        if(clientResponseTime != null) {
+            span.tag("capi.client.response.time", clientResponseTime);
+        }
+
+        String clientEndpoint = exchange.getProperty(Constants.CLIENT_ENDPOINT, String.class);
+        if(clientEndpoint != null) {
+            span.tag("capi.client.address", clientEndpoint);
+        }
+
+        String clientResponseCode = exchange.getProperty(Constants.CLIENT_RESPONSE_CODE, String.class);
+        if(clientResponseCode != null) {
+            span.tag("capi.client.response.code", clientResponseCode);
+        }
+    }
+
+    private String getClientResponseTime(Exchange exchange) {
+        Long clientStartTime = exchange.getProperty(Constants.CLIENT_START_TIME, Long.class);
+        Long clientEndTime = exchange.getProperty(Constants.CLIENT_END_TIME, Long.class);
+        if(clientStartTime != null && clientEndTime != null) {
+            return (clientEndTime - clientStartTime) + "ms";
+        } else {
+            return null;
+        }
     }
 }

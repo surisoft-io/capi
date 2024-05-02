@@ -28,9 +28,6 @@ import zipkin2.reporter.Reporter;
 import zipkin2.reporter.brave.ZipkinSpanHandler;
 
 import java.io.Closeable;
-import java.time.Instant;
-import java.time.temporal.ChronoField;
-import java.time.temporal.TemporalField;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
