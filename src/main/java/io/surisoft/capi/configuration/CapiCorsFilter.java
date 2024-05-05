@@ -16,6 +16,9 @@ import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -79,12 +82,14 @@ public class CapiCorsFilter implements Filter {
     }
 
     private void processOrigin(HttpServletResponse response, HttpServletRequest request, String origin, boolean capiConsumer) {
-        if(capiConsumer) {
-            if(isOriginAllowed(request)) {
+        if(isValidOrigin(origin)) {
+            if(capiConsumer) {
+                if(isOriginAllowed(request)) {
+                    response.setHeader(Constants.ACCESS_CONTROL_ALLOW_ORIGIN, origin);
+                }
+            } else {
                 response.setHeader(Constants.ACCESS_CONTROL_ALLOW_ORIGIN, origin);
             }
-        } else {
-            response.setHeader(Constants.ACCESS_CONTROL_ALLOW_ORIGIN, origin);
         }
     }
 
@@ -101,5 +106,14 @@ public class CapiCorsFilter implements Filter {
             }
         }
         return true;
+    }
+
+    private boolean isValidOrigin(String origin) {
+        try {
+            new URL(origin).toURI();
+            return true;
+        } catch (MalformedURLException | URISyntaxException e) {
+            return false;
+        }
     }
 }
