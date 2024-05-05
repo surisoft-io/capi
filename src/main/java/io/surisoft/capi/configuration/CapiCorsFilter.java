@@ -85,10 +85,10 @@ public class CapiCorsFilter implements Filter {
         if(isValidOrigin(origin)) {
             if(capiConsumer) {
                 if(isOriginAllowed(request)) {
-                    response.setHeader(Constants.ACCESS_CONTROL_ALLOW_ORIGIN, origin);
+                    response.setHeader(Constants.ACCESS_CONTROL_ALLOW_ORIGIN, origin.replaceAll("(\r\n|\n)", ""));
                 }
             } else {
-                response.setHeader(Constants.ACCESS_CONTROL_ALLOW_ORIGIN, origin);
+                response.setHeader(Constants.ACCESS_CONTROL_ALLOW_ORIGIN, origin.replaceAll("(\r\n|\n)", ""));
             }
         }
     }
