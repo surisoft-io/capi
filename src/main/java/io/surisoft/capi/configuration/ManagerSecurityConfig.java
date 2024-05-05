@@ -13,11 +13,6 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
-import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.web.SecurityFilterChain;
 
 import java.io.IOException;
 import java.net.URL;
@@ -26,7 +21,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Configuration
-@EnableWebSecurity
 public class ManagerSecurityConfig {
 
     private static final Logger log = LoggerFactory.getLogger(ManagerSecurityConfig.class);
@@ -40,20 +34,6 @@ public class ManagerSecurityConfig {
         return new ArrayList<>();
     }
 
-
-    @Bean
-    protected SecurityFilterChain configure(HttpSecurity http) throws Exception {
-        log.debug("Configuring security");
-        return http
-                .csrf(AbstractHttpConfigurer::disable)
-                .sessionManagement((sessionManagement) ->
-                        sessionManagement.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-                )
-                .authorizeHttpRequests(authorization ->
-                        authorization.anyRequest().permitAll()
-                )
-                .build();
-    }
 
     @Bean
     @ConditionalOnProperty(prefix = "oauth2.provider", name = "enabled", havingValue = "true")
