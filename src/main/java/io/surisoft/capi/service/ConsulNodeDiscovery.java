@@ -292,7 +292,7 @@ public class ConsulNodeDiscovery {
     private HttpRequest buildServiceNameHttpRequest(String consulHost, String serviceName) {
         HttpRequest.Builder builder = HttpRequest.newBuilder();
         if(consulToken != null) {
-            builder.header(Constants.AUTHORIZATION_HEADER, Constants.BEARER + consulToken);
+            builder.header(Constants.AUTHORIZATION_HEADER, Constants.BEARER + consulToken.replaceAll("(\r\n|\n)", ""));
         }
         return builder
                 .uri(URI.create(consulHost + GET_SERVICE_BY_NAME + serviceName))

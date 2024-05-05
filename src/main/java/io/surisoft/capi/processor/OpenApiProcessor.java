@@ -134,7 +134,7 @@ public class OpenApiProcessor implements Processor {
 
     private void propagateAuthorization(Exchange exchange, String accessToken) {
         if(accessToken != null) {
-            exchange.getIn().setHeader(Constants.AUTHORIZATION_HEADER, Constants.BEARER + accessToken);
+            exchange.getIn().setHeader(Constants.AUTHORIZATION_HEADER, Constants.BEARER + accessToken.replaceAll("(\r\n|\n)", ""));
         }
     }
 }
