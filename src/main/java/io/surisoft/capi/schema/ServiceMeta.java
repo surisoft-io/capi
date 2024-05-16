@@ -58,6 +58,9 @@ public class ServiceMeta {
 
         private String namespace;
 
+        @JsonProperty("route-group-first")
+        private boolean routeGroupFirst;
+
     public boolean isSecured() {
         return secured;
     }
@@ -206,5 +209,13 @@ public class ServiceMeta {
 
     public void setNamespace(String namespace) {
         this.namespace = namespace;
+    }
+
+    public boolean isRouteGroupFirst() {
+        return routeGroupFirst;
+    }
+
+    public void setRouteGroupFirst(boolean routeGroupFirst) {
+        this.routeGroupFirst = routeGroupFirst;
     }
 }

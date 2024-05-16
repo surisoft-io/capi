@@ -55,7 +55,7 @@ capi:
     discovery:
       enabled: true
       timer:
-        interval: 50000
+        interval: 10000
   #### Certificate Management (Editable property) ####
   #### If you want to enable certificate management, please provide a trust store (JKS). ####
   trust:

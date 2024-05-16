@@ -158,9 +158,8 @@ public class ConsulNodeDiscovery {
             log.trace("Processing service name: {}", serviceName);
             Map<String, Set<Mapping>> servicesStructure = groupByServiceId(objectList);
             for (var entry : servicesStructure.entrySet()) {
-                String serviceId = serviceName + ":" + entry.getKey();
-                Service incomingService = createServiceObject(serviceId, serviceName, entry.getKey(), entry.getValue(), objectList);
-                Service existingService = serviceCache.peek(serviceId);
+                Service incomingService = createServiceObject(serviceName, entry.getKey(), entry.getValue(), objectList);
+                Service existingService = serviceCache.peek(incomingService.getId());
                 if(existingService == null) {
                     if(serviceUtils.checkIfOpenApiIsEnabled(incomingService)) {
                         createRoute(incomingService);
@@ -227,12 +226,21 @@ public class ConsulNodeDiscovery {
         return null;
     }
 
-    private Service createServiceObject(String serviceId, String serviceName, String key, Set<Mapping> mappingList, List<ConsulObject> consulResponse) {
+    private Service createServiceObject(String serviceName, String key, Set<Mapping> mappingList, List<ConsulObject> consulResponse) {
         Service incomingService = new Service();
-        incomingService.setId(serviceId);
+        ServiceMeta serviceMeta = getServiceMeta(key, consulResponse);
+
+        if(serviceMeta.isRouteGroupFirst()) {
+            incomingService.setId(key + ":" + serviceName);
+            incomingService.setContext("/" + key + "/" + serviceName);
+        } else {
+            incomingService.setId(serviceName + ":" + key);
+            incomingService.setContext("/" + serviceName + "/" + key);
+        }
+
         incomingService.setName(serviceName);
         incomingService.setRegisteredBy(getClass().getName());
-        incomingService.setContext("/" + serviceName + "/" + key);
+
         incomingService.setMappingList(mappingList);
         incomingService.setServiceMeta(getServiceMeta(key, consulResponse));
         incomingService.setServiceIdConsul(getServiceIdConsul(key, consulResponse));
