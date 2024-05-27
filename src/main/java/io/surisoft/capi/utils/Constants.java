@@ -109,7 +109,8 @@ public class Constants {
             "X-B3-TraceId",
             "X-B3-ParentSpanId",
             "X-Auth-Url-Index",
-            "X-Apigateway-Impersonated-Cookie-Name"
+            "X-Apigateway-Impersonated-Cookie-Name",
+            "Vary"
     };
 
     public static final String ACCESS_CONTROL_ALLOW_ORIGIN = "Access-Control-Allow-Origin";

@@ -75,7 +75,7 @@ public class OpenApiProcessor implements Processor {
                             }
                             propagateAuthorization(exchange, accessToken);
                         } catch (AuthorizationException e) {
-                            sendException(e.getMessage(), Constants.BAD_REQUEST_CODE, exchange);
+                            sendException(e.getMessage(), Constants.UNAUTHORIZED_CODE, exchange);
                         }
                     }
                     return true;
