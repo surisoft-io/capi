@@ -40,7 +40,7 @@ class CapiErrorInterfaceTest {
 
         // Verify the results
         assertThat(response.getStatus()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR.value());
-        assertThat(response.getContentAsString()).isEqualTo("{\"errorMessage\":\"The requested route is not available, please try again later on.\",\"errorCode\":\"org.springframework.http.HttpStatus.BAD_REQUEST\"}");
+        assertThat(response.getContentAsString()).isEqualTo("{\"errorMessage\":\"The requested route is not available, please try again later on.\",\"errorCode\":401}");
     }
 
     @Test
@@ -54,7 +54,7 @@ class CapiErrorInterfaceTest {
 
         // Verify the results
         assertThat(response.getStatus()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR.value());
-        assertThat(response.getContentAsString()).isEqualTo("{\"errorMessage\":\"The requested route is not available, please try again later on.\",\"errorCode\":\"org.springframework.http.HttpStatus.BAD_REQUEST\"}");
+        assertThat(response.getContentAsString()).isEqualTo("{\"errorMessage\":\"The requested route is not available, please try again later on.\",\"errorCode\":401}");
     }
 
     @Test
@@ -68,7 +68,7 @@ class CapiErrorInterfaceTest {
 
         // Verify the results
         assertThat(response.getStatus()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR.value());
-        assertThat(response.getContentAsString()).isEqualTo("{\"errorMessage\":\"The requested route is not available, please try again later on.\",\"errorCode\":\"org.springframework.http.HttpStatus.BAD_REQUEST\"}");
+        assertThat(response.getContentAsString()).isEqualTo("{\"errorMessage\":\"The requested route is not available, please try again later on.\",\"errorCode\":401}");
     }
 
     @Test
@@ -81,7 +81,7 @@ class CapiErrorInterfaceTest {
 
         // Verify the results
         assertThat(response.getStatus()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR.value());
-        assertThat(response.getContentAsString()).isEqualTo("{\"errorMessage\":\"The requested route is not available, please try again later on.\",\"errorCode\":\"org.springframework.http.HttpStatus.BAD_REQUEST\"}");
+        assertThat(response.getContentAsString()).isEqualTo("{\"errorMessage\":\"The requested route is not available, please try again later on.\",\"errorCode\":401}");
     }
 
     @Test
@@ -95,6 +95,6 @@ class CapiErrorInterfaceTest {
 
         // Verify the results
         assertThat(response.getStatus()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR.value());
-        assertThat(response.getContentAsString()).isEqualTo("{\"errorMessage\":\"The requested route is not available, please try again later on.\",\"errorCode\":\"org.springframework.http.HttpStatus.BAD_REQUEST\"}");
+        assertThat(response.getContentAsString()).isEqualTo("{\"errorMessage\":\"The requested route is not available, please try again later on.\",\"errorCode\":401}");
     }
 }

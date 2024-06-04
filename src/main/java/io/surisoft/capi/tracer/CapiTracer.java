@@ -309,12 +309,10 @@ public class CapiTracer extends ServiceSupport implements RoutePolicyFactory, St
         @Override
         public void notify(CamelEvent camelEvent) throws Exception {
             if (camelEvent instanceof CamelEvent.ExchangeSendingEvent exchangeSendingEvent) {
-                LOG.trace("NOTIFY CamelEvent.ExchangeSendingEvent");
                 Endpoint endpoint = exchangeSendingEvent.getEndpoint();
                 exchangeSendingEvent.getExchange().setProperty(Constants.CLIENT_START_TIME, System.currentTimeMillis());
                 exchangeSendingEvent.getExchange().setProperty(Constants.CLIENT_ENDPOINT, endpoint.getEndpointKey());
             } else if (camelEvent instanceof CamelEvent.ExchangeSentEvent exchangeSentEvent) {
-                LOG.trace("NOTIFY CamelEvent.ExchangeSentEvent");
                 exchangeSentEvent.getExchange().setProperty(Constants.CLIENT_RESPONSE_CODE, exchangeSentEvent.getExchange().getMessage().getHeader(Exchange.HTTP_RESPONSE_CODE, String.class));
                 exchangeSentEvent.getExchange().setProperty(Constants.CLIENT_END_TIME, System.currentTimeMillis());
             }

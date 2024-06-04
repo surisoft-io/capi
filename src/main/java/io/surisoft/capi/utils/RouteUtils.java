@@ -10,6 +10,7 @@ import io.surisoft.capi.tracer.CapiTracer;
 import org.apache.camel.CamelContext;
 import org.apache.camel.Route;
 import org.apache.camel.component.http.HttpComponent;
+import org.apache.camel.component.mock.MockEndpoint;
 import org.apache.camel.model.RouteDefinition;
 import org.cache2k.Cache;
 import org.slf4j.Logger;
@@ -37,6 +38,9 @@ public class RouteUtils {
     private WebsocketUtils websocketUtils;
     private Map<String, WebsocketClient> websocketClientMap;
     private final boolean gatewayCorsManagementEnabled;
+    private final boolean capiErrorListenerEnabled;
+    private final String capiErrorListenerContext;
+    private final int capiErrorListenerPort;
 
     public RouteUtils(@Value("${server.ssl.enabled}") boolean sslEnabled,
                       @Value("${capi.gateway.error.endpoint}") String capiGatewayErrorEndpoint,
@@ -50,7 +54,10 @@ public class RouteUtils {
                       Optional<AuthorizationProcessor> authorizationProcessor,
                       WebsocketUtils websocketUtils,
                       Map<String, WebsocketClient> websocketClientMap,
-                      @Value("${capi.gateway.cors.management.enabled}") boolean gatewayCorsManagementEnabled) {
+                      @Value("${capi.gateway.cors.management.enabled}") boolean gatewayCorsManagementEnabled,
+                      @Value("${capi.gateway.error.listener.enabled}") boolean capiErrorListenerEnabled,
+                      @Value("${capi.gateway.error.listener.context}") String capiErrorListenerContext,
+                      @Value("${capi.gateway.error.listener.port}") int capiErrorListenerPort) {
         this.sslEnabled = sslEnabled;
         this.capiGatewayErrorEndpoint = capiGatewayErrorEndpoint;
         this.capiGatewayErrorEndpointSsl = capiGatewayErrorEndpointSsl;
@@ -64,6 +71,9 @@ public class RouteUtils {
         this.websocketUtils = websocketUtils;
         this.websocketClientMap = websocketClientMap;
         this.gatewayCorsManagementEnabled = gatewayCorsManagementEnabled;
+        this.capiErrorListenerEnabled = capiErrorListenerEnabled;
+        this.capiErrorListenerContext = capiErrorListenerContext;
+        this.capiErrorListenerPort = capiErrorListenerPort;
 
     }
 
@@ -82,20 +92,41 @@ public class RouteUtils {
                                            boolean isTraceIdVisible,
                                            String routeID) {
 
-        routeDefinition
-                .onException(Exception.class)
-                .handled(true)
-                .setHeader(Constants.ERROR_API_SHOW_TRACE_ID, constant(isTraceIdVisible))
-                .process(httpErrorProcessor)
-                .setHeader(Constants.ROUTE_ID_HEADER, constant(routeID))
-                .toF((capiGatewayErrorEndpointSsl ? Constants.FAIL_HTTPS_REST_ENDPOINT_OBJECT : Constants.FAIL_HTTP_REST_ENDPOINT_OBJECT), capiGatewayErrorEndpoint)
-                .removeHeader(Constants.ERROR_API_SHOW_TRACE_ID)
-                .removeHeader(Constants.ERROR_API_SHOW_INTERNAL_ERROR_MESSAGE)
-                .removeHeader(Constants.ERROR_API_SHOW_INTERNAL_ERROR_CLASS)
-                .removeHeader(Constants.CAPI_URL_IN_ERROR)
-                .removeHeader(Constants.CAPI_URI_IN_ERROR)
-                .removeHeader(Constants.ROUTE_ID_HEADER)
-                .end();
+        if(capiErrorListenerEnabled) {
+            routeDefinition
+                    .onException(Exception.class)
+                    .handled(true)
+                    .setHeader(Constants.ERROR_API_SHOW_TRACE_ID, constant(isTraceIdVisible))
+                    .process(httpErrorProcessor)
+                    .setHeader(Constants.ROUTE_ID_HEADER, constant(routeID))
+                    .toF(Constants.FAIL_HTTP_REST_ENDPOINT_OBJECT, "localhost:" + capiErrorListenerPort + capiErrorListenerContext)
+                    .removeHeader(Constants.ERROR_API_SHOW_TRACE_ID)
+                    .removeHeader(Constants.ERROR_API_SHOW_INTERNAL_ERROR_MESSAGE)
+                    .removeHeader(Constants.ERROR_API_SHOW_INTERNAL_ERROR_CLASS)
+                    .removeHeader(Constants.CAPI_URL_IN_ERROR)
+                    .removeHeader(Constants.CAPI_URI_IN_ERROR)
+                    .removeHeader(Constants.ROUTE_ID_HEADER)
+                    .removeHeader(Constants.REASON_CODE_HEADER)
+                    .removeHeader(Constants.REASON_MESSAGE_HEADER)
+                    .end();
+        } else {
+            routeDefinition
+                    .onException(Exception.class)
+                    .handled(true)
+                    .setHeader(Constants.ERROR_API_SHOW_TRACE_ID, constant(isTraceIdVisible))
+                    .process(httpErrorProcessor)
+                    .setHeader(Constants.ROUTE_ID_HEADER, constant(routeID))
+                    .toF((capiGatewayErrorEndpointSsl ? Constants.FAIL_HTTPS_REST_ENDPOINT_OBJECT : Constants.FAIL_HTTP_REST_ENDPOINT_OBJECT), capiGatewayErrorEndpoint)
+                    .removeHeader(Constants.ERROR_API_SHOW_TRACE_ID)
+                    .removeHeader(Constants.ERROR_API_SHOW_INTERNAL_ERROR_MESSAGE)
+                    .removeHeader(Constants.ERROR_API_SHOW_INTERNAL_ERROR_CLASS)
+                    .removeHeader(Constants.CAPI_URL_IN_ERROR)
+                    .removeHeader(Constants.CAPI_URI_IN_ERROR)
+                    .removeHeader(Constants.ROUTE_ID_HEADER)
+                    .removeHeader(Constants.REASON_CODE_HEADER)
+                    .removeHeader(Constants.REASON_MESSAGE_HEADER)
+                    .end();
+        }
     }
 
     public String[] buildEndpoints(Service service) {

@@ -81,6 +81,7 @@ public class Constants {
     public static final String CAPI_REQUEST_ERROR_MESSAGE = "capi.request.error.message";
     public static final String CAPI_SERVER_EXCHANGE_MESSAGE_RESPONSE_CODE = "capi.server.exchange.message.response.code";
     public static final String CONTENT_TYPE = "Content-Type";
+    public static final HttpString HTTP_STRING_CONTENT_TYPE = new HttpString("Content-Type");
     public static final int HTTPS_PORT = 443;
     public static final int HTTP_PORT = 80;
     public static final String CAPI_CONTEXT = "/capi";
@@ -125,6 +126,7 @@ public class Constants {
             "Access-Control-Allow-Headers", StringUtils.join(CAPI_ACCESS_CONTROL_ALLOW_HEADERS, ",")
     );
     public static final String WEBSOCKET_LISTENING_ADDRESS = "0.0.0.0";
+    public static final String ERROR_LISTENING_ADDRESS = "0.0.0.0";
     public static final int UNAUTHORIZED_CODE = 401;
     public static final int FORBIDDEN_CODE = 403;
     public static final int BAD_REQUEST_CODE = 400;

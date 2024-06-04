@@ -65,13 +65,14 @@ public class CapiErrorInterface implements ErrorController {
                 return new ResponseEntity<>(jsonObject.toJson(), HttpStatus.NOT_FOUND);
             } else {
                 jsonObject.put(Constants.ERROR_MESSAGE, "The requested route is not available, please try again later on.");
-                jsonObject.put(Constants.ERROR_CODE, HttpStatus.BAD_REQUEST);
-                return new ResponseEntity<>(jsonObject.toJson(), HttpStatus.BAD_REQUEST);
+                jsonObject.put(Constants.ERROR_CODE, HttpStatus.UNAUTHORIZED.value());
+                request.setAttribute(RequestDispatcher.ERROR_STATUS_CODE, HttpStatus.UNAUTHORIZED.value());
+                return new ResponseEntity<>(jsonObject.toJson(), HttpStatus.UNAUTHORIZED);
             }
         }
         JsonObject jsonObject = new JsonObject();
         jsonObject.put(Constants.ERROR_MESSAGE, "The requested route is not available, please try again later on.");
-        jsonObject.put(Constants.ERROR_CODE, HttpStatus.BAD_REQUEST);
+        jsonObject.put(Constants.ERROR_CODE, HttpStatus.UNAUTHORIZED.value());
         return new ResponseEntity<>(jsonObject.toJson(), HttpStatus.INTERNAL_SERVER_ERROR);
     }
 }

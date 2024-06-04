@@ -50,9 +50,9 @@ public class CapiTracerServerResponseAdapter {
             span.tag(Constants.CAPI_SERVER_EXCHANGE_MESSAGE_RESPONSE_CODE, responseCode);
         }
 
-        String clientResponseTime = getClientResponseTime(exchange);
+        Long clientResponseTime = getClientResponseTime(exchange);
         if(clientResponseTime != null) {
-            span.tag("capi.client.response.time", clientResponseTime);
+            span.tag("capi.client.response.time", clientResponseTime + "");
         }
 
         String clientEndpoint = exchange.getProperty(Constants.CLIENT_ENDPOINT, String.class);
@@ -66,11 +66,11 @@ public class CapiTracerServerResponseAdapter {
         }
     }
 
-    private String getClientResponseTime(Exchange exchange) {
+    private Long getClientResponseTime(Exchange exchange) {
         Long clientStartTime = exchange.getProperty(Constants.CLIENT_START_TIME, Long.class);
         Long clientEndTime = exchange.getProperty(Constants.CLIENT_END_TIME, Long.class);
         if(clientStartTime != null && clientEndTime != null) {
-            return (clientEndTime - clientStartTime) + "ms";
+            return (clientEndTime - clientStartTime);
         } else {
             return null;
         }

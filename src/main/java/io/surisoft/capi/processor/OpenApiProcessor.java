@@ -65,17 +65,18 @@ public class OpenApiProcessor implements Processor {
                                 Service service = serviceCache.get(httpUtils.contextToRole(contextPath));
                                 if(service != null) {
                                     if(!httpUtils.isAuthorized(accessToken, contextPath, service, opaService)) {
-                                        sendException("Invalid authentication", Constants.FORBIDDEN_CODE, exchange);
+                                        sendException("Invalid authentication", Constants.UNAUTHORIZED_CODE, exchange);
+                                    } else {
+                                        propagateAuthorization(exchange, accessToken);
                                     }
                                 } else {
-                                    sendException("Call not allowed", Constants.BAD_REQUEST_CODE, exchange);
+                                    sendException("Call not allowed", Constants.UNAUTHORIZED_CODE, exchange);
                                 }
                             } else {
                                 sendException("No authorization provided", Constants.UNAUTHORIZED_CODE, exchange);
                             }
-                            propagateAuthorization(exchange, accessToken);
                         } catch (AuthorizationException e) {
-                            sendException(e.getMessage(), Constants.UNAUTHORIZED_CODE, exchange);
+                            sendException(e.getMessage(), Constants.BAD_REQUEST_CODE, exchange);
                         }
                     }
                     return true;

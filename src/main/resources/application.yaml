@@ -72,6 +72,10 @@ capi:
       management:
         enabled: true
     error:
+      listener:
+        enabled: false
+        context: /capi-error
+        port: 8389
       #### All calls in error will be bridged to this endpoint ####
       endpoint: localhost:8380/capi-error
       ssl: false

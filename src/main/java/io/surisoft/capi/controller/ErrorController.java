@@ -33,7 +33,6 @@ public class ErrorController {
     }
 
     private ResponseEntity<CapiRestError> buildResponse(HttpServletRequest request) {
-
         CapiRestError capiRestError = new CapiRestError();
 
         String errorMessage =  request.getHeader(Constants.REASON_MESSAGE_HEADER);
