@@ -1,5 +1,6 @@
 package io.surisoft.capi.controller;
 
+import io.surisoft.capi.service.ConsistencyChecker;
 import io.surisoft.capi.service.ConsulNodeDiscovery;
 import org.apache.camel.builder.RouteBuilder;
 import org.junit.jupiter.api.Assertions;
@@ -17,7 +18,7 @@ class TestConsulAutoConfiguration {
     ConsulNodeDiscovery consulNodeDiscovery;
 
     @Autowired
-    RouteBuilder timerRouteBuilder;
+    ConsistencyChecker consistencyChecker;
 
     @Test
     void testConsulNodeDiscovery() {
@@ -25,7 +26,8 @@ class TestConsulAutoConfiguration {
     }
 
     @Test
-    void testTimerRouteBuilder() {
-        Assertions.assertNotNull(timerRouteBuilder);
+    void testConsistencyChecker() {
+        Assertions.assertNotNull(consistencyChecker);
     }
+
 }

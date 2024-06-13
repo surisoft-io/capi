@@ -5,11 +5,14 @@ import io.micrometer.core.instrument.Tags;
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
 import io.micrometer.core.instrument.util.HierarchicalNameMapper;
 import io.micrometer.jmx.JmxMeterRegistry;
+import io.surisoft.capi.schema.Service;
 import io.surisoft.capi.schema.WebsocketClient;
 import io.surisoft.capi.service.CapiTrustManager;
+import io.surisoft.capi.service.ConsistencyChecker;
 import io.surisoft.capi.tracer.CapiTracer;
 import io.surisoft.capi.utils.Constants;
 import io.surisoft.capi.utils.HttpUtils;
+import io.surisoft.capi.utils.RouteUtils;
 import okhttp3.OkHttpClient;
 import org.apache.camel.CamelContext;
 import org.apache.camel.component.http.HttpClientConfigurer;
@@ -25,6 +28,7 @@ import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManagerBuil
 import org.apache.hc.client5.http.io.HttpClientConnectionManager;
 import org.apache.hc.client5.http.ssl.SSLConnectionSocketFactory;
 import org.apache.hc.core5.ssl.SSLContextBuilder;
+import org.cache2k.Cache;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -106,6 +110,7 @@ public class CapiConfiguration {
         Set<String> excludePatterns = new HashSet<>();
         excludePatterns.add("timer://");
         excludePatterns.add("bean://consulNodeDiscovery");
+        excludePatterns.add("bean://consistencyChecker");
 
         CapiTracer capiTracer = new CapiTracer(httpUtils);
         RestTemplateSender restTemplateSender = new RestTemplateSender(createRestTemplate(), tracesEndpoint, null, JSON_V2);
@@ -197,6 +202,13 @@ public class CapiConfiguration {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    @Bean(name = "consistencyChecker")
+    public ConsistencyChecker consistencyChecker(CamelContext camelContext,
+                                                 RouteUtils routeUtils,
+                                                 Cache<String, Service> serviceCache) {
+        return new ConsistencyChecker(camelContext, routeUtils, serviceCache);
     }
 
     private void createSslContext() {

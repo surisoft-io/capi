@@ -7,20 +7,20 @@
   <groupId>io.surisoft.capi</groupId>
   <artifactId>capi</artifactId>
   <packaging>jar</packaging>
-  <version>4.6.02</version>
+  <version>4.6.03</version>
   <description>${spring.boot-version}</description>
   <name>CAPI Gateway</name>
 
   <properties>
     <org.apache.camel.springboot-version>4.6.0</org.apache.camel.springboot-version>
-    <spring.boot-version>3.2.5</spring.boot-version>
+    <spring.boot-version>3.3.0</spring.boot-version>
 
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <io.zipkin.reporter2-version>3.4.0</io.zipkin.reporter2-version>
     <spring-cloud-sleuth-version>3.1.11</spring-cloud-sleuth-version>
-    <nimbus-jose-jwt-version>9.37.3</nimbus-jose-jwt-version>
-    <io.micrometer-version>1.12.5</io.micrometer-version>
+    <nimbus-jose-jwt-version>9.40</nimbus-jose-jwt-version>
+    <io.micrometer-version>1.13.1</io.micrometer-version>
     <cache2k-version>2.6.1.Final</cache2k-version>
     <io.swagger.parser.v3.version>2.1.22</io.swagger.parser.v3.version>
 
