@@ -1,3 +1,6 @@
+####################################
+### Application Server specifics ###
+####################################
 server:
   port: 8380
   ssl:
@@ -5,8 +8,57 @@ server:
     key-store-type: PKCS12
     key-store:
     key-store-password:
+########################
+### Spring specifics ###
+########################
+spring:
+  servlet:
+    multipart:
+      max-file-size: 200MB
+      max-request-size: 200MB
+  autoconfigure:
+    exclude: org.springframework.boot.autoconfigure.security.servlet.UserDetailsServiceAutoConfiguration
+  profiles:
+    active: default
+  # CAPI Banner, keep it, it is beautiful!
+  banner:
+    location: classpath:capi.txt
+  # Allow bean definition overriding (Do not change)
+  main:
+    allow-bean-definition-overriding: true
+# Actuator Metrics Endpoint Configuration (Do not change)
+management:
+  server:
+    port: 8381
+  security:
+    enabled: false
+  endpoint:
+    camelroutes:
+      enabled: true
+  endpoints:
+    web:
+      base-path: /metrics/
+      exposure:
+        include: 'health,prometheus,routes,capi,openapi,truststore'
+#######################
+### Camel Specifics ###
+#######################
+camel:
+  main:
+    name: capi-gateway
+    tracing: false
+  component:
+    metrics:
+      enabled: true
+  servlet:
+    mapping:
+      context-path: /capi/*
+######################
+### CAPI specifics ###
+######################
 capi:
   namespace: local
+  strict: false
   public-endpoint: http://localhost:8380/capi/
   #### Kafka is still experimental ####
   kafka:
@@ -27,37 +79,37 @@ capi:
     proxy:
       enabled: false
       host: localhost:8380
-  #### DO NOT CHANGE, unless you know exactly that you CAPI to follow Redirects. ###
-  #### If you want to disable routes from following redirects ####
+  # DO NOT CHANGE, unless you know exactly that you CAPI to follow Redirects.
+  # If you want to disable routes from following redirects
   disable:
     redirect: true
-  #### Websocket Gateway (Editable Property) ####
+  # Websocket Gateway (Editable Property)
   websocket:
     enabled: false
     server:
       host: localhost
       port: 8382
-  #### gRPC Gateway (Editable Property) ####
+  # gRPC Gateway (Editable Property)
   grpc:
     enabled: false
     server:
       host: localhost
       port: 8383
-  #### Enable Traces (Editable Property) ####
+  # Enable Traces (Editable Property)
   traces:
     enabled: false
     endpoint: http://localhost:9411
-  #### Consul Integration (Editable Property) ####
-  #### If you want CAPI to search consul for available APIs to be deployed, enable this feature. ####
+  # Consul Integration (Editable Property)
   consul:
     token:
-    hosts: http://localhost:8500
+    hosts:
+      http://localhost:8500
     discovery:
       enabled: true
       timer:
         interval: 10000
-  #### Certificate Management (Editable property) ####
-  #### If you want to enable certificate management, please provide a trust store (JKS). ####
+  # Certificate Management (Editable property)
+  # If you want to enable certificate management, please provide a trust store (JKS).
   trust:
     store:
       enabled: false
@@ -71,74 +123,54 @@ capi:
     cors:
       management:
         enabled: true
+        allowed-headers:
+          Origin,
+          Accept,
+          X-Requested-With,
+          Content-Type,
+          Access-Control-Request-Method,
+          Access-Control-Request-Headers,
+          x-referrer,
+          Authorization,
+          Authorization-Propagation,
+          X-Csrf-Request,
+          Cache-Control,
+          pragma,
+          gem-context,
+          x-syncmode,
+          X-Total-Count,
+          Last-Event-ID,
+          X-B3-Sampled,
+          X-B3-SpanId,
+          X-B3-TraceId,
+          X-B3-ParentSpanId,
+          X-Auth-Url-Index,
+          X-Apigateway-Impersonated-Cookie-Name,
+          Vary,
     error:
       listener:
         enabled: false
         context: /capi-error
         port: 8389
-      #### All calls in error will be bridged to this endpoint ####
       endpoint: localhost:8380/capi-error
       ssl: false
-#### DO NOT CHANGE THESE SPRING AUTOCONFIGURE EXCLUSIONS #####
-spring:
-  servlet:
-    multipart:
-      max-file-size: 200MB
-      max-request-size: 200MB
-  #### We want persistence to be optional, so we disable autoconfiguration for JPA ####
-  autoconfigure:
-    exclude: org.springframework.boot.autoconfigure.security.servlet.UserDetailsServiceAutoConfiguration
-  profiles:
-    active: default
-  ### CAPI Banner, keep it, it is beautiful!
-  banner:
-    location: classpath:capi.txt
-  ### Allow bean definition overriding (Do not change) ###
-  main:
-    allow-bean-definition-overriding: true
-camel:
-  main:
-    name: capi-gateway
-    tracing: false
-  component:
-    metrics:
+  # oauth2 support to protect the routes. (Editable properties)
+  oauth2:
+    cookieName:
+    provider:
       enabled: true
-  servlet:
-    mapping:
-      context-path: /capi/*
-#### Actuator Metrics Endpoint Configuration (Do not change) ####
-management:
-  server:
-    port: 8381
-  security:
+      keys:
+        http://localhost:8080/realms/master/protocol/openid-connect/certs
+      #host: http://localhost:8080
+      #realm: /realms/master
+      #clientId:
+      #clientSecret:
+  opa:
     enabled: false
-  endpoint:
-    camelroutes:
-      enabled: true
-  endpoints:
-    web:
-      base-path: /metrics/
-      exposure:
-        include: 'health,prometheus,routes,capi,openapi,truststore'
-
-#### Time to live for Sticky Sessions feature ####
-sticky:
-  session:
-    time:
-      to:
-        live: 2
-#### OAUTH2 Support to protect the routes. (Editable properties) ####
-oauth2:
-  cookieName:
-  provider:
-    enabled: false
-    keys:
-      - http://localhost:8080/realms/master/protocol/openid-connect/certs
-    host: http://localhost:8080
-    realm: /realms/master
-    clientId:
-    clientSecret:
-
-opa:
-  enabled: false
-  endpoint: http://localhost:8181
+    endpoint: http://localhost:8181
+  # Time to live for Sticky Sessions feature
+  sticky:
+    session:
+      time:
+        to:
+          live: 2

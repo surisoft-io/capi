@@ -14,7 +14,7 @@ import org.springframework.stereotype.Component;
 import java.io.IOException;
 
 @Component
-@ConditionalOnProperty(prefix = "opa", name = "enabled", havingValue = "true")
+@ConditionalOnProperty(prefix = "capi.opa", name = "enabled", havingValue = "true")
 public class OpaService {
 
     private static final Logger log = LoggerFactory.getLogger(OpaService.class);
@@ -22,7 +22,7 @@ public class OpaService {
     @Autowired
     private OkHttpClient httpClient;
 
-    @Value("${opa.endpoint}")
+    @Value("${capi.opa.endpoint}")
     private String opaEndpoint;
 
     public static final MediaType JSON = MediaType.parse("application/json; charset=utf-8");

@@ -43,9 +43,15 @@ public class ConsulNodeDiscovery {
     private OpaService opaService;
     private HttpUtils httpUtils;
     private String capiNamespace;
+    private boolean strictNamespace;
     private String consulToken;
 
-    public ConsulNodeDiscovery(CamelContext camelContext, ServiceUtils serviceUtils, RouteUtils routeUtils, MetricsProcessor metricsProcessor, Cache<String, Service> serviceCache, Map<String, WebsocketClient> websocketClientMap) {
+    public ConsulNodeDiscovery(CamelContext camelContext,
+                               ServiceUtils serviceUtils,
+                               RouteUtils routeUtils,
+                               MetricsProcessor metricsProcessor,
+                               Cache<String, Service> serviceCache,
+                               Map<String, WebsocketClient> websocketClientMap) {
         this.serviceUtils = serviceUtils;
         this.routeUtils = routeUtils;
         this.camelContext = camelContext;
@@ -137,7 +143,9 @@ public class ConsulNodeDiscovery {
                     servicesToDeploy.add(o);
                 } else {
                     if(o.getServiceMeta().getNamespace() == null) {
-                        servicesToDeploy.add(o);
+                        if(!strictNamespace) {
+                            servicesToDeploy.add(o);
+                        }
                     } else if(o.getServiceMeta().getNamespace().equals(capiNamespace)) {
                         servicesToDeploy.add(o);
                     }
@@ -291,6 +299,7 @@ public class ConsulNodeDiscovery {
         if(consulToken != null) {
             builder.header(Constants.AUTHORIZATION_HEADER, Constants.BEARER + consulToken);
         }
+        log.info(":"+consulHost+":");
         return builder
                 .uri(URI.create(consulHost + GET_ALL_SERVICES))
                 .timeout(Duration.ofMinutes(2))
@@ -334,6 +343,9 @@ public class ConsulNodeDiscovery {
 
     public void setCapiNamespace(String capiNamespace) {
         this.capiNamespace = capiNamespace;
+    }
+    public void setStrictNamespace(boolean strictNamespace) {
+        this.strictNamespace = strictNamespace;
     }
 
     public void setConsulToken(String consulToken) {

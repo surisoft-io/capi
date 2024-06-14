@@ -51,10 +51,7 @@ import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateException;
 import java.time.Duration;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import static org.apache.camel.component.micrometer.messagehistory.MicrometerMessageHistoryNamingStrategy.MESSAGE_HISTORIES;
 import static org.apache.camel.component.micrometer.routepolicy.MicrometerRoutePolicyNamingStrategy.ROUTE_POLICIES;
@@ -71,6 +68,7 @@ public class CapiConfiguration {
     private final CamelContext camelContext;
     private final ResourceLoader resourceLoader;
     private CapiTrustManager capiTrustManager;
+    private final List<String> allowedHeaders;
 
     public CapiConfiguration(@Value("${capi.traces.endpoint}") String tracesEndpoint,
                              HttpUtils httpUtils,
@@ -78,7 +76,8 @@ public class CapiConfiguration {
                              ResourceLoader resourceLoader,
                              @Value("${capi.trust.store.enabled}") boolean capiTrustStoreEnabled,
                              @Value("${capi.trust.store.path}") String capiTrustStorePath,
-                             @Value("${capi.trust.store.password}") String capiTrustStorePassword) {
+                             @Value("${capi.trust.store.password}") String capiTrustStorePassword,
+                             @Value("${capi.gateway.cors.management.allowed-headers}") List<String> allowedHeaders) {
 
         this.tracesEndpoint = tracesEndpoint;
         this.httpUtils = httpUtils;
@@ -87,6 +86,7 @@ public class CapiConfiguration {
         this.capiTrustStoreEnabled = capiTrustStoreEnabled;
         this.capiTrustStorePath = capiTrustStorePath;
         this.capiTrustStorePassword = capiTrustStorePassword;
+        this.allowedHeaders = allowedHeaders;
 
         if(capiTrustStoreEnabled) {
             createTrustMaterial();
@@ -264,6 +264,6 @@ public class CapiConfiguration {
     @Bean(name = "capiCorsFilterStrategy")
     @ConditionalOnProperty(prefix = "capi.gateway.cors", name = "management.enabled", havingValue = "true")
     public CapiCorsFilterStrategy capiCorsFilterStrategy() {
-        return new CapiCorsFilterStrategy();
+        return new CapiCorsFilterStrategy(allowedHeaders);
     }
 }

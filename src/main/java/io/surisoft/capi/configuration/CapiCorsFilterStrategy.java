@@ -3,15 +3,22 @@ package io.surisoft.capi.configuration;
 import io.surisoft.capi.utils.Constants;
 import org.apache.camel.Exchange;
 import org.apache.camel.support.DefaultHeaderFilterStrategy;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.List;
+import java.util.Map;
 
 public class CapiCorsFilterStrategy extends DefaultHeaderFilterStrategy {
 
     private static final Logger log = LoggerFactory.getLogger(CapiCorsFilterStrategy.class);
+    private final List<String> allowedHeaders;
+    private Map<String, String> managedHeaders;
 
-    public CapiCorsFilterStrategy() {
+    public CapiCorsFilterStrategy(List<String> allowedHeaders) {
         log.info("Capi Filter Strategy initialized");
+        this.allowedHeaders = allowedHeaders;
         initialize();
     }
 
@@ -30,7 +37,9 @@ public class CapiCorsFilterStrategy extends DefaultHeaderFilterStrategy {
         getOutFilter().add("warning");
         getOutFilter().add(Constants.ACCESS_CONTROL_ALLOW_ORIGIN);
 
-        Constants.CAPI_CORS_MANAGED_HEADERS.forEach((key, value) -> {
+        managedHeaders = new java.util.HashMap<>(Constants.CAPI_CORS_MANAGED_HEADERS);
+        managedHeaders.put("Access-Control-Allow-Headers", StringUtils.join(allowedHeaders, ","));
+        managedHeaders.forEach((key, value) -> {
             getOutFilter().add(key);
         });
 
@@ -47,7 +56,7 @@ public class CapiCorsFilterStrategy extends DefaultHeaderFilterStrategy {
         if(headerName.equalsIgnoreCase(Constants.ACCESS_CONTROL_ALLOW_ORIGIN)) {
             return true;
         }
-        if(Constants.CAPI_CORS_MANAGED_HEADERS.containsKey(headerName)) {
+        if(managedHeaders.containsKey(headerName)) {
             return true;
         }
         return super.applyFilterToExternalHeaders(headerName, headerValue, exchange);

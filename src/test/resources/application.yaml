@@ -7,6 +7,7 @@ server:
     key-store-password:
 capi:
   namespace:
+  strict: false
   public-endpoint: http://localhost:8380/capi/
   #### Kafka is still experimental ####
   kafka:
@@ -51,6 +52,30 @@ capi:
     cors:
       management:
         enabled: false
+        allowed-headers: >
+          - Origin
+          - Accept
+          - X-Requested-With
+          - Content-Type
+          - Access-Control-Request-Method
+          - Access-Control-Request-Headers
+          - x-referrer
+          - Authorization
+          - Authorization-Propagation
+          - X-Csrf-Request
+          - Cache-Control
+          - pragma
+          - gem-context
+          - x-syncmode
+          - X-Total-Count
+          - Last-Event-ID
+          - X-B3-Sampled
+          - X-B3-SpanId
+          - X-B3-TraceId
+          - X-B3-ParentSpanId
+          - X-Auth-Url-Index
+          - X-Apigateway-Impersonated-Cookie-Name
+          - Vary
     error:
       listener:
         enabled: false
@@ -59,6 +84,21 @@ capi:
       #### All calls in error will be bridged to this endpoint ####
       endpoint: localhost:8380/capi-error
       ssl: false
+  oauth2:
+    cookieName:
+    provider:
+      enabled: false
+      keys:
+        - http://localhost:8080/realms/master/protocol/openid-connect/certs
+        - http://localhost:8080/realms/master/protocol/openid-connect/certs
+      host: http://localhost:8080
+      realm: /realms/
+      clientId:
+      clientSecret:
+
+  opa:
+    enabled: false
+    endpoint: http://localhost:8181
 
 spring:
   #### We want persistence to be optional, so we disable autoconfiguration for JPA ####
@@ -99,18 +139,3 @@ sticky:
     time:
       to:
         live: 2
-oauth2:
-  cookieName:
-  provider:
-    enabled: false
-    keys:
-      - http://localhost:8080/realms/master/protocol/openid-connect/certs
-      - http://localhost:8080/realms/master/protocol/openid-connect/certs
-    host: http://localhost:8080
-    realm: /realms/
-    clientId:
-    clientSecret:
-
-opa:
-  enabled: false
-  endpoint: http://localhost:8181

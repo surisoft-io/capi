@@ -29,7 +29,7 @@ public class HttpUtils {
     private final String authorizationCookieName;
     private final Optional<List<DefaultJWTProcessor<SecurityContext>>> jwtProcessorList;
 
-    public HttpUtils(@Value("${oauth2.cookieName}") String authorizationCookieName,
+    public HttpUtils(@Value("${capi.oauth2.cookieName}") String authorizationCookieName,
                      Optional<List<DefaultJWTProcessor<SecurityContext>>> jwtProcessorList) {
         this.authorizationCookieName = authorizationCookieName;
         this.jwtProcessorList = jwtProcessorList;

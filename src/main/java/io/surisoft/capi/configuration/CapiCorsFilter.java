@@ -22,6 +22,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 @Component
 @Order(Ordered.HIGHEST_PRECEDENCE)
@@ -32,15 +33,22 @@ public class CapiCorsFilter implements Filter {
     private final boolean gatewayCorsManagementEnabled;
     private String capiContextPath;
     private final Cache<String, Service> serviceCache;
+    private final List<String> accessControlAllowHeaders;
+    private Map<String, String> managedHeaders;
 
-    public CapiCorsFilter(@Value("${oauth2.cookieName}") String oauth2CookieName,
+    public CapiCorsFilter(@Value("${capi.oauth2.cookieName}") String oauth2CookieName,
                           @Value("${capi.gateway.cors.management.enabled}") boolean gatewayCorsManagementEnabled,
                           @Value("${camel.servlet.mapping.context-path}") String capiContextPath,
+                          @Value("${capi.gateway.cors.management.allowed-headers}") List<String> accessControlAllowHeaders,
                           Cache<String, Service> serviceCache) {
         this.oauth2CookieName = oauth2CookieName;
         this.gatewayCorsManagementEnabled = gatewayCorsManagementEnabled;
         this.capiContextPath = capiContextPath;
+        this.accessControlAllowHeaders = accessControlAllowHeaders;
         this.serviceCache = serviceCache;
+
+        managedHeaders = new java.util.HashMap<>(Constants.CAPI_CORS_MANAGED_HEADERS);
+        managedHeaders.put("Access-Control-Allow-Headers", StringUtils.join(accessControlAllowHeaders, ","));
     }
 
     @PostConstruct
@@ -54,7 +62,6 @@ public class CapiCorsFilter implements Filter {
     public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain) throws IOException, ServletException {
         HttpServletRequest request = (HttpServletRequest) servletRequest;
         HttpServletResponse response = (HttpServletResponse) servletResponse;
-        List<String> accessControlAllowHeaders = new ArrayList<>(List.of(Constants.CAPI_ACCESS_CONTROL_ALLOW_HEADERS));
 
         if(request.getRequestURI().startsWith(capiContextPath) && gatewayCorsManagementEnabled) {
             if(oauth2CookieName != null && !oauth2CookieName.isEmpty()) {
@@ -72,7 +79,7 @@ public class CapiCorsFilter implements Filter {
     }
 
     private void processControlledHeaders(List<String> accessControlAllowHeaders, HttpServletResponse response, HttpServletRequest request, String origin, boolean capiConsumer) {
-        Constants.CAPI_CORS_MANAGED_HEADERS.forEach((k, v) -> {
+        managedHeaders.forEach((k, v) -> {
             if(k.equals(Constants.ACCESS_CONTROL_ALLOW_HEADERS)) {
                 v = StringUtils.join(accessControlAllowHeaders, ",");
             }

@@ -29,14 +29,14 @@ public class ManagerSecurityConfig {
     }
 
     @Bean
-    @ConfigurationProperties( prefix = "oauth2.provider.keys" )
+    @ConfigurationProperties( prefix = "capi.oauth2.provider.keys" )
     public List<String> getOauth2ProviderKeys(){
         return new ArrayList<>();
     }
 
 
     @Bean
-    @ConditionalOnProperty(prefix = "oauth2.provider", name = "enabled", havingValue = "true")
+    @ConditionalOnProperty(prefix = "capi.oauth2.provider", name = "enabled", havingValue = "true")
     public List<DefaultJWTProcessor<SecurityContext>> getJwtProcessor() throws IOException, ParseException {
         log.trace("Starting CAPI JWT Processor");
         List<DefaultJWTProcessor<SecurityContext>> jwtProcessorList = new ArrayList<>();

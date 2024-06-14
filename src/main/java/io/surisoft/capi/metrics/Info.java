@@ -28,12 +28,12 @@ public class Info {
     private String capiNameSpace;
     @Value("${capi.spring.version}")
     private String capiSpringVersion;
-    @Value("${oauth2.provider.enabled}")
+    @Value("${capi.oauth2.provider.enabled}")
     private boolean oauth2Enabled;
 
-    @Value("${opa.enabled}")
+    @Value("${capi.opa.enabled}")
     private boolean opaEnabled;
-    @Value("${opa.endpoint}")
+    @Value("${capi.opa.endpoint}")
     private String opaEndpoint;
     @Value("${capi.consul.discovery.enabled}")
     private boolean consulEnabled;

@@ -88,32 +88,6 @@ public class Constants {
     public static final String BEARER = "Bearer ";
     public static final String CAPI_GROUP_HEADER = "Capi-Group";
     public static final String WEBSOCKET_TYPE = "websocket";
-    public static final String[] CAPI_ACCESS_CONTROL_ALLOW_HEADERS = {
-            "Origin",
-            "Accept",
-            "X-Requested-With",
-            "Content-Type",
-            "Access-Control-Request-Method",
-            "Access-Control-Request-Headers",
-            "x-referrer",
-            "Authorization",
-            "Authorization-Propagation",
-            "X-Csrf-Request",
-            "Cache-Control",
-            "pragma",
-            "gem-context",
-            "x-syncmode",
-            "X-Total-Count",
-            "Last-Event-ID",
-            "X-B3-Sampled",
-            "X-B3-SpanId",
-            "X-B3-TraceId",
-            "X-B3-ParentSpanId",
-            "X-Auth-Url-Index",
-            "X-Apigateway-Impersonated-Cookie-Name",
-            "Vary"
-    };
-
     public static final String ACCESS_CONTROL_ALLOW_ORIGIN = "Access-Control-Allow-Origin";
     public static final String ACCESS_CONTROL_ALLOW_HEADERS = "Access-Control-Allow-Headers";
     public static final String ACCESS_CONTROL_ALLOW_METHODS_VALUE = "GET, POST, DELETE, PUT, PATCH";
@@ -122,8 +96,7 @@ public class Constants {
     public static final Map<String, String> CAPI_CORS_MANAGED_HEADERS = Map.of(
             "Access-Control-Allow-Credentials", "true",
             "Access-Control-Allow-Methods", ACCESS_CONTROL_ALLOW_METHODS_VALUE,
-            "Access-Control-Max-Age", ACCESS_CONTROL_MAX_AGE_VALUE,
-            "Access-Control-Allow-Headers", StringUtils.join(CAPI_ACCESS_CONTROL_ALLOW_HEADERS, ",")
+            "Access-Control-Max-Age", ACCESS_CONTROL_MAX_AGE_VALUE
     );
     public static final String WEBSOCKET_LISTENING_ADDRESS = "0.0.0.0";
     public static final String ERROR_LISTENING_ADDRESS = "0.0.0.0";

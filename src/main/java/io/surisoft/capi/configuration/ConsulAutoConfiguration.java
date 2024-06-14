@@ -21,6 +21,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -30,7 +31,7 @@ public class ConsulAutoConfiguration {
     private static final Logger log = LoggerFactory.getLogger(ConsulAutoConfiguration.class);
     private final int consulTimerInterval;
 
-    private final String capiConsulHosts;
+    private final List<String> capiConsulHosts;
 
     private final String consulToken;
 
@@ -49,9 +50,10 @@ public class ConsulAutoConfiguration {
     private final Optional<OpaService> opaService;
 
     private final String capiNamespace;
+    private final boolean strictNamespace;
 
     public ConsulAutoConfiguration(@Value("${capi.consul.discovery.timer.interval}") int consulTimerInterval,
-                                   @Value("${capi.consul.hosts}") String capiConsulHosts,
+                                   @Value("${capi.consul.hosts}") List<String> capiConsulHosts,
                                    @Value("${capi.consul.token}") String consulToken,
                                    @Value("${camel.servlet.mapping.context-path}") String capiContext,
                                    @Value("${capi.reverse.proxy.enabled}") boolean reverseProxyEnabled,
@@ -60,7 +62,8 @@ public class ConsulAutoConfiguration {
                                    WebsocketUtils websocketUtils,
                                    Optional<StickySessionCacheManager> stickySessionCacheManager,
                                    Optional<OpaService> opaService,
-                                   @Value("${capi.namespace}") String capiNamespace) {
+                                   @Value("${capi.namespace}") String capiNamespace,
+                                   @Value("${capi.strict}") boolean strictNamespace) {
         this.consulTimerInterval = consulTimerInterval;
         this.capiConsulHosts = capiConsulHosts;
         this.consulToken = consulToken;
@@ -72,6 +75,7 @@ public class ConsulAutoConfiguration {
         this.stickySessionCacheManager = stickySessionCacheManager;
         this.opaService = opaService;
         this.capiNamespace = capiNamespace;
+        this.strictNamespace = strictNamespace;
     }
 
     @Bean(name = "consulNodeDiscovery")
@@ -89,9 +93,10 @@ public class ConsulAutoConfiguration {
         opaService.ifPresent(consulNodeDiscovery::setOpaService);
         consulNodeDiscovery.setWebsocketUtils(websocketUtils);
         consulNodeDiscovery.setCapiContext(httpUtils.getCapiContext(capiContext));
-        consulNodeDiscovery.setConsulHostList(Arrays.asList(capiConsulHosts.split("\\s*,\\s*")));
+        consulNodeDiscovery.setConsulHostList(capiConsulHosts);
         if(capiNamespace != null && !capiNamespace.isEmpty()) {
             consulNodeDiscovery.setCapiNamespace(capiNamespace);
+            consulNodeDiscovery.setStrictNamespace(strictNamespace);
         }
 
         if(consulToken != null && !consulToken.isEmpty()) {

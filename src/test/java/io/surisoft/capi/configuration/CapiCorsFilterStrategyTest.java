@@ -8,15 +8,43 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.util.Arrays;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 class CapiCorsFilterStrategyTest {
 
     private CapiCorsFilterStrategy capiCorsFilterStrategyUnderTest;
 
+    public static final String[] CAPI_ACCESS_CONTROL_ALLOW_HEADERS = {
+            "Origin",
+            "Accept",
+            "X-Requested-With",
+            "Content-Type",
+            "Access-Control-Request-Method",
+            "Access-Control-Request-Headers",
+            "x-referrer",
+            "Authorization",
+            "Authorization-Propagation",
+            "X-Csrf-Request",
+            "Cache-Control",
+            "pragma",
+            "gem-context",
+            "x-syncmode",
+            "X-Total-Count",
+            "Last-Event-ID",
+            "X-B3-Sampled",
+            "X-B3-SpanId",
+            "X-B3-TraceId",
+            "X-B3-ParentSpanId",
+            "X-Auth-Url-Index",
+            "X-Apigateway-Impersonated-Cookie-Name",
+            "Vary"
+    };
+
     @BeforeEach
     void setUp() {
-        capiCorsFilterStrategyUnderTest = new CapiCorsFilterStrategy();
+        capiCorsFilterStrategyUnderTest = new CapiCorsFilterStrategy(Arrays.stream(CAPI_ACCESS_CONTROL_ALLOW_HEADERS).toList());
     }
 
     @Test
