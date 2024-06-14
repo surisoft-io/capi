@@ -20,7 +20,7 @@
     <io.zipkin.reporter2-version>3.4.0</io.zipkin.reporter2-version>
     <spring-cloud-sleuth-version>3.1.11</spring-cloud-sleuth-version>
     <nimbus-jose-jwt-version>9.40</nimbus-jose-jwt-version>
-    <io.micrometer-version>1.13.1</io.micrometer-version>
+    <io.micrometer-version>1.10.2</io.micrometer-version>
     <cache2k-version>2.6.1.Final</cache2k-version>
     <io.swagger.parser.v3.version>2.1.22</io.swagger.parser.v3.version>
 

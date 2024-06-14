@@ -58,7 +58,7 @@ camel:
 ######################
 capi:
   namespace: local
-  strict: false
+  strict: true
   public-endpoint: http://localhost:8380/capi/
   #### Kafka is still experimental ####
   kafka:

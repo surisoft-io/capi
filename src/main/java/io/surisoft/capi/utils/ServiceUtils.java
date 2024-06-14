@@ -180,6 +180,7 @@ public class ServiceUtils {
                     return true;
                 } else {
                     log.warn("Open API specification is invalid for service {}, response code: {}", service.getId(), response.code());
+                    response.close();
                     return false;
                 }
             } catch(Exception e) {

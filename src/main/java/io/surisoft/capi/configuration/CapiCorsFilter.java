@@ -34,7 +34,7 @@ public class CapiCorsFilter implements Filter {
     private String capiContextPath;
     private final Cache<String, Service> serviceCache;
     private final List<String> accessControlAllowHeaders;
-    private Map<String, String> managedHeaders;
+    private final Map<String, String> managedHeaders;
 
     public CapiCorsFilter(@Value("${capi.oauth2.cookieName}") String oauth2CookieName,
                           @Value("${capi.gateway.cors.management.enabled}") boolean gatewayCorsManagementEnabled,
@@ -62,12 +62,13 @@ public class CapiCorsFilter implements Filter {
     public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain) throws IOException, ServletException {
         HttpServletRequest request = (HttpServletRequest) servletRequest;
         HttpServletResponse response = (HttpServletResponse) servletResponse;
+        List<String> localAccessControlAllowHeaders = new ArrayList<>(accessControlAllowHeaders);
 
         if(request.getRequestURI().startsWith(capiContextPath) && gatewayCorsManagementEnabled) {
             if(oauth2CookieName != null && !oauth2CookieName.isEmpty()) {
-                accessControlAllowHeaders.add(oauth2CookieName);
+                localAccessControlAllowHeaders.add(oauth2CookieName);
             }
-            processControlledHeaders(accessControlAllowHeaders, response, request, request.getHeader(Constants.ORIGIN_HEADER), true);
+            processControlledHeaders(localAccessControlAllowHeaders, response, request, request.getHeader(Constants.ORIGIN_HEADER), true);
         }
 
         if (request.getMethod().equals(Constants.OPTIONS_METHODS_VALUE)) {
@@ -78,10 +79,10 @@ public class CapiCorsFilter implements Filter {
         filterChain.doFilter(servletRequest, servletResponse);
     }
 
-    private void processControlledHeaders(List<String> accessControlAllowHeaders, HttpServletResponse response, HttpServletRequest request, String origin, boolean capiConsumer) {
+    private void processControlledHeaders(List<String> localAccessControlAllowHeaders, HttpServletResponse response, HttpServletRequest request, String origin, boolean capiConsumer) {
         managedHeaders.forEach((k, v) -> {
             if(k.equals(Constants.ACCESS_CONTROL_ALLOW_HEADERS)) {
-                v = StringUtils.join(accessControlAllowHeaders, ",");
+                v = StringUtils.join(localAccessControlAllowHeaders, ",");
             }
             response.setHeader(k, v);
         });
