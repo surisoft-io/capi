@@ -299,7 +299,6 @@ public class ConsulNodeDiscovery {
         if(consulToken != null) {
             builder.header(Constants.AUTHORIZATION_HEADER, Constants.BEARER + consulToken);
         }
-        log.info(":"+consulHost+":");
         return builder
                 .uri(URI.create(consulHost + GET_ALL_SERVICES))
                 .timeout(Duration.ofMinutes(2))

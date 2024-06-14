@@ -18,7 +18,7 @@ import org.springframework.stereotype.Component;
 import java.util.Optional;
 
 @Component
-@ConditionalOnProperty(prefix = "oauth2.provider", name = "enabled", havingValue = "true")
+@ConditionalOnProperty(prefix = "capi.oauth2.provider", name = "enabled", havingValue = "true")
 public class AuthorizationProcessor implements Processor {
     private static final Logger log = LoggerFactory.getLogger(AuthorizationProcessor.class);
     private final HttpUtils httpUtils;

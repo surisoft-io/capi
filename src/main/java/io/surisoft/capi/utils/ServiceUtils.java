@@ -174,9 +174,14 @@ public class ServiceUtils {
                 Response response = okHttpClient.newCall(request).execute();
 
                 log.trace("Calling Remote Open API Spec: {}", service.getServiceMeta().getOpenApiEndpoint());
-                OpenAPI openAPI = new OpenAPIV3Parser().readContents(response.body().string()).getOpenAPI();
-                service.setOpenAPI(openAPI);
-                return true;
+                if(response.isSuccessful()) {
+                    OpenAPI openAPI = new OpenAPIV3Parser().readContents(response.body().string()).getOpenAPI();
+                    service.setOpenAPI(openAPI);
+                    return true;
+                } else {
+                    log.warn("Open API specification is invalid for service {}, response code: {}", service.getId(), response.code());
+                    return false;
+                }
             } catch(Exception e) {
                 log.warn("Open API specification is invalid for service {}", service.getId());
                 return false;
