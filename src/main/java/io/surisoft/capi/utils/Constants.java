@@ -89,10 +89,12 @@ public class Constants {
     public static final String CAPI_GROUP_HEADER = "Capi-Group";
     public static final String WEBSOCKET_TYPE = "websocket";
     public static final String ACCESS_CONTROL_ALLOW_ORIGIN = "Access-Control-Allow-Origin";
+    public static final String ACCESS_CONTROL_ALLOW_CREDENTIALS = "Access-Control-Allow-Credentials";
+    public static final String ACCESS_CONTROL_ALLOW_METHODS = "Access-Control-Allow-Methods";
     public static final String ACCESS_CONTROL_ALLOW_HEADERS = "Access-Control-Allow-Headers";
     public static final String ACCESS_CONTROL_ALLOW_METHODS_VALUE = "GET, POST, DELETE, PUT, PATCH";
     public static final String OPTIONS_METHODS_VALUE = "OPTIONS";
-    public static final String ACCESS_CONTROL_MAX_AGE_VALUE = "1728000";
+    public static final String ACCESS_CONTROL_MAX_AGE_VALUE = "86400";
     public static final Map<String, String> CAPI_CORS_MANAGED_HEADERS = Map.of(
             "Access-Control-Allow-Credentials", "true",
             "Access-Control-Allow-Methods", ACCESS_CONTROL_ALLOW_METHODS_VALUE,
@@ -107,4 +109,6 @@ public class Constants {
     public static final String CLIENT_END_TIME = "ClientEndTime";
     public static final String CLIENT_ENDPOINT = "ClientEndpoint";
     public static final String CLIENT_RESPONSE_CODE = "ClientResponseCode";
+    public static final String CONSUL_KV_STORE_API = "/v1/kv/";
+    public static final String CAPI_CORS_HEADERS_CACHE_KEY = "capi-cors-headers";
 }

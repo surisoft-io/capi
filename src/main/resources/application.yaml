@@ -39,7 +39,7 @@ management:
     web:
       base-path: /metrics/
       exposure:
-        include: 'health,prometheus,routes,capi,openapi,truststore'
+        include: 'health,prometheus,routes,capi,openapi,truststore,kv'
 #######################
 ### Camel Specifics ###
 #######################
@@ -58,7 +58,7 @@ camel:
 ######################
 capi:
   namespace: local
-  strict: true
+  strict: false
   public-endpoint: http://localhost:8380/capi/
   #### Kafka is still experimental ####
   kafka:
@@ -101,20 +101,24 @@ capi:
     endpoint: http://localhost:9411
   # Consul Integration (Editable Property)
   consul:
+    kv:
+      enabled: false
+      timer:
+        interval: 20000
     token:
     hosts:
       http://localhost:8500
     discovery:
-      enabled: true
+      enabled: false
       timer:
-        interval: 10000
+        interval: 20000
   # Certificate Management (Editable property)
   # If you want to enable certificate management, please provide a trust store (JKS).
   trust:
     store:
       enabled: false
-      path:
-      password:
+      path: /Users/rodrigo/Library/Java/JavaVirtualMachines/openjdk-21.0.2/Contents/Home/lib/security/cacerts
+      password: changeit
   version: ^project.version^
   name: ^project.name^
   spring:

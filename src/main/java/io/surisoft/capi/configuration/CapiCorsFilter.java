@@ -72,6 +72,7 @@ public class CapiCorsFilter implements Filter {
         }
 
         if (request.getMethod().equals(Constants.OPTIONS_METHODS_VALUE)) {
+            response.setHeader("Access-Control-Max-Age", Constants.ACCESS_CONTROL_MAX_AGE_VALUE);
             response.setStatus(HttpServletResponse.SC_ACCEPTED);
             return;
         }

@@ -2,6 +2,8 @@ package io.surisoft.capi.schema;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
+import java.util.Date;
+
 @Schema(hidden = true)
 public class AliasInfo {
 
@@ -10,6 +12,8 @@ public class AliasInfo {
     private String subjectDN;
     private String additionalInfo;
     private String serviceId;
+    private Date notBefore;
+    private Date notAfter;
 
     public String getAlias() {
         return alias;
@@ -49,5 +53,21 @@ public class AliasInfo {
 
     public void setServiceId(String serviceId) {
         this.serviceId = serviceId;
+    }
+
+    public Date getNotBefore() {
+        return notBefore;
+    }
+
+    public void setNotBefore(Date notBefore) {
+        this.notBefore = notBefore;
+    }
+
+    public Date getNotAfter() {
+        return notAfter;
+    }
+
+    public void setNotAfter(Date notAfter) {
+        this.notAfter = notAfter;
     }
 }

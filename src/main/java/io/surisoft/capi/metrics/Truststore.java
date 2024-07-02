@@ -66,6 +66,8 @@ public class Truststore {
                 X509Certificate certificate = (X509Certificate) keystore.getCertificate(alias);
                 aliasInfo.setIssuerDN(certificate.getIssuerX500Principal().getName());
                 aliasInfo.setSubjectDN(certificate.getSubjectX500Principal().getName());
+                aliasInfo.setNotBefore(certificate.getNotBefore());
+                aliasInfo.setNotAfter(certificate.getNotAfter());
                 aliasList.add(aliasInfo);
             }
         } catch(Exception e) {

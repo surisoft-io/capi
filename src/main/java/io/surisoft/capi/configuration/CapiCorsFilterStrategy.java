@@ -59,6 +59,12 @@ public class CapiCorsFilterStrategy extends DefaultHeaderFilterStrategy {
         if(managedHeaders.containsKey(headerName)) {
             return true;
         }
+        if(headerName.equalsIgnoreCase(Constants.ACCESS_CONTROL_ALLOW_METHODS)) {
+            return true;
+        }
+        if(headerName.equalsIgnoreCase(Constants.ACCESS_CONTROL_ALLOW_CREDENTIALS)) {
+            return true;
+        }
         return super.applyFilterToExternalHeaders(headerName, headerValue, exchange);
     }
 }

@@ -9,6 +9,7 @@ import io.surisoft.capi.schema.Service;
 import io.surisoft.capi.schema.WebsocketClient;
 import io.surisoft.capi.service.CapiTrustManager;
 import io.surisoft.capi.service.ConsistencyChecker;
+import io.surisoft.capi.service.ConsulKVStore;
 import io.surisoft.capi.tracer.CapiTracer;
 import io.surisoft.capi.utils.Constants;
 import io.surisoft.capi.utils.HttpUtils;
@@ -211,6 +212,14 @@ public class CapiConfiguration {
         return new ConsistencyChecker(camelContext, routeUtils, serviceCache);
     }
 
+    @Bean(name = "consulKVStore")
+    @ConditionalOnProperty(prefix = "capi.consul.kv", name = "enabled", havingValue = "true")
+    public ConsulKVStore consulKVStore(RestTemplate restTemplate,
+                                       Cache<String, List<String>> corsHeadersCache,
+                                       @Value("${capi.consul.hosts}") List<String> capiConsulHosts) {
+        return new ConsulKVStore(restTemplate, corsHeadersCache, capiConsulHosts.get(0));
+    }
+
     private void createSslContext() {
         try {
             log.info("Starting CAPI HTTP Components SSL Context");
@@ -266,4 +275,5 @@ public class CapiConfiguration {
     public CapiCorsFilterStrategy capiCorsFilterStrategy() {
         return new CapiCorsFilterStrategy(allowedHeaders);
     }
+
 }
