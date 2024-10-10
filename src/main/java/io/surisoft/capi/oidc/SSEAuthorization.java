@@ -5,6 +5,7 @@ import com.nimbusds.jose.proc.BadJOSEException;
 import com.nimbusds.jose.proc.SecurityContext;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.proc.DefaultJWTProcessor;
+import io.surisoft.capi.schema.SSEClient;
 import io.surisoft.capi.schema.WebsocketClient;
 import io.undertow.server.HttpServerExchange;
 import io.undertow.util.HttpString;
@@ -17,15 +18,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-public class WebsocketAuthorization {
-    private static final Logger log = LoggerFactory.getLogger(WebsocketAuthorization.class);
+public class SSEAuthorization {
+    private static final Logger log = LoggerFactory.getLogger(SSEAuthorization.class);
     private final List<DefaultJWTProcessor<SecurityContext>> jwtProcessorList;
 
-    public WebsocketAuthorization(List<DefaultJWTProcessor<SecurityContext>> jwtProcessorList) {
+    public SSEAuthorization(List<DefaultJWTProcessor<SecurityContext>> jwtProcessorList) {
         this.jwtProcessorList = jwtProcessorList;
     }
 
-    public boolean isAuthorized(WebsocketClient websocketClient, HttpServerExchange httpServerExchange) {
+    public boolean isAuthorized(SSEClient websocketClient, HttpServerExchange httpServerExchange) {
         if(!websocketClient.requiresSubscription()) {
             return true;
         }

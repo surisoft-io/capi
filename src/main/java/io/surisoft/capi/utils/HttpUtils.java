@@ -11,6 +11,7 @@ import io.surisoft.capi.oidc.Oauth2Constants;
 import io.surisoft.capi.schema.OpaResult;
 import io.surisoft.capi.schema.Service;
 import io.surisoft.capi.service.OpaService;
+import jakarta.servlet.http.HttpServletRequest;
 import org.apache.camel.Exchange;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -104,6 +105,23 @@ public class HttpUtils {
         return null;
     }
 
+    public String processAuthorizationAccessToken(HttpServletRequest httpServletRequest) throws AuthorizationException {
+        String authorization = httpServletRequest.getHeader(Constants.AUTHORIZATION_HEADER);
+        if(authorization == null) {
+            if(httpServletRequest.getHeader(Constants.AUTHORIZATION_REQUEST_PARAMETER) != null) {
+                return httpServletRequest.getHeader(Constants.AUTHORIZATION_REQUEST_PARAMETER);
+            }
+            List<HttpCookie> cookies = getCookiesFromRequest(httpServletRequest);
+            String authorizationName = httpServletRequest.getHeader(authorizationCookieName);
+            if(authorizationName != null) {
+                return getAuthorizationCookieValue(cookies, authorizationName);
+            }
+        } else {
+            return getBearerTokenFromHeader(authorization);
+        }
+        return null;
+    }
+
     public String normalizeHttpEndpoint(String httpEndpoint) {
         if(httpEndpoint.contains("http://")) {
             return httpEndpoint.replace("http://", "");
@@ -122,6 +140,19 @@ public class HttpUtils {
         List<HttpCookie> httpCookieList = new ArrayList<>();
         if(exchange.getIn().getHeader(Constants.COOKIE_HEADER) != null) {
             String[] cookieArray = exchange.getIn().getHeader(Constants.COOKIE_HEADER, String.class).split(";");
+            for (String cookieString : cookieArray) {
+                String[] cookieKeyValue = cookieString.split("=");
+                HttpCookie httpCookie = new HttpCookie(stripOffSurroundingQuote(cookieKeyValue[0]), stripOffSurroundingQuote(cookieKeyValue[1]));
+                httpCookieList.add(httpCookie);
+            }
+        }
+        return httpCookieList;
+    }
+
+    public List<HttpCookie> getCookiesFromRequest(HttpServletRequest httpServletRequest) {
+        List<HttpCookie> httpCookieList = new ArrayList<>();
+        if(httpServletRequest.getHeader(Constants.COOKIE_HEADER) != null) {
+            String[] cookieArray = httpServletRequest.getHeader(Constants.COOKIE_HEADER).split(";");
             for (String cookieString : cookieArray) {
                 String[] cookieKeyValue = cookieString.split("=");
                 HttpCookie httpCookie = new HttpCookie(stripOffSurroundingQuote(cookieKeyValue[0]), stripOffSurroundingQuote(cookieKeyValue[1]));

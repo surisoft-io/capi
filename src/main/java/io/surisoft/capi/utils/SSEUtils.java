@@ -3,10 +3,10 @@ package io.surisoft.capi.utils;
 import com.nimbusds.jose.proc.SecurityContext;
 import com.nimbusds.jwt.proc.DefaultJWTProcessor;
 import io.surisoft.capi.exception.CapiUndertowException;
-import io.surisoft.capi.oidc.WebsocketAuthorization;
+import io.surisoft.capi.oidc.SSEAuthorization;
 import io.surisoft.capi.schema.HttpProtocol;
+import io.surisoft.capi.schema.SSEClient;
 import io.surisoft.capi.schema.Service;
-import io.surisoft.capi.schema.WebsocketClient;
 import io.undertow.server.HttpHandler;
 import io.undertow.server.handlers.ResponseCodeHandler;
 import io.undertow.server.handlers.proxy.LoadBalancingProxyClient;
@@ -19,18 +19,18 @@ import java.util.List;
 import java.util.Optional;
 
 @Component
-public class WebsocketUtils {
+public class SSEUtils {
 
     private final String capiContextPath;
     private final Optional<List<DefaultJWTProcessor<SecurityContext>>> defaultJWTProcessor;
 
-    public WebsocketUtils(@Value("${camel.servlet.mapping.context-path}") String capiContextPath,
-                          Optional<List<DefaultJWTProcessor<SecurityContext>>> defaultJWTProcessor) {
+    public SSEUtils(@Value("${camel.servlet.mapping.context-path}") String capiContextPath,
+                    Optional<List<DefaultJWTProcessor<SecurityContext>>> defaultJWTProcessor) {
         this.capiContextPath = capiContextPath;
         this.defaultJWTProcessor = defaultJWTProcessor;
     }
 
-    public HttpHandler createClientHttpHandler(WebsocketClient webSocketClient, Service service) {
+    public HttpHandler createClientHttpHandler(SSEClient webSocketClient, Service service) {
         LoadBalancingProxyClient loadBalancingProxyClient = new LoadBalancingProxyClient();
 
         webSocketClient.getMappingList().forEach((m) -> {
@@ -40,21 +40,21 @@ public class WebsocketUtils {
         return ProxyHandler
                 .builder()
                 .setProxyClient(loadBalancingProxyClient)
-                .setMaxRequestTime(30000)
+                .setMaxRequestTime(360000)
                 .setNext(ResponseCodeHandler.HANDLE_404)
                 .build();
     }
 
-    public WebsocketAuthorization createWebsocketAuthorization() throws CapiUndertowException {
+    public SSEAuthorization createSSEAuthorization() throws CapiUndertowException {
         if(defaultJWTProcessor.isPresent()) {
-            return new WebsocketAuthorization(defaultJWTProcessor.get());
+            return new SSEAuthorization(defaultJWTProcessor.get());
         }
         throw new CapiUndertowException("No OIDC provider enabled, consider enabling OIDC");
     }
 
-    public String normalizePathForForwarding(WebsocketClient websocketClient, String path) {
+    public String normalizePathForForwarding(SSEClient sseClient, String path) {
         String pathWithoutCapiContext = path.replaceAll(Constants.CAPI_CONTEXT, "");
-        return pathWithoutCapiContext.replaceAll(websocketClient.getApiId(), "");
+        return pathWithoutCapiContext.replaceAll(sseClient.getApiId(), "");
     }
 
     public String normalizeBaseContextName() {
@@ -72,18 +72,18 @@ public class WebsocketUtils {
         return Constants.CAPI_CONTEXT + "/" + pathParts[2] + "/" + pathParts[3] + "/";
     }
 
-    public WebsocketClient createWebsocketClient(Service service) {
+    public SSEClient createSSEClient(Service service) {
 
         //The path should be the same for all the nodes, so we take the first just to set the path.
-        String websocketContext = Constants.CAPI_CONTEXT + service.getContext() + service.getMappingList().stream().toList().get(0).getRootContext();
+        String sseContext = Constants.CAPI_CONTEXT + service.getContext() + service.getMappingList().stream().toList().get(0).getRootContext();
 
-        WebsocketClient websocketClient = new WebsocketClient();
+        SSEClient sseClient = new SSEClient();
 
-        websocketClient.setApiId(service.getContext());
-        websocketClient.setMappingList(service.getMappingList());
-        websocketClient.setPath(websocketContext);
-        websocketClient.setRequiresSubscription(service.getServiceMeta().isSecured());
-        websocketClient.setHttpHandler(createClientHttpHandler(websocketClient, service));
-        return websocketClient;
+        sseClient.setApiId(service.getContext());
+        sseClient.setMappingList(service.getMappingList());
+        sseClient.setPath(sseContext);
+        sseClient.setRequiresSubscription(service.getServiceMeta().isSecured());
+        sseClient.setHttpHandler(createClientHttpHandler(sseClient, service));
+        return sseClient;
     }
 }

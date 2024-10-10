@@ -2,14 +2,12 @@ package io.surisoft.capi.configuration;
 
 import io.surisoft.capi.cache.StickySessionCacheManager;
 import io.surisoft.capi.processor.MetricsProcessor;
+import io.surisoft.capi.schema.SSEClient;
 import io.surisoft.capi.schema.Service;
 import io.surisoft.capi.schema.WebsocketClient;
 import io.surisoft.capi.service.ConsulNodeDiscovery;
 import io.surisoft.capi.service.OpaService;
-import io.surisoft.capi.utils.HttpUtils;
-import io.surisoft.capi.utils.RouteUtils;
-import io.surisoft.capi.utils.ServiceUtils;
-import io.surisoft.capi.utils.WebsocketUtils;
+import io.surisoft.capi.utils.*;
 import org.apache.camel.CamelContext;
 import org.apache.camel.builder.RouteBuilder;
 import org.cache2k.Cache;
@@ -20,7 +18,6 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -43,7 +40,11 @@ public class ConsulAutoConfiguration {
 
     private final Map<String, WebsocketClient> websocketClientMap;
 
+    private final Map<String, SSEClient> sseClientMap;
+
     private final WebsocketUtils websocketUtils;
+
+    private final SSEUtils sseUtils;
 
     private final Optional<StickySessionCacheManager> stickySessionCacheManager;
 
@@ -51,6 +52,7 @@ public class ConsulAutoConfiguration {
 
     private final String capiNamespace;
     private final boolean strictNamespace;
+    private final String capiRunningMode;
 
     public ConsulAutoConfiguration(@Value("${capi.consul.discovery.timer.interval}") int consulTimerInterval,
                                    @Value("${capi.consul.hosts}") List<String> capiConsulHosts,
@@ -59,11 +61,14 @@ public class ConsulAutoConfiguration {
                                    @Value("${capi.reverse.proxy.enabled}") boolean reverseProxyEnabled,
                                    @Value("${capi.reverse.proxy.host}") String reverseProxyHost,
                                    Map<String, WebsocketClient> websocketClientMap,
+                                   Map<String, SSEClient> sseClientMap,
                                    WebsocketUtils websocketUtils,
+                                   SSEUtils sseUtils,
                                    Optional<StickySessionCacheManager> stickySessionCacheManager,
                                    Optional<OpaService> opaService,
                                    @Value("${capi.namespace}") String capiNamespace,
-                                   @Value("${capi.strict}") boolean strictNamespace) {
+                                   @Value("${capi.strict}") boolean strictNamespace,
+                                   @Value("${capi.mode}") String capiRunningMode) {
         this.consulTimerInterval = consulTimerInterval;
         this.capiConsulHosts = capiConsulHosts;
         this.consulToken = consulToken;
@@ -71,11 +76,14 @@ public class ConsulAutoConfiguration {
         this.reverseProxyEnabled = reverseProxyEnabled;
         this.reverseProxyHost = reverseProxyHost;
         this.websocketClientMap = websocketClientMap;
+        this.sseClientMap = sseClientMap;
         this.websocketUtils = websocketUtils;
+        this.sseUtils = sseUtils;
         this.stickySessionCacheManager = stickySessionCacheManager;
         this.opaService = opaService;
         this.capiNamespace = capiNamespace;
         this.strictNamespace = strictNamespace;
+        this.capiRunningMode = capiRunningMode;
     }
 
     @Bean(name = "consulNodeDiscovery")
@@ -87,11 +95,12 @@ public class ConsulAutoConfiguration {
                                                    HttpUtils httpUtils,
                                                    Cache<String, Service> serviceCache) {
 
-        ConsulNodeDiscovery consulNodeDiscovery = new ConsulNodeDiscovery(camelContext, serviceUtils, routeUtils, metricsProcessor, serviceCache, websocketClientMap);
+        ConsulNodeDiscovery consulNodeDiscovery = new ConsulNodeDiscovery(camelContext, serviceUtils, routeUtils, metricsProcessor, serviceCache, websocketClientMap, sseClientMap);
         consulNodeDiscovery.setHttpUtils(httpUtils);
 
         opaService.ifPresent(consulNodeDiscovery::setOpaService);
         consulNodeDiscovery.setWebsocketUtils(websocketUtils);
+        consulNodeDiscovery.setSSEUtils(sseUtils);
         consulNodeDiscovery.setCapiContext(httpUtils.getCapiContext(capiContext));
         consulNodeDiscovery.setConsulHostList(capiConsulHosts);
         if(capiNamespace != null && !capiNamespace.isEmpty()) {
@@ -106,6 +115,8 @@ public class ConsulAutoConfiguration {
         if(reverseProxyEnabled) {
             consulNodeDiscovery.setReverseProxyHost(reverseProxyHost);
         }
+
+        consulNodeDiscovery.setCapiRunningMode(capiRunningMode);
 
         stickySessionCacheManager.ifPresent(consulNodeDiscovery::setStickySessionCacheManager);
         return consulNodeDiscovery;

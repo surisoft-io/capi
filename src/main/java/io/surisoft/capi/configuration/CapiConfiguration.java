@@ -1,10 +1,13 @@
 package io.surisoft.capi.configuration;
 
+import ch.qos.logback.core.net.ssl.SSL;
 import io.micrometer.core.instrument.Clock;
 import io.micrometer.core.instrument.Tags;
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
 import io.micrometer.core.instrument.util.HierarchicalNameMapper;
 import io.micrometer.jmx.JmxMeterRegistry;
+import io.surisoft.capi.exception.RestTemplateErrorHandler;
+import io.surisoft.capi.schema.SSEClient;
 import io.surisoft.capi.schema.Service;
 import io.surisoft.capi.schema.WebsocketClient;
 import io.surisoft.capi.service.CapiTrustManager;
@@ -14,6 +17,8 @@ import io.surisoft.capi.tracer.CapiTracer;
 import io.surisoft.capi.utils.Constants;
 import io.surisoft.capi.utils.HttpUtils;
 import io.surisoft.capi.utils.RouteUtils;
+import io.surisoft.scim.ScimController;
+import io.surisoft.scim.resources.ControllerConfiguration;
 import okhttp3.OkHttpClient;
 import org.apache.camel.CamelContext;
 import org.apache.camel.component.http.HttpClientConfigurer;
@@ -34,29 +39,34 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.cloud.sleuth.zipkin2.RestTemplateSender;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.env.Environment;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.http.client.ClientHttpRequestFactory;
 import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 import org.springframework.web.client.RestTemplate;
 import zipkin2.reporter.AsyncReporter;
+import zipkin2.reporter.urlconnection.URLConnectionSender;
 
 import javax.net.ssl.SSLContext;
 import java.io.File;
 import java.io.IOException;
+import java.net.URL;
+import java.net.URLClassLoader;
+import java.nio.file.Path;
 import java.security.KeyManagementException;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
+import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
 import java.time.Duration;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.apache.camel.component.micrometer.messagehistory.MicrometerMessageHistoryNamingStrategy.MESSAGE_HISTORIES;
 import static org.apache.camel.component.micrometer.routepolicy.MicrometerRoutePolicyNamingStrategy.ROUTE_POLICIES;
-import static zipkin2.codec.SpanBytesEncoder.JSON_V2;
 
 @Configuration
 public class CapiConfiguration {
@@ -70,6 +80,10 @@ public class CapiConfiguration {
     private final ResourceLoader resourceLoader;
     private CapiTrustManager capiTrustManager;
     private final List<String> allowedHeaders;
+    private final String capiScimImplementationPath;
+    private final Environment environment;
+    private final String sslPath;
+    private final String sslPassword;
 
     public CapiConfiguration(@Value("${capi.traces.endpoint}") String tracesEndpoint,
                              HttpUtils httpUtils,
@@ -78,7 +92,12 @@ public class CapiConfiguration {
                              @Value("${capi.trust.store.enabled}") boolean capiTrustStoreEnabled,
                              @Value("${capi.trust.store.path}") String capiTrustStorePath,
                              @Value("${capi.trust.store.password}") String capiTrustStorePassword,
-                             @Value("${capi.gateway.cors.management.allowed-headers}") List<String> allowedHeaders) {
+                             @Value("${capi.gateway.cors.management.allowed-headers}") List<String> allowedHeaders,
+                             @Value("${capi.scim.implementation.path}") String capiScimImplementationPath,
+                             Environment environment,
+                             @Value("${server.ssl.key-store}") String sslPath,
+                             @Value("${server.ssl.key-store-password}") String sslPassword) {
+
 
         this.tracesEndpoint = tracesEndpoint;
         this.httpUtils = httpUtils;
@@ -88,6 +107,10 @@ public class CapiConfiguration {
         this.capiTrustStorePath = capiTrustStorePath;
         this.capiTrustStorePassword = capiTrustStorePassword;
         this.allowedHeaders = allowedHeaders;
+        this.capiScimImplementationPath = capiScimImplementationPath;
+        this.environment = environment;
+        this.sslPath = sslPath;
+        this.sslPassword = sslPassword;
 
         if(capiTrustStoreEnabled) {
             createTrustMaterial();
@@ -96,8 +119,46 @@ public class CapiConfiguration {
     }
 
     @Bean
+    @ConditionalOnProperty(prefix = "capi.scim", name = "enabled", havingValue = "true")
+    public ScimController scimController() {
+        AtomicReference<ScimController> scimController = new AtomicReference<>();
+        if(canCreateScimController()) {
+            log.info("CAPI SCIM, looking for a provided implementation.");
+            try {
+                URL jarUrl = Path.of(capiScimImplementationPath).toUri().toURL();
+                try (URLClassLoader urlClassLoader = new URLClassLoader(new URL[] { jarUrl }, CapiConfiguration.class.getClassLoader())) {
+                    ServiceLoader<ScimController> serviceLoader = ServiceLoader.load(ScimController.class, urlClassLoader);
+                    serviceLoader.iterator().forEachRemaining(scimControllerEntry -> {
+                        log.info("Found SCIM Implementation: {}", scimControllerEntry.getClass().getName());
+                        ControllerConfiguration scimControllerConfiguration = new ControllerConfiguration();
+                        scimControllerConfiguration.setUsername(environment.getProperty("scim-controller-auth-username"));
+                        scimControllerConfiguration.setPassword(environment.getProperty("scim-controller-auth-password"));
+                        scimControllerConfiguration.setBaseUrl(environment.getProperty("scim-controller-base-url"));
+                        scimControllerConfiguration.setBasePath(environment.getProperty("scim-controller-base-path"));
+                        scimControllerEntry.init(scimControllerConfiguration);
+                        scimController.set(scimControllerEntry);
+                    });
+                }
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        } else {
+            log.info("SCIM is enabled but scim properties were not found in the environment variables");
+            log.info("The following properties are mandatory: {}", "scim-controller-auth-username, scim-controller-auth-password, scim-controller-base-url, scim-controller-base-path");
+            return null;
+        }
+        return scimController.get();
+    }
+
+    @Bean
     @ConditionalOnProperty(prefix = "capi.websocket", name = "enabled", havingValue = "true")
     public Map<String, WebsocketClient> websocketClients() {
+        return new HashMap<>();
+    }
+
+    @Bean
+    @ConditionalOnProperty(prefix = "capi.sse", name = "enabled", havingValue = "true")
+    public Map<String, SSEClient> sseClients() {
         return new HashMap<>();
     }
 
@@ -114,9 +175,15 @@ public class CapiConfiguration {
         excludePatterns.add("bean://consistencyChecker");
 
         CapiTracer capiTracer = new CapiTracer(httpUtils);
-        RestTemplateSender restTemplateSender = new RestTemplateSender(createRestTemplate(), tracesEndpoint, null, JSON_V2);
+        //RestTemplateSender restTemplateSender = new RestTemplateSender(createRestTemplate(), tracesEndpoint, null, JSON_V2);
 
-        capiTracer.setSpanReporter(AsyncReporter.builder(restTemplateSender).build());
+        URLConnectionSender sender = URLConnectionSender
+                .newBuilder()
+                .readTimeout(100)
+                .endpoint(tracesEndpoint + "/api/v2/spans")
+                .build();
+
+        capiTracer.setSpanReporter(AsyncReporter.builder(sender).build());
         capiTracer.setIncludeMessageBody(true);
         capiTracer.setIncludeMessageBodyStreams(true);
 
@@ -166,7 +233,7 @@ public class CapiConfiguration {
         if(capiTrustStoreEnabled) {
             SSLContext sslContext = SSLContextBuilder
                     .create()
-                    .loadTrustMaterial(getFile(), capiTrustStorePassword.toCharArray())
+                    .loadTrustMaterial(getFile(capiTrustStorePath), capiTrustStorePassword.toCharArray())
                     .build();
 
             SSLConnectionSocketFactory sslConFactory = new SSLConnectionSocketFactory(sslContext);
@@ -185,7 +252,9 @@ public class CapiConfiguration {
                 .setConnectionManager(httpClientConnectionManager)
                 .build();
         ClientHttpRequestFactory requestFactory = new HttpComponentsClientHttpRequestFactory(closeableHttpClient);
-        return new RestTemplate(requestFactory);
+        RestTemplate restTemplate = new RestTemplate(requestFactory);
+        restTemplate.setErrorHandler(new RestTemplateErrorHandler());
+        return restTemplate;
     }
 
     @Bean
@@ -195,7 +264,7 @@ public class CapiConfiguration {
             if(capiTrustStoreEnabled) {
                 SSLContext sslContext = SSLContextBuilder
                         .create()
-                        .loadTrustMaterial(getFile(), capiTrustStorePassword.toCharArray())
+                        .loadTrustMaterial(getFile(capiTrustStorePath), capiTrustStorePassword.toCharArray())
                         .build();
                 builder.sslSocketFactory(sslContext.getSocketFactory(), capiTrustManager);
             }
@@ -223,7 +292,7 @@ public class CapiConfiguration {
     private void createSslContext() {
         try {
             log.info("Starting CAPI HTTP Components SSL Context");
-            File filePath = getFile();
+            File filePath = getFile(capiTrustStorePath);
 
             HttpComponent httpComponent = (HttpComponent) camelContext.getComponent("https");
             if(filePath != null) {
@@ -245,14 +314,24 @@ public class CapiConfiguration {
         }
     }
 
-    private File getFile() {
+    @Bean
+    @ConditionalOnProperty(prefix = "server.ssl", name = "enabled", havingValue = "true")
+    public SSLContext createSSLContextForUndertow() throws UnrecoverableKeyException, CertificateException, NoSuchAlgorithmException, KeyStoreException, IOException, KeyManagementException {
+        File filePath = getFile(sslPath);
+        if(filePath != null) {
+            return new SSLContextBuilder().loadKeyMaterial(filePath, sslPassword.toCharArray(), sslPassword.toCharArray()).build();
+        }
+        return null;
+    }
+
+    private File getFile(String path) {
         File filePath = null;
         try {
-            if(capiTrustStorePath.startsWith("classpath")) {
-                Resource resource = resourceLoader.getResource(capiTrustStorePath);
+            if(path.startsWith("classpath")) {
+                Resource resource = resourceLoader.getResource(path);
                 filePath = resource.getFile();
             } else {
-                filePath = new File(capiTrustStorePath);
+                filePath = new File(path);
             }
         } catch(IOException e) {
             log.error(e.getMessage(), e);
@@ -262,7 +341,7 @@ public class CapiConfiguration {
 
     private void createTrustMaterial() {
         try {
-            File filePath = getFile();
+            File filePath = getFile(capiTrustStorePath);
             capiTrustManager = new CapiTrustManager(filePath.getAbsolutePath(), capiTrustStorePassword);
             createSslContext();
         } catch (Exception e) {
@@ -276,4 +355,10 @@ public class CapiConfiguration {
         return new CapiCorsFilterStrategy(allowedHeaders);
     }
 
+    private boolean canCreateScimController() {
+        return environment.containsProperty("scim-controller-auth-username") &&
+                environment.containsProperty("scim-controller-auth-password") &&
+                environment.containsProperty("scim-controller-base-url") &&
+                environment.containsProperty("scim-controller-base-path");
+    }
 }

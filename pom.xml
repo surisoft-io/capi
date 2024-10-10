@@ -7,25 +7,24 @@
   <groupId>io.surisoft.capi</groupId>
   <artifactId>capi</artifactId>
   <packaging>jar</packaging>
-  <version>4.6.03</version>
+  <version>4.8.20</version>
   <description>${spring.boot-version}</description>
   <name>CAPI Gateway</name>
 
   <properties>
-    <org.apache.camel.springboot-version>4.6.0</org.apache.camel.springboot-version>
-    <spring.boot-version>3.3.0</spring.boot-version>
+    <org.apache.camel.springboot-version>4.8.0</org.apache.camel.springboot-version>
+    <spring.boot-version>3.3.3</spring.boot-version>
 
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-    <io.zipkin.reporter2-version>3.4.0</io.zipkin.reporter2-version>
     <spring-cloud-sleuth-version>3.1.11</spring-cloud-sleuth-version>
     <nimbus-jose-jwt-version>9.40</nimbus-jose-jwt-version>
-    <io.micrometer-version>1.10.2</io.micrometer-version>
+    <io.micrometer-version>1.13.2</io.micrometer-version>
     <cache2k-version>2.6.1.Final</cache2k-version>
     <io.swagger.parser.v3.version>2.1.22</io.swagger.parser.v3.version>
 
     <jackson-dataformat-xml.version>2.17.0</jackson-dataformat-xml.version>
-    <spring.kafka.version>3.0.11</spring.kafka.version>
+    <spring.kafka.version>3.2.3</spring.kafka.version>
     <camel-zipkin-starter.version>3.22.1</camel-zipkin-starter.version>
 
     <wiremock.version>3.0.1</wiremock.version>
@@ -46,7 +45,7 @@
   <parent>
     <groupId>org.springframework.boot</groupId>
     <artifactId>spring-boot-starter-parent</artifactId>
-    <version>3.2.5</version>
+    <version>3.3.3</version>
     <relativePath/>
   </parent>
 
@@ -130,11 +129,6 @@
       <version>${org.apache.camel.springboot-version}</version>
     </dependency>
     <!-- Instrumentation -->
-    <dependency>
-      <groupId>io.zipkin.reporter2</groupId>
-      <artifactId>zipkin-sender-okhttp3</artifactId>
-      <version>${io.zipkin.reporter2-version}</version>
-    </dependency>
     <dependency>
       <groupId>org.apache.camel.springboot</groupId>
       <artifactId>camel-log-starter</artifactId>
@@ -243,12 +237,23 @@
         <artifactId>proto-google-common-protos</artifactId>
         <version>${com.google.api.grpc.version}</version>
     </dependency>
-
     <!-- Swagger parser dependency-->
     <dependency>
       <groupId>io.swagger.parser.v3</groupId>
       <artifactId>swagger-parser-v3</artifactId>
       <version>${io.swagger.parser.v3.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.camel.springboot</groupId>
+      <artifactId>camel-stream-starter</artifactId>
+      <version>${org.apache.camel.springboot-version}</version>
+      <!-- use the same version as your Camel core version -->
+    </dependency>
+
+    <dependency>
+      <groupId>io.surisoft</groupId>
+      <artifactId>scim-controller</artifactId>
+      <version>1.0.0</version>
     </dependency>
   </dependencies>
 <build>
@@ -334,8 +339,8 @@
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
         <configuration>
-            <source>21</source>
-            <target>21</target>
+            <source>22</source>
+            <target>22</target>
         </configuration>
     </plugin>
 </plugins>

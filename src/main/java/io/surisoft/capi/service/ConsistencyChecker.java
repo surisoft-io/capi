@@ -24,8 +24,10 @@ public class ConsistencyChecker {
     }
 
     public void process() {
-        log.debug("Looking for inconsistent routes...");
-        checkForOpenApiInconsistency();
+        if(camelContext.isStarted()) {
+            log.debug("Looking for inconsistent routes...");
+            checkForOpenApiInconsistency();
+        }
     }
 
     private void checkForOpenApiInconsistency() {

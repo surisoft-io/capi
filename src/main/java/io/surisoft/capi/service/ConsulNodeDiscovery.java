@@ -39,25 +39,30 @@ public class ConsulNodeDiscovery {
     private final CamelContext camelContext;
     private final Cache<String, Service> serviceCache;
     private final Map<String, WebsocketClient> websocketClientMap;
+    private final Map<String, SSEClient> sseClientMap;
     private WebsocketUtils websocketUtils;
+    private SSEUtils sseUtils;
     private OpaService opaService;
     private HttpUtils httpUtils;
     private String capiNamespace;
     private boolean strictNamespace;
     private String consulToken;
+    private String capiRunningMode;
 
     public ConsulNodeDiscovery(CamelContext camelContext,
                                ServiceUtils serviceUtils,
                                RouteUtils routeUtils,
                                MetricsProcessor metricsProcessor,
                                Cache<String, Service> serviceCache,
-                               Map<String, WebsocketClient> websocketClientMap) {
+                               Map<String, WebsocketClient> websocketClientMap,
+                               Map<String, SSEClient> sseClientMap) {
         this.serviceUtils = serviceUtils;
         this.routeUtils = routeUtils;
         this.camelContext = camelContext;
         this.serviceCache = serviceCache;
         this.metricsProcessor = metricsProcessor;
         this.websocketClientMap = websocketClientMap;
+        this.sseClientMap = sseClientMap;
 
         client = HttpClient.newBuilder()
                 .connectTimeout(Duration.ofSeconds(10))
@@ -65,9 +70,11 @@ public class ConsulNodeDiscovery {
     }
 
     public void processInfo() {
-        lookForRemovedServices();
-        Map<String, List<ConsulObject>> serviceListObjects = getAllServices();
-        processServices(serviceListObjects);
+        if(camelContext.isStarted()) {
+            lookForRemovedServices();
+            Map<String, List<ConsulObject>> serviceListObjects = getAllServices();
+            processServices(serviceListObjects);
+        }
     }
 
     private void lookForRemovedServices() {
@@ -261,12 +268,20 @@ public class ConsulNodeDiscovery {
 
     private void createRoute(Service incomingService) {
         serviceCache.put(incomingService.getId(), incomingService);
-        if(incomingService.getServiceMeta().getType().equalsIgnoreCase(Constants.WEBSOCKET_TYPE)) {
+        if(incomingService.getServiceMeta().getType().equalsIgnoreCase(Constants.WEBSOCKET_TYPE) &&
+                (capiRunningMode.equalsIgnoreCase(Constants.WEBSOCKET_TYPE) || capiRunningMode.equalsIgnoreCase(Constants.FULL_TYPE))) {
             WebsocketClient websocketClient = websocketUtils.createWebsocketClient(incomingService);
             if(websocketClient != null && websocketClientMap != null) {
                websocketClientMap.put(websocketClient.getPath(), websocketClient);
             }
-        } else {
+        } else if(incomingService.getServiceMeta().getType().equalsIgnoreCase(Constants.SSE_TYPE) &&
+                ((capiRunningMode.equalsIgnoreCase(Constants.SSE_TYPE) || capiRunningMode.equalsIgnoreCase(Constants.FULL_TYPE)))) {
+            SSEClient sseClient = sseUtils.createSSEClient(incomingService);
+            if(sseClient != null && sseClientMap != null) {
+                sseClientMap.put(sseClient.getPath(), sseClient);
+            }
+
+        } else if(capiRunningMode.equalsIgnoreCase(Constants.FULL_TYPE)) {
             List<String> apiRouteIdList = routeUtils.getAllRouteIdForAGivenService(incomingService);
             for(String routeId : apiRouteIdList) {
                 Route existingRoute = camelContext.getRoute(routeId);
@@ -328,6 +343,10 @@ public class ConsulNodeDiscovery {
         this.websocketUtils = websocketUtils;
     }
 
+    public void setSSEUtils(SSEUtils sseUtils) {
+        this.sseUtils = sseUtils;
+    }
+
     public void setStickySessionCacheManager(StickySessionCacheManager stickySessionCacheManager) {
         this.stickySessionCacheManager = stickySessionCacheManager;
     }
@@ -349,5 +368,9 @@ public class ConsulNodeDiscovery {
 
     public void setConsulToken(String consulToken) {
         this.consulToken = consulToken;
+    }
+
+    public void setCapiRunningMode(String capiRunningMode) {
+        this.capiRunningMode = capiRunningMode;
     }
 }

@@ -8,6 +8,7 @@ server:
 capi:
   namespace:
   strict: false
+  mode: full
   public-endpoint: http://localhost:8380/capi/
   #### Kafka is still experimental ####
   kafka:
@@ -24,14 +25,21 @@ capi:
   websocket:
     enabled: false
     server:
-      host: localhost
       port: 8382
+  sse:
+    enabled: false
+    server:
+      port: 8383
   #### Enable Zipkin
   traces:
     enabled: false
     endpoint: https://localhost:9411/api/v2/spans
   #### If you want CAPI to search consul for available APIs to be deployed, enable this feature. ####
   consul:
+    kv:
+      enabled: false
+      timer:
+        interval: 20000
     token:
     hosts: http://localhost:8500
     discovery:
@@ -99,6 +107,10 @@ capi:
   opa:
     enabled: false
     endpoint: http://localhost:8181
+  scim:
+    enabled: false
+    implementation:
+      path:
 
 spring:
   #### We want persistence to be optional, so we disable autoconfiguration for JPA ####

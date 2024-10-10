@@ -63,7 +63,8 @@ public class Constants {
             "/analytics/**",
             "/swagger/**"
     };
-    public static final List<String> CAPI_INTERNAL_ROUTES_PREFIX = List.of("consul-discovery-service");
+    public static final List<String> CAPI_INTERNAL_ROUTES_PREFIX = List.of("consul-discovery-service",
+                                                                           "consistency-checker-service");
     public static final String CAMEL_HTTP_SERVLET_REQUEST = "CamelHttpServletRequest";
     public static final String CACHE_ROUTE_STOPPED_EVENT = "RouteStoppedEvent";
     public static final String CACHE_ROUTE_REMOVED_EVENT = "RouteRemovedEvent";
@@ -88,6 +89,8 @@ public class Constants {
     public static final String BEARER = "Bearer ";
     public static final String CAPI_GROUP_HEADER = "Capi-Group";
     public static final String WEBSOCKET_TYPE = "websocket";
+    public static final String SSE_TYPE = "sse";
+    public static final String FULL_TYPE = "full";
     public static final String ACCESS_CONTROL_ALLOW_ORIGIN = "Access-Control-Allow-Origin";
     public static final String ACCESS_CONTROL_ALLOW_CREDENTIALS = "Access-Control-Allow-Credentials";
     public static final String ACCESS_CONTROL_ALLOW_METHODS = "Access-Control-Allow-Methods";
@@ -100,7 +103,7 @@ public class Constants {
             "Access-Control-Allow-Methods", ACCESS_CONTROL_ALLOW_METHODS_VALUE,
             "Access-Control-Max-Age", ACCESS_CONTROL_MAX_AGE_VALUE
     );
-    public static final String WEBSOCKET_LISTENING_ADDRESS = "0.0.0.0";
+    public static final String UNDERTOW_LISTENING_ADDRESS = "0.0.0.0";
     public static final String ERROR_LISTENING_ADDRESS = "0.0.0.0";
     public static final int UNAUTHORIZED_CODE = 401;
     public static final int FORBIDDEN_CODE = 403;

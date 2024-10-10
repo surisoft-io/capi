@@ -4,6 +4,7 @@ import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
 import io.surisoft.capi.cache.StickySessionCacheManager;
 import io.surisoft.capi.processor.MetricsProcessor;
+import io.surisoft.capi.schema.SSEClient;
 import io.surisoft.capi.schema.Service;
 import io.surisoft.capi.schema.WebsocketClient;
 import io.surisoft.capi.service.ConsulNodeDiscovery;
@@ -92,6 +93,9 @@ class TestConsulNodeDiscovery {
     @Autowired(required = false)
     Map<String, WebsocketClient> websocketClientMap;
 
+    @Autowired(required = false)
+    Map<String, SSEClient> sseClientMap;
+
     WireMockServer wireMockServer;
 
     @Test
@@ -107,12 +111,13 @@ class TestConsulNodeDiscovery {
         Assertions.assertNotNull(metricsProcessor);
         Assertions.assertNotNull(serviceCache);
 
-        ConsulNodeDiscovery consulNodeDiscovery = new ConsulNodeDiscovery(camelContext, serviceUtils, routeUtils, metricsProcessor, serviceCache, websocketClientMap);
+        ConsulNodeDiscovery consulNodeDiscovery = new ConsulNodeDiscovery(camelContext, serviceUtils, routeUtils, metricsProcessor, serviceCache, websocketClientMap, sseClientMap);
         consulNodeDiscovery.setOpaService(opaService);
         consulNodeDiscovery.setHttpUtils(httpUtils);
         consulNodeDiscovery.setStickySessionCacheManager(stickySessionCacheManager);
         consulNodeDiscovery.setConsulHostList(List.of("http://localhost:" + wireMockServer.port()));
         consulNodeDiscovery.setCapiContext("/capi/test");
+        consulNodeDiscovery.setCapiRunningMode("full");
         consulNodeDiscovery.processInfo();
 
         Thread.sleep(5000);

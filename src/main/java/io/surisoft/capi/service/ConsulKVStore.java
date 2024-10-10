@@ -40,14 +40,14 @@ public class ConsulKVStore {
                 ConsulKeyValueStore consulKeyValueStore = Objects.requireNonNull(consulKeyValueStoreResponse.getBody())[0];
                 List<String> consulDecodedValueAsList = consulKeyValueToList(consulKeyValueStore.getValue());
                 if(cachedValueAsList != null && !consulDecodedValueAsList.isEmpty() && !cachedValueAsList.isEmpty() && !consulDecodedValueAsList.equals(cachedValueAsList)) {
-                    log.info("Cached Values Are different we need to save them to Consul KV");
+                    log.debug("Cached Values Are different we need to save them to Consul KV");
                     updateConsulHeaderKey(Constants.CAPI_CORS_HEADERS_CACHE_KEY, String.join(",", cachedValueAsList));
                 } else {
-                    log.info("Go to sleep and try later on...");
+                    log.debug("Go to sleep and try later on...");
                 }
             }
         } catch(Exception e) {
-            log.info("Cached Values Are different we need to save them to Consul KV");
+            log.debug("Cached Values Are different we need to save them to Consul KV");
             assert cachedValueAsList != null;
             updateConsulHeaderKey("capi-cors-headers", String.join(",", cachedValueAsList));
         }

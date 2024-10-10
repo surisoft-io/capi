@@ -2,7 +2,8 @@ package io.surisoft.capi.configuration;
 
 import io.surisoft.capi.schema.Service;
 import io.surisoft.capi.schema.StickySession;
-import io.surisoft.capi.websocket.WebsocketGateway;
+import io.surisoft.capi.undertow.SSEGateway;
+import io.surisoft.capi.undertow.WebsocketGateway;
 import org.cache2k.Cache;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
@@ -22,11 +23,13 @@ public class CapiApplicationListener implements ApplicationListener<ApplicationE
     private final Cache<String, Service> serviceCache;
     private final Cache<String, StickySession> stickySessionCache;
     private final Optional<WebsocketGateway> websocketGateway;
+    private final Optional<SSEGateway> sseGateway;
 
-    public CapiApplicationListener(Cache<String, Service> serviceCache, Cache<String, StickySession> stickySessionCache, Optional<WebsocketGateway> websocketGateway) {
+    public CapiApplicationListener(Cache<String, Service> serviceCache, Cache<String, StickySession> stickySessionCache, Optional<WebsocketGateway> websocketGateway, Optional<SSEGateway> sseGateway) {
         this.serviceCache = serviceCache;
         this.stickySessionCache = stickySessionCache;
         this.websocketGateway = websocketGateway;
+        this.sseGateway = sseGateway;
     }
 
     @Override
@@ -35,6 +38,10 @@ public class CapiApplicationListener implements ApplicationListener<ApplicationE
             if(websocketGateway.isPresent()) {
                 log.info("Capi Websocket Gateway starting.");
                 websocketGateway.get().runProxy();
+            }
+            if(sseGateway.isPresent()) {
+                log.info("Capi SSE Gateway starting.");
+                sseGateway.get().runProxy();
             }
         }
         if(applicationEvent instanceof ContextClosedEvent) {

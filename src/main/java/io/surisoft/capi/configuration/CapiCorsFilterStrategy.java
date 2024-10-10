@@ -24,7 +24,7 @@ public class CapiCorsFilterStrategy extends DefaultHeaderFilterStrategy {
 
     protected void initialize() {
         getOutFilter().add("content-length");
-        getOutFilter().add("content-type");
+        //getOutFilter().add("content-type");
         getOutFilter().add("host");
         getOutFilter().add("cache-control");
         getOutFilter().add("connection");
