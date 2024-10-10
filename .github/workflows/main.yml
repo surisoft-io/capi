@@ -13,14 +13,15 @@ jobs:
       with:
         java-version: 21
     - uses: actions/checkout@v3.5.3
-    - name: maven-settings-xml-action
-      uses: whelk-io/maven-settings-xml-action@v21
+
+    - name: Set up Maven settings
+      run: |
+        mkdir -p ~/.m2
+        echo "<settings><servers><server><id>github</id><username>${{ github.actor }}</username><password>${{ secrets.GITHUB_TOKEN }}</password></server></servers></settings>" > ~/.m2/settings.xml
     - name: Set Release version env variable
       run: |
           echo "RELEASE_VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)" >> $GITHUB_ENV
     - name: Build with Maven
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: mvn package --file pom.xml
     - name: Docker login
       run: |
