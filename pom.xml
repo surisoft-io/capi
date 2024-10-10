@@ -345,4 +345,11 @@
     </plugin>
 </plugins>
 </build>
+  <repositories>
+    <repository>
+      <id>github</id>
+      <name>GitHub CAPI Apache Maven Packages</name>
+      <url>https://maven.pkg.github.com/surisoft-io/scim-controller</url>
+    </repository>
+  </repositories>
 </project>
