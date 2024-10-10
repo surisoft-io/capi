@@ -53,7 +53,6 @@ public class WebsocketGateway {
         }
 
         builder
-                .addHttpListener(port, Constants.UNDERTOW_LISTENING_ADDRESS)
                 .setHandler(httpServerExchange -> {
                     String requestPath = httpServerExchange.getRequestPath();
                     String serviceDefinitionPath = websocketUtils.getPathDefinition(requestPath);
