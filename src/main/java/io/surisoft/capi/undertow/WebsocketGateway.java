@@ -55,37 +55,40 @@ public class WebsocketGateway {
         builder
                 .setHandler(httpServerExchange -> {
                     String requestPath = httpServerExchange.getRequestPath();
-                    String serviceDefinitionPath = websocketUtils.getPathDefinition(requestPath);
-                    if (webSocketClients.containsKey(serviceDefinitionPath)) {
+                    String webClientId = websocketUtils.getWebclientId(requestPath);
+                    WebsocketClient websocketClient = webSocketClients.get(webClientId);
+                    if (webSocketClients.containsKey(webClientId)) {
                         if (httpServerExchange.getProtocol().equals(Constants.PROTOCOL_HTTP)) {
                             if (websocketAuthorization != null) {
-                                if (websocketAuthorization.isAuthorized(webSocketClients.get(serviceDefinitionPath), httpServerExchange)) {
+                                if (websocketAuthorization.isAuthorized(websocketClient, httpServerExchange)) {
                                     log.info("{} is authorized!", httpServerExchange.getRequestPath());
-                                    httpServerExchange.setRequestURI(websocketUtils.normalizePathForForwarding(webSocketClients.get(serviceDefinitionPath), requestPath));
-                                    httpServerExchange.setRelativePath(websocketUtils.normalizePathForForwarding(webSocketClients.get(serviceDefinitionPath), requestPath));
-                                    webSocketClients.get(serviceDefinitionPath).getHttpHandler().handleRequest(httpServerExchange);
+                                    httpServerExchange.setRequestURI(websocketUtils.normalizePathForForwarding(websocketClient, requestPath));
+                                    httpServerExchange.setRelativePath(websocketUtils.normalizePathForForwarding(websocketClient, requestPath));
+                                    websocketClient.getHttpHandler().handleRequest(httpServerExchange);
                                 } else {
                                     log.info("{} is not authorized!", httpServerExchange.getRequestPath());
                                     httpServerExchange.setStatusCode(403);
                                     httpServerExchange.endExchange();
-                                    //webSocketClients.get(serviceDefinitionPath).getHttpHandler().handleRequest(httpServerExchange);
                                 }
                             } else {
-                                if (!webSocketClients.get(serviceDefinitionPath).requiresSubscription()) {
+                                if (!websocketClient.requiresSubscription()) {
                                     log.info("{} is authorized!", httpServerExchange.getRequestPath());
-                                    httpServerExchange.setRequestURI(websocketUtils.normalizePathForForwarding(webSocketClients.get(serviceDefinitionPath), requestPath));
-                                    httpServerExchange.setRelativePath(websocketUtils.normalizePathForForwarding(webSocketClients.get(serviceDefinitionPath), requestPath));
-                                    webSocketClients.get(serviceDefinitionPath).getHttpHandler().handleRequest(httpServerExchange);
+                                    httpServerExchange.setRequestURI(websocketUtils.normalizePathForForwarding(websocketClient, requestPath));
+                                    httpServerExchange.setRelativePath(websocketUtils.normalizePathForForwarding(websocketClient, requestPath));
+                                    websocketClient.getHttpHandler().handleRequest(httpServerExchange);
                                 } else {
-                                    log.info("{} is not authorized!", httpServerExchange.getRequestPath());
+                                    log.info("{} is ot authorized!", httpServerExchange.getRequestPath());
                                     httpServerExchange.setStatusCode(403);
                                     httpServerExchange.endExchange();
-                                    //webSocketClients.get(serviceDefinitionPath).getHttpHandler().handleRequest(httpServerExchange);
                                 }
                             }
                         }
+                    } else {
+                        log.info("{} is not present!", httpServerExchange.getRequestPath());
+                        httpServerExchange.setStatusCode(404);
+                        httpServerExchange.endExchange();
                     }
-                }).build();
+                });
         builder.build().start();
     }
 }

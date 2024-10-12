@@ -7,7 +7,7 @@ import java.util.Set;
 
 public class WebsocketClient {
 
-    private String apiId;
+    private String serviceId;
     private String path;
     private Set<Mapping> mappingList;
     @JsonIgnore
@@ -35,6 +35,10 @@ public class WebsocketClient {
         return requiresSubscription;
     }
 
+    public boolean isRequiresSubscription() {
+        return requiresSubscription;
+    }
+
     public void setRequiresSubscription(boolean requiresSubscription) {
         this.requiresSubscription = requiresSubscription;
     }
@@ -47,12 +51,12 @@ public class WebsocketClient {
         this.subscriptionRole = subscriptionRole;
     }
 
-    public String getApiId() {
-        return apiId;
+    public String getServiceId() {
+        return serviceId;
     }
 
-    public void setApiId(String apiId) {
-        this.apiId = apiId;
+    public void setServiceId(String serviceId) {
+        this.serviceId = serviceId;
     }
 
     public Set<Mapping> getMappingList() {

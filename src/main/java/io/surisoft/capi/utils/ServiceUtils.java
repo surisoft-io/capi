@@ -1,12 +1,6 @@
 package io.surisoft.capi.utils;
 
-import io.surisoft.capi.cache.StickySessionCacheManager;
-import io.surisoft.capi.processor.MetricsProcessor;
-import io.surisoft.capi.schema.ConsulObject;
-import io.surisoft.capi.schema.Mapping;
-import io.surisoft.capi.schema.Service;
-import io.surisoft.capi.schema.WebsocketClient;
-import io.surisoft.capi.service.OpaService;
+import io.surisoft.capi.schema.*;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.parser.OpenAPIV3Parser;
 import okhttp3.OkHttpClient;
@@ -17,7 +11,6 @@ import org.cache2k.Cache;
 import org.cache2k.CacheEntry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -31,36 +24,25 @@ public class ServiceUtils {
     private static final Logger log = LoggerFactory.getLogger(ServiceUtils.class);
     private final HttpUtils httpUtils;
     private final Optional<Map<String, WebsocketClient>> websocketClientMap;
+    private final Optional<Map<String, SSEClient>> sseClientMap;
     private final RouteUtils routeUtils;
-    private final MetricsProcessor metricsProcessor;
     private final CamelContext camelContext;
-    private final Optional<StickySessionCacheManager> stickySessionCacheManager;
-    private final String capiContext;
-    private final String reverseProxyHost;
     private final OkHttpClient okHttpClient;
-    private final Optional<OpaService> opaService;
+    private final WebsocketUtils websocketUtils;
 
     public ServiceUtils(HttpUtils httpUtils,
                         Optional<Map<String, WebsocketClient>> websocketClientMap,
+                        Optional<Map<String, SSEClient>> sseClientMap,
                         RouteUtils routeUtils,
-                        MetricsProcessor metricsProcessor,
                         CamelContext camelContext,
-                        Optional<StickySessionCacheManager> stickySessionCacheManager,
-                        @Value("${camel.servlet.mapping.context-path}") String capiContext,
-                        @Value("${capi.reverse.proxy.host}") String reverseProxyHost,
-                        OkHttpClient okHttpClient,
-                        Optional<OpaService> opaService) {
+                        OkHttpClient okHttpClient, WebsocketUtils websocketUtils) {
         this.httpUtils = httpUtils;
         this.websocketClientMap = websocketClientMap;
+        this.sseClientMap = sseClientMap;
         this.routeUtils = routeUtils;
-        this.metricsProcessor = metricsProcessor;
         this.camelContext = camelContext;
-        this.stickySessionCacheManager = stickySessionCacheManager;
-        this.capiContext = capiContext;
-        this.reverseProxyHost = reverseProxyHost;
         this.okHttpClient = okHttpClient;
-        this.opaService = opaService;
-
+        this.websocketUtils = websocketUtils;
     }
 
     public String getServiceId(Service service) {
@@ -124,14 +106,28 @@ public class ServiceUtils {
 
     private void redeployService(Service incomingService, Service existingService, Cache<String, Service> serviceCache) {
         log.trace("Changes detected for Service: {}, redeploying routes.", existingService.getId());
-        try {
-            List<String> apiRouteIdList = routeUtils.getAllRouteIdForAGivenService(existingService);
-            for(String routeId : apiRouteIdList) {
-                camelContext.getRouteController().stopRoute(routeId);
-                camelContext.removeRoute(routeId);
+        if(existingService.getServiceMeta().getType() != null &&
+                existingService.getServiceMeta().getType().equals(Constants.WEBSOCKET_TYPE) &&
+                incomingService.getServiceMeta().getType().equals(Constants.WEBSOCKET_TYPE) &&
+                websocketClientMap.isPresent() &&
+                websocketClientMap.get().containsKey(existingService.getId())) {
+            websocketClientMap.get().remove(existingService.getContext());
+        } else if(existingService.getServiceMeta().getType() != null &&
+                existingService.getServiceMeta().getType().equals(Constants.SSE_TYPE) &&
+                incomingService.getServiceMeta().getType().equals(Constants.SSE_TYPE) &&
+                sseClientMap.isPresent() &&
+                sseClientMap.get().containsKey(existingService.getId())) {
+            sseClientMap.get().remove(existingService.getId());
+        } else {
+            try {
+                List<String> apiRouteIdList = routeUtils.getAllRouteIdForAGivenService(existingService);
+                for(String routeId : apiRouteIdList) {
+                    camelContext.getRouteController().stopRoute(routeId);
+                    camelContext.removeRoute(routeId);
+                }
+            } catch (Exception e) {
+                log.error(e.getMessage(), e);
             }
-        } catch (Exception e) {
-            log.error(e.getMessage(), e);
         }
     }
 
@@ -153,7 +149,10 @@ public class ServiceUtils {
             if (!serviceNameList.contains(service.getName())) {
                 serviceCache.remove(service.getId());
                 if(service.getServiceMeta().getType().equals("websocket") && websocketClientMap.isPresent()) {
-                    websocketClientMap.get().remove(service.getContext());
+                    websocketUtils.removeClientFromMap(websocketClientMap.get(), service);
+                } else if(service.getServiceMeta().getType().equals("sse") && sseClientMap.isPresent()) {
+
+                    sseClientMap.get().remove(service.getContext());
                 } else {
                     List<String> serviceRouteIdList = routeUtils.getAllRouteIdForAGivenService(service);
                     for (String routeId : serviceRouteIdList) {
@@ -175,6 +174,7 @@ public class ServiceUtils {
 
                 log.trace("Calling Remote Open API Spec: {}", service.getServiceMeta().getOpenApiEndpoint());
                 if(response.isSuccessful()) {
+                    assert response.body() != null;
                     OpenAPI openAPI = new OpenAPIV3Parser().readContents(response.body().string()).getOpenAPI();
                     service.setOpenAPI(openAPI);
                     return true;

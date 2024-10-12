@@ -96,11 +96,8 @@ public class ConsulNodeDiscovery {
             } catch (Exception e) {
                 log.error(e.getMessage(), e);
             }
-        } catch (IOException e) {
-            log.error("Error connecting to Consul, will try again...");
-        } catch (InterruptedException e) {
-            log.error("Error connecting to Consul, will try again...");
-            Thread.currentThread().interrupt();
+        } catch (IOException | InterruptedException e) {
+            log.error(ErrorMessage.ERROR_CONNECTING_TO_CONSUL);
         }
     }
 
@@ -128,9 +125,9 @@ public class ConsulNodeDiscovery {
                 }
             }
         } catch (IOException e) {
-            log.error("Error connecting to Consul, will try again...");
+            log.error(ErrorMessage.ERROR_CONNECTING_TO_CONSUL);
         } catch (InterruptedException e) {
-            log.error("Error connecting to Consul, will try again...");
+            log.error(ErrorMessage.ERROR_CONNECTING_TO_CONSUL);
             Thread.currentThread().interrupt();
 
         }
@@ -160,9 +157,9 @@ public class ConsulNodeDiscovery {
             });
             return servicesToDeploy;
         } catch (IOException e) {
-            log.error("Error connecting to Consul, will try again...");
+            log.error(ErrorMessage.ERROR_CONNECTING_TO_CONSUL);
         } catch (InterruptedException e) {
-            log.error("Error connecting to Consul, will try again...");
+            log.error(ErrorMessage.ERROR_CONNECTING_TO_CONSUL);
             Thread.currentThread().interrupt();
         }
         return null;
@@ -272,7 +269,7 @@ public class ConsulNodeDiscovery {
                 (capiRunningMode.equalsIgnoreCase(Constants.WEBSOCKET_TYPE) || capiRunningMode.equalsIgnoreCase(Constants.FULL_TYPE))) {
             WebsocketClient websocketClient = websocketUtils.createWebsocketClient(incomingService);
             if(websocketClient != null && websocketClientMap != null) {
-               websocketClientMap.put(websocketClient.getPath(), websocketClient);
+               websocketClientMap.put(websocketClient.getServiceId(), websocketClient);
             }
         } else if(incomingService.getServiceMeta().getType().equalsIgnoreCase(Constants.SSE_TYPE) &&
                 ((capiRunningMode.equalsIgnoreCase(Constants.SSE_TYPE) || capiRunningMode.equalsIgnoreCase(Constants.FULL_TYPE)))) {

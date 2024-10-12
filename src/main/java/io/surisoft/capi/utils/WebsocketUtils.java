@@ -16,6 +16,7 @@ import org.springframework.stereotype.Component;
 
 import java.net.URI;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @Component
@@ -53,15 +54,15 @@ public class WebsocketUtils {
     }
 
     public String normalizePathForForwarding(WebsocketClient websocketClient, String path) {
-        String pathWithoutCapiContext = path.replaceAll(Constants.CAPI_CONTEXT, "");
-        return pathWithoutCapiContext.replaceAll(websocketClient.getApiId(), "");
+        String pathWithoutCapiContext = path.replaceAll(normalizeCapiContextPath(), "");
+        return pathWithoutCapiContext.replaceAll(websocketClient.getServiceId(), "");
     }
 
     public String normalizeBaseContextName() {
         return capiContextPath.replaceAll("/", "").replaceAll("\\*", "");
     }
 
-    public String getPathDefinition(String originalRequest) {
+    public String getWebclientId(String originalRequest) {
         String[] pathParts = originalRequest.split("/");
         if(pathParts.length < 4) {
             return null;
@@ -69,21 +70,30 @@ public class WebsocketUtils {
         if(!pathParts[1].equals(normalizeBaseContextName())) {
             return null;
         }
-        return Constants.CAPI_CONTEXT + "/" + pathParts[2] + "/" + pathParts[3] + "/";
+        return  "/" + pathParts[2] + "/" + pathParts[3];
     }
 
     public WebsocketClient createWebsocketClient(Service service) {
 
         //The path should be the same for all the nodes, so we take the first just to set the path.
-        String websocketContext = Constants.CAPI_CONTEXT + service.getContext() + service.getMappingList().stream().toList().get(0).getRootContext();
+        String websocketContext = normalizeCapiContextPath() + service.getContext() + service.getMappingList().stream().toList().get(0).getRootContext();
 
         WebsocketClient websocketClient = new WebsocketClient();
 
-        websocketClient.setApiId(service.getContext());
+        websocketClient.setServiceId(service.getContext());
         websocketClient.setMappingList(service.getMappingList());
         websocketClient.setPath(websocketContext);
         websocketClient.setRequiresSubscription(service.getServiceMeta().isSecured());
         websocketClient.setHttpHandler(createClientHttpHandler(websocketClient, service));
         return websocketClient;
+    }
+
+    public void removeClientFromMap(Map<String, WebsocketClient> websocketClientMap, Service service) {
+        websocketClientMap.remove(service.getContext());
+    }
+
+    public String normalizeCapiContextPath() {
+        String normalized = capiContextPath.replaceAll("/", "").replaceAll("\\*", "");
+        return "/" + normalized;
     }
 }
