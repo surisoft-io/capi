@@ -57,8 +57,8 @@ class WebsocketClientTest {
     @Test
     void testApiIdGetterAndSetter() {
         final String apiId = "apiId";
-        websocketClientUnderTest.setApiId(apiId);
-        assertThat(websocketClientUnderTest.getApiId()).isEqualTo(apiId);
+        websocketClientUnderTest.setServiceId(apiId);
+        assertThat(websocketClientUnderTest.getServiceId()).isEqualTo(apiId);
     }
 
     @Test
