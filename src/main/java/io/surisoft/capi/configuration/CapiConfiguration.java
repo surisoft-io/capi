@@ -14,6 +14,7 @@ import io.surisoft.capi.service.CapiTrustManager;
 import io.surisoft.capi.service.ConsistencyChecker;
 import io.surisoft.capi.service.ConsulKVStore;
 import io.surisoft.capi.tracer.CapiTracer;
+import io.surisoft.capi.tracer.CapiUndertowTracer;
 import io.surisoft.capi.utils.Constants;
 import io.surisoft.capi.utils.HttpUtils;
 import io.surisoft.capi.utils.RouteUtils;
@@ -189,6 +190,24 @@ public class CapiConfiguration {
 
         capiTracer.init(camelContext);
         return capiTracer;
+    }
+
+    @Bean
+    @ConditionalOnProperty(prefix = "capi.traces", name = "enabled", havingValue = "true")
+    CapiUndertowTracer capiUndertowTracer() throws Exception {
+        log.debug("Undertow Traces Enabled!");
+
+        CapiUndertowTracer capiUndertowTracer = new CapiUndertowTracer(httpUtils);
+
+        URLConnectionSender sender = URLConnectionSender
+                .newBuilder()
+                .readTimeout(100)
+                .endpoint(tracesEndpoint + "/api/v2/spans")
+                .build();
+
+        capiUndertowTracer.setSpanReporter(AsyncReporter.builder(sender).build());
+        capiUndertowTracer.init();
+        return capiUndertowTracer;
     }
 
     @Bean

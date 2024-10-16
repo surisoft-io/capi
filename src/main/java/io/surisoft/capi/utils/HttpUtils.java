@@ -11,6 +11,7 @@ import io.surisoft.capi.oidc.Oauth2Constants;
 import io.surisoft.capi.schema.OpaResult;
 import io.surisoft.capi.schema.Service;
 import io.surisoft.capi.service.OpaService;
+import io.undertow.server.HttpServerExchange;
 import jakarta.servlet.http.HttpServletRequest;
 import org.apache.camel.Exchange;
 import org.slf4j.Logger;
@@ -103,6 +104,16 @@ public class HttpUtils {
             return getBearerTokenFromHeader(authorization);
         }
         return null;
+    }
+
+    public String processAuthorizationAccessToken(HttpServerExchange httpServerExchange) throws AuthorizationException {
+        String accessToken = null;
+        if(httpServerExchange.getRequestHeaders().contains(Constants.AUTHORIZATION_HEADER)) {
+            accessToken = getBearerTokenFromHeader(httpServerExchange.getRequestHeaders().get(Constants.AUTHORIZATION_HEADER).get(0));
+        } else if(httpServerExchange.getQueryParameters().containsKey("access_token")) {
+            accessToken = httpServerExchange.getQueryParameters().get("access_token").getFirst();
+        }
+        return accessToken;
     }
 
     public String processAuthorizationAccessToken(HttpServletRequest httpServletRequest) throws AuthorizationException {

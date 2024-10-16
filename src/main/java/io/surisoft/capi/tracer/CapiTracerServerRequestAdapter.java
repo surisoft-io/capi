@@ -53,7 +53,7 @@ public class CapiTracerServerRequestAdapter {
                     }
                     String iss = jwtClaimsSet.getStringClaim("iss");
                     if(iss != null) {
-                        span.tag("capi.requester.token.issuer", iss);
+                        span.tag(Constants.CAPI_REQUESTER_TOKEN_ISSUER, iss);
                     }
                 }
             } catch (AuthorizationException e) {

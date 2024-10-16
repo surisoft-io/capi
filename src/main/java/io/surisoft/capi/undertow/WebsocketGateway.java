@@ -3,7 +3,9 @@ package io.surisoft.capi.undertow;
 import io.surisoft.capi.exception.CapiUndertowException;
 import io.surisoft.capi.oidc.WebsocketAuthorization;
 import io.surisoft.capi.schema.WebsocketClient;
+import io.surisoft.capi.tracer.CapiUndertowTracer;
 import io.surisoft.capi.utils.Constants;
+import io.surisoft.capi.utils.ErrorMessage;
 import io.surisoft.capi.utils.WebsocketUtils;
 import io.undertow.Undertow;
 import org.slf4j.Logger;
@@ -25,15 +27,18 @@ public class WebsocketGateway {
     private WebsocketAuthorization websocketAuthorization;
     private final WebsocketUtils websocketUtils;
     private final Optional<SSLContext> sslContext;
+    private final Optional<CapiUndertowTracer> capiUndertowTracer;
 
     public WebsocketGateway(@Value("${capi.websocket.server.port}") int port,
                             Map<String, WebsocketClient> webSocketClients,
                             WebsocketUtils websocketUtils,
-                            Optional<SSLContext> sslContext) {
+                            Optional<SSLContext> sslContext,
+                            Optional<CapiUndertowTracer> capiUndertowTracer) {
         this.port = port;
         this.webSocketClients = webSocketClients;
         this.websocketUtils = websocketUtils;
         this.sslContext = sslContext;
+        this.capiUndertowTracer = capiUndertowTracer;
     }
 
     public void runProxy() {
@@ -56,36 +61,37 @@ public class WebsocketGateway {
                 .setHandler(httpServerExchange -> {
                     String requestPath = httpServerExchange.getRequestPath();
                     String webClientId = websocketUtils.getWebclientId(requestPath);
+                    capiUndertowTracer.ifPresent(undertowTracer -> undertowTracer.serverRequest(httpServerExchange, webClientId));
                     WebsocketClient websocketClient = webSocketClients.get(webClientId);
                     if (webSocketClients.containsKey(webClientId)) {
                         if (httpServerExchange.getProtocol().equals(Constants.PROTOCOL_HTTP)) {
                             if (websocketAuthorization != null) {
                                 if (websocketAuthorization.isAuthorized(websocketClient, httpServerExchange)) {
-                                    log.info("{} is authorized!", httpServerExchange.getRequestPath());
+                                    log.debug(ErrorMessage.IS_AUTHORIZED, httpServerExchange.getRequestPath());
                                     httpServerExchange.setRequestURI(websocketUtils.normalizePathForForwarding(websocketClient, requestPath));
                                     httpServerExchange.setRelativePath(websocketUtils.normalizePathForForwarding(websocketClient, requestPath));
                                     websocketClient.getHttpHandler().handleRequest(httpServerExchange);
                                 } else {
-                                    log.info("{} is not authorized!", httpServerExchange.getRequestPath());
-                                    httpServerExchange.setStatusCode(403);
+                                    log.debug(ErrorMessage.IS_NOT_AUTHORIZED, httpServerExchange.getRequestPath());
+                                    httpServerExchange.setStatusCode(Constants.FORBIDDEN_CODE);
                                     httpServerExchange.endExchange();
                                 }
                             } else {
                                 if (!websocketClient.requiresSubscription()) {
-                                    log.info("{} is authorized!", httpServerExchange.getRequestPath());
+                                    log.debug(ErrorMessage.IS_AUTHORIZED, httpServerExchange.getRequestPath());
                                     httpServerExchange.setRequestURI(websocketUtils.normalizePathForForwarding(websocketClient, requestPath));
                                     httpServerExchange.setRelativePath(websocketUtils.normalizePathForForwarding(websocketClient, requestPath));
                                     websocketClient.getHttpHandler().handleRequest(httpServerExchange);
                                 } else {
-                                    log.info("{} is ot authorized!", httpServerExchange.getRequestPath());
-                                    httpServerExchange.setStatusCode(403);
+                                    log.debug(ErrorMessage.IS_NOT_AUTHORIZED, httpServerExchange.getRequestPath());
+                                    httpServerExchange.setStatusCode(Constants.FORBIDDEN_CODE);
                                     httpServerExchange.endExchange();
                                 }
                             }
                         }
                     } else {
-                        log.info("{} is not present!", httpServerExchange.getRequestPath());
-                        httpServerExchange.setStatusCode(404);
+                        log.debug(ErrorMessage.IS_NOT_PRESENT, httpServerExchange.getRequestPath());
+                        httpServerExchange.setStatusCode(Constants.NOT_FOUND_CODE);
                         httpServerExchange.endExchange();
                     }
                 });

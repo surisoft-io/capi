@@ -7,10 +7,11 @@ import io.surisoft.capi.oidc.WebsocketAuthorization;
 import io.surisoft.capi.schema.HttpProtocol;
 import io.surisoft.capi.schema.Service;
 import io.surisoft.capi.schema.WebsocketClient;
+import io.surisoft.capi.tracer.CapiUndertowTracer;
+import io.surisoft.capi.undertow.CAPILoadBalancerProxyClient;
+import io.surisoft.capi.undertow.CAPIProxyHandler;
 import io.undertow.server.HttpHandler;
 import io.undertow.server.handlers.ResponseCodeHandler;
-import io.undertow.server.handlers.proxy.LoadBalancingProxyClient;
-import io.undertow.server.handlers.proxy.ProxyHandler;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -24,21 +25,24 @@ public class WebsocketUtils {
 
     private final String capiContextPath;
     private final Optional<List<DefaultJWTProcessor<SecurityContext>>> defaultJWTProcessor;
+    private final Optional<CapiUndertowTracer> capiUndertowTracer;
 
     public WebsocketUtils(@Value("${camel.servlet.mapping.context-path}") String capiContextPath,
-                          Optional<List<DefaultJWTProcessor<SecurityContext>>> defaultJWTProcessor) {
+                          Optional<List<DefaultJWTProcessor<SecurityContext>>> defaultJWTProcessor,
+                          Optional<CapiUndertowTracer> capiUndertowTracer) {
         this.capiContextPath = capiContextPath;
         this.defaultJWTProcessor = defaultJWTProcessor;
+        this.capiUndertowTracer = capiUndertowTracer;
     }
 
     public HttpHandler createClientHttpHandler(WebsocketClient webSocketClient, Service service) {
-        LoadBalancingProxyClient loadBalancingProxyClient = new LoadBalancingProxyClient();
+        CAPILoadBalancerProxyClient loadBalancingProxyClient = new CAPILoadBalancerProxyClient(capiUndertowTracer.orElse(null));
 
         webSocketClient.getMappingList().forEach((m) -> {
             String schema = service.getServiceMeta().getSchema() == null ? HttpProtocol.HTTP.getProtocol() : service.getServiceMeta().getSchema();
             loadBalancingProxyClient.addHost(URI.create(schema + "://" + m.getHostname() + ":" + m.getPort()));
         });
-        return ProxyHandler
+        return CAPIProxyHandler
                 .builder()
                 .setProxyClient(loadBalancingProxyClient)
                 .setMaxRequestTime(30000)

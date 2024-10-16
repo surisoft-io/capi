@@ -73,6 +73,7 @@ public class Constants {
     public static final String CAMEL_SERVER_ENDPOINT_URL = "capi.server.endpoint.url";
     public static final String CAMEL_SERVER_EXCHANGE_ID = "capi.server.exchange.id";
     public static final String CAMEL_CLIENT_EXCHANGE_ID = "capi.client.exchange.id";
+    public static final String CAPI_REQUESTER_TOKEN_ISSUER = "capi.requester.token.issuer";
     public static final String CAMEL_SERVER_EXCHANGE_FAILURE = "camel.server.exchange.failure";
     public static final String CAPI_EXCHANGE_REQUESTER_ID = "capi.token.requester.id";
     public static final String CAPI_TOKEN_EXPIRED = "capi.token.expired";
@@ -81,6 +82,11 @@ public class Constants {
     public static final String CAPI_REQUEST_CONTENT_LENGTH = "capi.request.content.length";
     public static final String CAPI_REQUEST_ERROR_MESSAGE = "capi.request.error.message";
     public static final String CAPI_SERVER_EXCHANGE_MESSAGE_RESPONSE_CODE = "capi.server.exchange.message.response.code";
+    public static final String CAPI_WS_CLIENT_HOST = "capi.ws.client.host";
+    public static final String CAPI_WS_CLIENT_PORT = "capi.ws.client.port";
+    public static final String CAPI_WS_CLIENT_PATH = "capi.ws.client.path";
+    public static final String CAPI_WS_CLIENT_QUERY = "capi.ws.client.query";
+    public static final String CAPI_WS_CLIENT_SCHEME = "capi.ws.client.scheme";
     public static final String CONTENT_TYPE = "Content-Type";
     public static final HttpString HTTP_STRING_CONTENT_TYPE = new HttpString("Content-Type");
     public static final int HTTPS_PORT = 443;
@@ -108,6 +114,7 @@ public class Constants {
     public static final int UNAUTHORIZED_CODE = 401;
     public static final int FORBIDDEN_CODE = 403;
     public static final int BAD_REQUEST_CODE = 400;
+    public static final int NOT_FOUND_CODE = 404;
     public static final String CLIENT_START_TIME = "ClientStartTime";
     public static final String CLIENT_END_TIME = "ClientEndTime";
     public static final String CLIENT_ENDPOINT = "ClientEndpoint";
