@@ -149,13 +149,17 @@ public class HttpUtils {
 
     public List<HttpCookie> getCookiesFromExchange(Exchange exchange) {
         List<HttpCookie> httpCookieList = new ArrayList<>();
-        if(exchange.getIn().getHeader(Constants.COOKIE_HEADER) != null) {
-            String[] cookieArray = exchange.getIn().getHeader(Constants.COOKIE_HEADER, String.class).split(";");
-            for (String cookieString : cookieArray) {
-                String[] cookieKeyValue = cookieString.split("=");
-                HttpCookie httpCookie = new HttpCookie(stripOffSurroundingQuote(cookieKeyValue[0]), stripOffSurroundingQuote(cookieKeyValue[1]));
-                httpCookieList.add(httpCookie);
+        try {
+            if(exchange.getIn().getHeader(Constants.COOKIE_HEADER) != null) {
+                String[] cookieArray = exchange.getIn().getHeader(Constants.COOKIE_HEADER, String.class).split(";");
+                for (String cookieString : cookieArray) {
+                    String[] cookieKeyValue = cookieString.split("=");
+                    HttpCookie httpCookie = new HttpCookie(stripOffSurroundingQuote(cookieKeyValue[0]), stripOffSurroundingQuote(cookieKeyValue[1]));
+                    httpCookieList.add(httpCookie);
+                }
             }
+        } catch(Exception e) {
+            return httpCookieList;
         }
         return httpCookieList;
     }

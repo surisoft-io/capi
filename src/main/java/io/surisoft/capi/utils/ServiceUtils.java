@@ -11,6 +11,7 @@ import org.cache2k.Cache;
 import org.cache2k.CacheEntry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -29,13 +30,15 @@ public class ServiceUtils {
     private final CamelContext camelContext;
     private final OkHttpClient okHttpClient;
     private final WebsocketUtils websocketUtils;
+    private final String capiRunningMode;
 
     public ServiceUtils(HttpUtils httpUtils,
                         Optional<Map<String, WebsocketClient>> websocketClientMap,
                         Optional<Map<String, SSEClient>> sseClientMap,
                         RouteUtils routeUtils,
                         CamelContext camelContext,
-                        OkHttpClient okHttpClient, WebsocketUtils websocketUtils) {
+                        OkHttpClient okHttpClient, WebsocketUtils websocketUtils,
+                        @Value("${capi.mode}") String capiRunningMode) {
         this.httpUtils = httpUtils;
         this.websocketClientMap = websocketClientMap;
         this.sseClientMap = sseClientMap;
@@ -43,6 +46,7 @@ public class ServiceUtils {
         this.camelContext = camelContext;
         this.okHttpClient = okHttpClient;
         this.websocketUtils = websocketUtils;
+        this.capiRunningMode = capiRunningMode;
     }
 
     public String getServiceId(Service service) {
@@ -165,7 +169,7 @@ public class ServiceUtils {
     }
 
     public boolean checkIfOpenApiIsEnabled(Service service) {
-        if(service.getServiceMeta() != null && service.getServiceMeta().getOpenApiEndpoint() != null && !service.getServiceMeta().getOpenApiEndpoint().isEmpty()) {
+        if(capiRunningMode.equalsIgnoreCase(Constants.FULL_TYPE) && service.getServiceMeta() != null && service.getServiceMeta().getOpenApiEndpoint() != null && !service.getServiceMeta().getOpenApiEndpoint().isEmpty()) {
             try {
                 Request request = new Request.Builder()
                         .url(service.getServiceMeta().getOpenApiEndpoint())
@@ -184,6 +188,7 @@ public class ServiceUtils {
                     return false;
                 }
             } catch(Exception e) {
+                log.warn(e.getMessage(), e);
                 log.warn("Open API specification is invalid for service {}", service.getId());
                 return false;
             }

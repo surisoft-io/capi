@@ -1,6 +1,7 @@
 package io.surisoft.capi.configuration;
 
 import io.surisoft.capi.cache.StickySessionCacheManager;
+import io.surisoft.capi.processor.ContentTypeValidator;
 import io.surisoft.capi.processor.MetricsProcessor;
 import io.surisoft.capi.schema.SSEClient;
 import io.surisoft.capi.schema.Service;
@@ -53,6 +54,7 @@ public class ConsulAutoConfiguration {
     private final String capiNamespace;
     private final boolean strictNamespace;
     private final String capiRunningMode;
+    private final ContentTypeValidator contentTypeValidator;
 
     public ConsulAutoConfiguration(@Value("${capi.consul.discovery.timer.interval}") int consulTimerInterval,
                                    @Value("${capi.consul.hosts}") List<String> capiConsulHosts,
@@ -68,7 +70,8 @@ public class ConsulAutoConfiguration {
                                    Optional<OpaService> opaService,
                                    @Value("${capi.namespace}") String capiNamespace,
                                    @Value("${capi.strict}") boolean strictNamespace,
-                                   @Value("${capi.mode}") String capiRunningMode) {
+                                   @Value("${capi.mode}") String capiRunningMode,
+                                   ContentTypeValidator contentTypeValidator) {
         this.consulTimerInterval = consulTimerInterval;
         this.capiConsulHosts = capiConsulHosts;
         this.consulToken = consulToken;
@@ -84,6 +87,7 @@ public class ConsulAutoConfiguration {
         this.capiNamespace = capiNamespace;
         this.strictNamespace = strictNamespace;
         this.capiRunningMode = capiRunningMode;
+        this.contentTypeValidator = contentTypeValidator;
     }
 
     @Bean(name = "consulNodeDiscovery")
@@ -95,7 +99,7 @@ public class ConsulAutoConfiguration {
                                                    HttpUtils httpUtils,
                                                    Cache<String, Service> serviceCache) {
 
-        ConsulNodeDiscovery consulNodeDiscovery = new ConsulNodeDiscovery(camelContext, serviceUtils, routeUtils, metricsProcessor, serviceCache, websocketClientMap, sseClientMap);
+        ConsulNodeDiscovery consulNodeDiscovery = new ConsulNodeDiscovery(camelContext, serviceUtils, routeUtils, metricsProcessor, serviceCache, websocketClientMap, sseClientMap, contentTypeValidator);
         consulNodeDiscovery.setHttpUtils(httpUtils);
 
         opaService.ifPresent(consulNodeDiscovery::setOpaService);

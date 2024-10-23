@@ -3,6 +3,7 @@ package io.surisoft.capi.controller;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
 import io.surisoft.capi.cache.StickySessionCacheManager;
+import io.surisoft.capi.processor.ContentTypeValidator;
 import io.surisoft.capi.processor.MetricsProcessor;
 import io.surisoft.capi.schema.SSEClient;
 import io.surisoft.capi.schema.Service;
@@ -93,6 +94,9 @@ class TestConsulNodeDiscovery {
     @Autowired(required = false)
     Map<String, WebsocketClient> websocketClientMap;
 
+    @Autowired
+    ContentTypeValidator contentTypeValidator;
+
     @Autowired(required = false)
     Map<String, SSEClient> sseClientMap;
 
@@ -111,7 +115,7 @@ class TestConsulNodeDiscovery {
         Assertions.assertNotNull(metricsProcessor);
         Assertions.assertNotNull(serviceCache);
 
-        ConsulNodeDiscovery consulNodeDiscovery = new ConsulNodeDiscovery(camelContext, serviceUtils, routeUtils, metricsProcessor, serviceCache, websocketClientMap, sseClientMap);
+        ConsulNodeDiscovery consulNodeDiscovery = new ConsulNodeDiscovery(camelContext, serviceUtils, routeUtils, metricsProcessor, serviceCache, websocketClientMap, sseClientMap, contentTypeValidator);
         consulNodeDiscovery.setOpaService(opaService);
         consulNodeDiscovery.setHttpUtils(httpUtils);
         consulNodeDiscovery.setStickySessionCacheManager(stickySessionCacheManager);

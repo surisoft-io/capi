@@ -63,6 +63,10 @@ public class CapiTracerServerRequestAdapter {
             LOG.trace("No Authorization header detected, or access token invalid");
         }
 
+        if(exchange.getIn().getHeader("Content-Type") != null) {
+            span.tag("capi.incoming.request.content.type", exchange.getIn().getHeader("Content-Type", String.class));
+        }
+
         span.name(spanName);
         span.tag(Constants.CAMEL_SERVER_ENDPOINT_URL, url);
         span.tag(Constants.CAMEL_SERVER_EXCHANGE_ID, exchange.getExchangeId());

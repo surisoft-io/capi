@@ -85,6 +85,7 @@ public class CapiConfiguration {
     private final Environment environment;
     private final String sslPath;
     private final String sslPassword;
+    private final boolean capiDisableRedirect;
 
     public CapiConfiguration(@Value("${capi.traces.endpoint}") String tracesEndpoint,
                              HttpUtils httpUtils,
@@ -97,7 +98,8 @@ public class CapiConfiguration {
                              @Value("${capi.scim.implementation.path}") String capiScimImplementationPath,
                              Environment environment,
                              @Value("${server.ssl.key-store}") String sslPath,
-                             @Value("${server.ssl.key-store-password}") String sslPassword) {
+                             @Value("${server.ssl.key-store-password}") String sslPassword,
+                             @Value("${capi.disable.redirect}") boolean capiDisableRedirect) {
 
 
         this.tracesEndpoint = tracesEndpoint;
@@ -112,6 +114,7 @@ public class CapiConfiguration {
         this.environment = environment;
         this.sslPath = sslPath;
         this.sslPassword = sslPassword;
+        this.capiDisableRedirect = capiDisableRedirect;
 
         if(capiTrustStoreEnabled) {
             createTrustMaterial();
@@ -176,7 +179,6 @@ public class CapiConfiguration {
         excludePatterns.add("bean://consistencyChecker");
 
         CapiTracer capiTracer = new CapiTracer(httpUtils);
-        //RestTemplateSender restTemplateSender = new RestTemplateSender(createRestTemplate(), tracesEndpoint, null, JSON_V2);
 
         URLConnectionSender sender = URLConnectionSender
                 .newBuilder()
@@ -211,10 +213,16 @@ public class CapiConfiguration {
     }
 
     @Bean
-    @ConditionalOnProperty(prefix = "capi.disable", name = "redirect", havingValue = "true")
     public HttpComponent disableFollowRedirect(CamelContext camelContext) {
         HttpComponent httpComponent = (HttpComponent) camelContext.getComponent("http");
-        HttpClientConfigurer httpClientConfigurer = HttpClientBuilder::disableRedirectHandling;
+
+        HttpClientConfigurer httpClientConfigurer = clientBuilder -> {
+            if(capiDisableRedirect) {
+                clientBuilder.disableAuthCaching();
+            }
+            clientBuilder.setConnectionReuseStrategy((request, response, context) -> false);
+        };
+
         httpComponent.setHttpClientConfigurer(httpClientConfigurer);
         return httpComponent;
     }

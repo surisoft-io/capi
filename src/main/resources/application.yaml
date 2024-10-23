@@ -2,6 +2,11 @@
 ### Application Server specifics ###
 ####################################
 server:
+  undertow:
+    accesslog:
+      enabled: false
+      dir:
+      rotate: false
   port: 8380
   ssl:
     enabled: false
@@ -39,7 +44,7 @@ management:
     web:
       base-path: /metrics/
       exposure:
-        include: 'health,prometheus,routes,capi,openapi,truststore,kv'
+        include: 'health,prometheus,routes,capi,openapi,truststore,kv,ws-routes'
 #######################
 ### Camel Specifics ###
 #######################
@@ -115,7 +120,7 @@ capi:
     discovery:
       enabled: true
       timer:
-        interval: 20000
+        interval: 1200000
   # Certificate Management (Editable property)
   # If you want to enable certificate management, please provide a trust store (JKS).
   trust:
@@ -154,7 +159,7 @@ capi:
           Vary
     error:
       listener:
-        enabled: false
+        enabled: true
         context: /capi-error
         port: 8389
       endpoint: localhost:8380/capi-error
@@ -165,7 +170,6 @@ capi:
     provider:
       enabled: false
       keys:
-
   opa:
     enabled: false
     endpoint: http://localhost:8181

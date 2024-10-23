@@ -222,21 +222,6 @@
       <artifactId>spring-kafka</artifactId>
       <version>${spring.kafka.version}</version>
     </dependency>
-    <dependency>
-      <groupId>io.grpc</groupId>
-      <artifactId>grpc-api</artifactId>
-      <version>${grpc.api.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>io.grpc</groupId>
-      <artifactId>grpc-netty</artifactId>
-      <version>${grpc.api.version}</version>
-    </dependency>
-    <dependency>
-        <groupId>com.google.api.grpc</groupId>
-        <artifactId>proto-google-common-protos</artifactId>
-        <version>${com.google.api.grpc.version}</version>
-    </dependency>
     <!-- Swagger parser dependency-->
     <dependency>
       <groupId>io.swagger.parser.v3</groupId>
@@ -247,7 +232,6 @@
       <groupId>org.apache.camel.springboot</groupId>
       <artifactId>camel-stream-starter</artifactId>
       <version>${org.apache.camel.springboot-version}</version>
-      <!-- use the same version as your Camel core version -->
     </dependency>
 
     <dependency>
@@ -255,6 +239,8 @@
       <artifactId>scim-controller</artifactId>
       <version>1.0.0</version>
     </dependency>
+
+
   </dependencies>
 <build>
   <resources>

@@ -1,6 +1,6 @@
 FROM eclipse-temurin:21-jdk-alpine
 
-ARG CAPI_VERSION=4.4.04
+ARG CAPI_VERSION=4.8.20
 
 RUN mkdir /capi
 RUN mkdir /capi/logs

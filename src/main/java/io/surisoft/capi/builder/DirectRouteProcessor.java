@@ -1,10 +1,7 @@
 package io.surisoft.capi.builder;
 
 import io.surisoft.capi.cache.StickySessionCacheManager;
-import io.surisoft.capi.processor.MetricsProcessor;
-import io.surisoft.capi.processor.OpenApiProcessor;
-import io.surisoft.capi.processor.StickyLoadBalancer;
-import io.surisoft.capi.processor.TenantAwareLoadBalancer;
+import io.surisoft.capi.processor.*;
 import io.surisoft.capi.schema.Service;
 import io.surisoft.capi.service.OpaService;
 import io.surisoft.capi.utils.Constants;
@@ -27,8 +24,9 @@ public class DirectRouteProcessor extends RouteBuilder {
     private OpaService opaService;
     private HttpUtils httpUtils;
     private Cache<String, Service> serviceCache;
+    private final ContentTypeValidator contentTypeValidator;
 
-    public DirectRouteProcessor(CamelContext camelContext, Service service, RouteUtils routeUtils, MetricsProcessor metricsProcessor, String routeId, String capiContext, String reverseProxyHost) {
+    public DirectRouteProcessor(CamelContext camelContext, Service service, RouteUtils routeUtils, MetricsProcessor metricsProcessor, String routeId, String capiContext, String reverseProxyHost, ContentTypeValidator contentTypeValidator) {
         super(camelContext);
         this.service = service;
         this.routeUtils = routeUtils;
@@ -36,6 +34,7 @@ public class DirectRouteProcessor extends RouteBuilder {
         this.capiContext = capiContext;
         this.metricsProcessor = metricsProcessor;
         this.reverseProxyHost = reverseProxyHost;
+        this.contentTypeValidator = contentTypeValidator;
     }
 
     @Override
@@ -64,6 +63,7 @@ public class DirectRouteProcessor extends RouteBuilder {
 
         if(service.isFailOverEnabled()) {
             routeDefinition
+                    .process(contentTypeValidator)
                     .process(metricsProcessor)
                     .loadBalance()
                     .failover(1, false, service.isRoundRobinEnabled(), false)
@@ -76,6 +76,7 @@ public class DirectRouteProcessor extends RouteBuilder {
                     .routeId(routeId);
         } else if(routeUtils.isStickySessionEnabled(service, stickySessionCacheManager)) {
             routeDefinition
+                    .process(contentTypeValidator)
                     .process(metricsProcessor)
                     .loadBalance(new StickyLoadBalancer(stickySessionCacheManager, service.getServiceMeta().getStickySessionKey(), routeUtils.isStickySessionOnCookie(service)))
                     .to(routeUtils.buildEndpoints(service))
@@ -87,6 +88,7 @@ public class DirectRouteProcessor extends RouteBuilder {
                     .routeId(routeId);
         } else if(service.getServiceMeta().isTenantAware()) {
             routeDefinition
+                    .process(contentTypeValidator)
                     .process(metricsProcessor)
                     .loadBalance(new TenantAwareLoadBalancer())
                     .to(routeUtils.buildEndpoints(service))
@@ -98,6 +100,7 @@ public class DirectRouteProcessor extends RouteBuilder {
                     .routeId(routeId);
         } else {
             routeDefinition
+                    .process(contentTypeValidator)
                     .process(metricsProcessor)
                     .to(routeUtils.buildEndpoints(service))
                     .end()
