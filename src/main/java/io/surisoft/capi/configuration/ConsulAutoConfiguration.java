@@ -10,7 +10,6 @@ import io.surisoft.capi.service.ConsulNodeDiscovery;
 import io.surisoft.capi.service.OpaService;
 import io.surisoft.capi.utils.*;
 import org.apache.camel.CamelContext;
-import org.apache.camel.builder.RouteBuilder;
 import org.cache2k.Cache;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,7 +26,7 @@ import java.util.Optional;
 public class ConsulAutoConfiguration {
 
     private static final Logger log = LoggerFactory.getLogger(ConsulAutoConfiguration.class);
-    private final int consulTimerInterval;
+    //private final int consulTimerInterval;
 
     private final List<String> capiConsulHosts;
 
@@ -56,8 +55,7 @@ public class ConsulAutoConfiguration {
     private final String capiRunningMode;
     private final ContentTypeValidator contentTypeValidator;
 
-    public ConsulAutoConfiguration(@Value("${capi.consul.discovery.timer.interval}") int consulTimerInterval,
-                                   @Value("${capi.consul.hosts}") List<String> capiConsulHosts,
+    public ConsulAutoConfiguration(@Value("${capi.consul.hosts}") List<String> capiConsulHosts,
                                    @Value("${capi.consul.token}") String consulToken,
                                    @Value("${camel.servlet.mapping.context-path}") String capiContext,
                                    @Value("${capi.reverse.proxy.enabled}") boolean reverseProxyEnabled,
@@ -72,7 +70,6 @@ public class ConsulAutoConfiguration {
                                    @Value("${capi.strict}") boolean strictNamespace,
                                    @Value("${capi.mode}") String capiRunningMode,
                                    ContentTypeValidator contentTypeValidator) {
-        this.consulTimerInterval = consulTimerInterval;
         this.capiConsulHosts = capiConsulHosts;
         this.consulToken = consulToken;
         this.capiContext = capiContext;
@@ -126,7 +123,7 @@ public class ConsulAutoConfiguration {
         return consulNodeDiscovery;
     }
 
-    @Bean
+    /*@Bean
     @ConditionalOnProperty(prefix = "capi.consul.discovery", name = "enabled", havingValue = "true")
     public RouteBuilder routeBuilder() {
         log.debug("Creating Capi Consul Node Discovery");
@@ -138,5 +135,5 @@ public class ConsulAutoConfiguration {
                         .routeId("consul-discovery-service");
             }
         };
-    }
+    }*/
 }

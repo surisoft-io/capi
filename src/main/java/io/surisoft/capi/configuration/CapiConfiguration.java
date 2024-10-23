@@ -26,6 +26,7 @@ import org.apache.camel.component.http.HttpClientConfigurer;
 import org.apache.camel.component.http.HttpComponent;
 import org.apache.camel.component.micrometer.CamelJmxConfig;
 import org.apache.camel.component.micrometer.DistributionStatisticConfigFilter;
+import org.apache.camel.spring.boot.CamelContextConfiguration;
 import org.apache.camel.support.jsse.SSLContextParameters;
 import org.apache.camel.support.jsse.TrustManagersParameters;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
@@ -86,6 +87,7 @@ public class CapiConfiguration {
     private final String sslPath;
     private final String sslPassword;
     private final boolean capiDisableRedirect;
+    private final int consulTimerInterval;
 
     public CapiConfiguration(@Value("${capi.traces.endpoint}") String tracesEndpoint,
                              HttpUtils httpUtils,
@@ -99,7 +101,8 @@ public class CapiConfiguration {
                              Environment environment,
                              @Value("${server.ssl.key-store}") String sslPath,
                              @Value("${server.ssl.key-store-password}") String sslPassword,
-                             @Value("${capi.disable.redirect}") boolean capiDisableRedirect) {
+                             @Value("${capi.disable.redirect}") boolean capiDisableRedirect,
+                             @Value("${capi.consul.discovery.timer.interval}") int consulTimerInterval) {
 
 
         this.tracesEndpoint = tracesEndpoint;
@@ -115,11 +118,30 @@ public class CapiConfiguration {
         this.sslPath = sslPath;
         this.sslPassword = sslPassword;
         this.capiDisableRedirect = capiDisableRedirect;
+        this.consulTimerInterval = consulTimerInterval;
 
         if(capiTrustStoreEnabled) {
             createTrustMaterial();
         }
 
+    }
+
+    @Bean
+    public CamelContextConfiguration contextConfiguration() {
+        return new CamelContextConfiguration() {
+            @Override
+            public void beforeApplicationStart(CamelContext context) {
+                try {
+                    log.debug("Initializing CamelContext Startup Listener");
+                    camelContext.addStartupListener(new CamelStartupListener(consulTimerInterval));
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+            }
+
+            @Override
+            public void afterApplicationStart(CamelContext camelContext) {}
+        };
     }
 
     @Bean
