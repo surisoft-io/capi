@@ -26,30 +26,17 @@ import java.util.Optional;
 public class ConsulAutoConfiguration {
 
     private static final Logger log = LoggerFactory.getLogger(ConsulAutoConfiguration.class);
-    //private final int consulTimerInterval;
-
     private final List<String> capiConsulHosts;
-
     private final String consulToken;
-
     private final String capiContext;
-
     private final boolean reverseProxyEnabled;
-
     private final String reverseProxyHost;
-
     private final Map<String, WebsocketClient> websocketClientMap;
-
     private final Map<String, SSEClient> sseClientMap;
-
     private final WebsocketUtils websocketUtils;
-
     private final SSEUtils sseUtils;
-
     private final Optional<StickySessionCacheManager> stickySessionCacheManager;
-
     private final Optional<OpaService> opaService;
-
     private final String capiNamespace;
     private final boolean strictNamespace;
     private final String capiRunningMode;
@@ -122,18 +109,4 @@ public class ConsulAutoConfiguration {
         stickySessionCacheManager.ifPresent(consulNodeDiscovery::setStickySessionCacheManager);
         return consulNodeDiscovery;
     }
-
-    /*@Bean
-    @ConditionalOnProperty(prefix = "capi.consul.discovery", name = "enabled", havingValue = "true")
-    public RouteBuilder routeBuilder() {
-        log.debug("Creating Capi Consul Node Discovery");
-        return new RouteBuilder() {
-            @Override
-            public void configure() {
-                from("timer:consul-inspect?period=" + consulTimerInterval)
-                        .to("bean:consulNodeDiscovery?method=processInfo")
-                        .routeId("consul-discovery-service");
-            }
-        };
-    }*/
 }

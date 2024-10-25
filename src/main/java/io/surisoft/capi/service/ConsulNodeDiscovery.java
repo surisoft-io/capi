@@ -74,11 +74,9 @@ public class ConsulNodeDiscovery {
     }
 
     public void processInfo() {
-        //if(camelContext.isStarted()) {
-            lookForRemovedServices();
-            Map<String, List<ConsulObject>> serviceListObjects = getAllServices();
-            processServices(serviceListObjects);
-        //}
+        lookForRemovedServices();
+        Map<String, List<ConsulObject>> serviceListObjects = getAllServices();
+        processServices(serviceListObjects);
     }
 
     private void lookForRemovedServices() {
