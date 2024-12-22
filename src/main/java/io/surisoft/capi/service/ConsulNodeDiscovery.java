@@ -315,22 +315,30 @@ public class ConsulNodeDiscovery {
 
     private HttpRequest buildServicesHttpRequest(String consulHost) {
         HttpRequest.Builder builder = HttpRequest.newBuilder();
+        URI uri = URI.create(consulHost + GET_ALL_SERVICES);
+        if (uri.getPath() != null && uri.getPath().contains("..")) {
+            throw new IllegalArgumentException("Path traversal detected in URI path: " + uri.getPath());
+        }
         if(consulToken != null) {
             builder.header(Constants.AUTHORIZATION_HEADER, Constants.BEARER + consulToken);
         }
         return builder
-                .uri(URI.create(consulHost + GET_ALL_SERVICES))
+                .uri(uri)
                 .timeout(Duration.ofMinutes(2))
                 .build();
     }
 
     private HttpRequest buildServiceNameHttpRequest(String consulHost, String serviceName) {
         HttpRequest.Builder builder = HttpRequest.newBuilder();
+        URI uri = URI.create(consulHost + GET_ALL_SERVICES + "/" + serviceName);
+        if (uri.getPath() != null && uri.getPath().contains("..")) {
+            throw new IllegalArgumentException("Path traversal detected in URI path: " + uri.getPath());
+        }
         if(consulToken != null) {
             builder.header(Constants.AUTHORIZATION_HEADER, Constants.BEARER + consulToken.replaceAll("(\r\n|\n)", ""));
         }
         return builder
-                .uri(URI.create(consulHost + GET_SERVICE_BY_NAME + serviceName))
+                .uri(uri)
                 .timeout(Duration.ofMinutes(2))
                 .build();
     }

@@ -10,6 +10,7 @@ import org.cache2k.Cache;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.util.HtmlUtils;
 
 import java.util.Optional;
 
@@ -65,7 +66,8 @@ public class ScimEndpoint {
             Result result = scimController.get().handleRequest(accessToken, httpServletRequest);
 
             if (result.getStatusCode() != 200) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(result.getErrorMessage());
+                String sanitizedMessage = HtmlUtils.htmlEscape(result.getErrorMessage());
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(sanitizedMessage);
             }
 
             return new ResponseEntity<>(HttpStatus.OK);
