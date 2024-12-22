@@ -280,8 +280,16 @@ public class HttpUtils {
     }
 
     public void sendException(Exchange exchange, String message) {
-        exchange.getIn().setHeader(Constants.REASON_MESSAGE_HEADER, message);
+        String validatedMessage = validateHeaderValue(message);
+        exchange.getIn().setHeader(Constants.REASON_MESSAGE_HEADER, validatedMessage);
         exchange.getIn().setHeader(Constants.REASON_CODE_HEADER, HttpStatus.UNAUTHORIZED.value());
         exchange.setException(new AuthorizationException(message));
+    }
+
+    public static String validateHeaderValue(String value) {
+        if (!value.matches("^[a-zA-Z0-9 \\-]+$")) {
+            throw new IllegalArgumentException("Invalid header value");
+        }
+        return value;
     }
 }
