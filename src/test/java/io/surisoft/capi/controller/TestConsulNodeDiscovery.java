@@ -115,7 +115,7 @@ class TestConsulNodeDiscovery {
         Assertions.assertNotNull(metricsProcessor);
         Assertions.assertNotNull(serviceCache);
 
-        ConsulNodeDiscovery consulNodeDiscovery = new ConsulNodeDiscovery(camelContext, serviceUtils, routeUtils, metricsProcessor, serviceCache, websocketClientMap, sseClientMap, contentTypeValidator);
+        ConsulNodeDiscovery consulNodeDiscovery = new ConsulNodeDiscovery(camelContext, serviceUtils, routeUtils, metricsProcessor, serviceCache, websocketClientMap, sseClientMap, contentTypeValidator, null);
         consulNodeDiscovery.setOpaService(opaService);
         consulNodeDiscovery.setHttpUtils(httpUtils);
         consulNodeDiscovery.setStickySessionCacheManager(stickySessionCacheManager);
@@ -125,7 +125,7 @@ class TestConsulNodeDiscovery {
         consulNodeDiscovery.processInfo();
 
         Thread.sleep(5000);
-        Assertions.assertEquals(6, routeUtils.getAllActiveRoutes(camelContext).size());
+        Assertions.assertEquals(8, routeUtils.getAllActiveRoutes(camelContext).size());
 
         wireMockServer.stop();
     }

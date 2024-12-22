@@ -6,6 +6,7 @@ import io.surisoft.capi.builder.DirectRouteProcessor;
 import io.surisoft.capi.cache.StickySessionCacheManager;
 import io.surisoft.capi.processor.ContentTypeValidator;
 import io.surisoft.capi.processor.MetricsProcessor;
+import io.surisoft.capi.processor.GlobalThrottleProcessor;
 import io.surisoft.capi.schema.*;
 import io.surisoft.capi.utils.*;
 import org.apache.camel.CamelContext;
@@ -50,6 +51,7 @@ public class ConsulNodeDiscovery {
     private String consulToken;
     private String capiRunningMode;
     private final ContentTypeValidator contentTypeValidator;
+    private final Optional<GlobalThrottleProcessor> globalThrottleProcessor;
 
     public ConsulNodeDiscovery(CamelContext camelContext,
                                ServiceUtils serviceUtils,
@@ -58,7 +60,8 @@ public class ConsulNodeDiscovery {
                                Cache<String, Service> serviceCache,
                                Map<String, WebsocketClient> websocketClientMap,
                                Map<String, SSEClient> sseClientMap,
-                               ContentTypeValidator contentTypeValidator) {
+                               ContentTypeValidator contentTypeValidator,
+                               Optional<GlobalThrottleProcessor> globalThrottleProcessor) {
         this.serviceUtils = serviceUtils;
         this.routeUtils = routeUtils;
         this.camelContext = camelContext;
@@ -67,6 +70,8 @@ public class ConsulNodeDiscovery {
         this.websocketClientMap = websocketClientMap;
         this.sseClientMap = sseClientMap;
         this.contentTypeValidator = contentTypeValidator;
+        this.globalThrottleProcessor = globalThrottleProcessor;
+
 
         client = HttpClient.newBuilder()
                 .connectTimeout(Duration.ofSeconds(10))
@@ -286,7 +291,7 @@ public class ConsulNodeDiscovery {
                 Route existingRoute = camelContext.getRoute(routeId);
                 if(existingRoute == null) {
                     try {
-                        DirectRouteProcessor directRouteProcessor = new DirectRouteProcessor(camelContext, incomingService, routeUtils, metricsProcessor, routeId, capiContext, reverseProxyHost, contentTypeValidator);
+                        DirectRouteProcessor directRouteProcessor = new DirectRouteProcessor(camelContext, incomingService, routeUtils, metricsProcessor, routeId, capiContext, reverseProxyHost, contentTypeValidator, globalThrottleProcessor);
                         directRouteProcessor.setHttpUtils(httpUtils);
                         directRouteProcessor.setOpaService(opaService);
                         directRouteProcessor.setStickySessionCacheManager(stickySessionCacheManager);

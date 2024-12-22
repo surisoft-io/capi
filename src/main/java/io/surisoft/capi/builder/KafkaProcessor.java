@@ -52,13 +52,15 @@ public class KafkaProcessor extends RouteBuilder {
                     "&sslTruststoreLocation=" + capiKafkaSslTruststoreLocation +
                     "&sslTruststorePassword=" + capiKafkaSslTruststorePassword +
                     "&groupInstanceId=" + capiKafkaGroupInstance +
+                    "&autoOffsetReset=latest" +
                     "&groupId=" + capiKafkaGroupId +
                     "&valueDeserializer=io.surisoft.capi.kafka.CapiKafkaEventDeserializer";
         } else {
             return capiKafkaTopic +
                     "?brokers=" + capiKafkaHost +
                     "&groupId=" + capiKafkaGroupId +
-                    "&autoOffsetReset=earliest&consumersCount=1" +
+                    "&autoOffsetReset=latest" +
+                    "&consumersCount=1" +
                     "&valueDeserializer=io.surisoft.capi.kafka.CapiKafkaEventDeserializer";
         }
     }

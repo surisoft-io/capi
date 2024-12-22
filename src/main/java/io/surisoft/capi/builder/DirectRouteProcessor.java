@@ -13,6 +13,8 @@ import org.apache.camel.model.RouteDefinition;
 import org.apache.camel.model.rest.RestDefinition;
 import org.cache2k.Cache;
 
+import java.util.Optional;
+
 public class DirectRouteProcessor extends RouteBuilder {
     private final RouteUtils routeUtils;
     private final Service service;
@@ -25,8 +27,17 @@ public class DirectRouteProcessor extends RouteBuilder {
     private HttpUtils httpUtils;
     private Cache<String, Service> serviceCache;
     private final ContentTypeValidator contentTypeValidator;
+    private final Optional<GlobalThrottleProcessor> globalThrottleProcessor;
 
-    public DirectRouteProcessor(CamelContext camelContext, Service service, RouteUtils routeUtils, MetricsProcessor metricsProcessor, String routeId, String capiContext, String reverseProxyHost, ContentTypeValidator contentTypeValidator) {
+    public DirectRouteProcessor(CamelContext camelContext,
+                                Service service,
+                                RouteUtils routeUtils,
+                                MetricsProcessor metricsProcessor,
+                                String routeId,
+                                String capiContext,
+                                String reverseProxyHost,
+                                ContentTypeValidator contentTypeValidator,
+                                Optional<GlobalThrottleProcessor> globalThrottleProcessor) {
         super(camelContext);
         this.service = service;
         this.routeUtils = routeUtils;
@@ -35,6 +46,7 @@ public class DirectRouteProcessor extends RouteBuilder {
         this.metricsProcessor = metricsProcessor;
         this.reverseProxyHost = reverseProxyHost;
         this.contentTypeValidator = contentTypeValidator;
+        this.globalThrottleProcessor = globalThrottleProcessor;
     }
 
     @Override
@@ -86,6 +98,35 @@ public class DirectRouteProcessor extends RouteBuilder {
                     .removeHeader(Constants.AUTHORIZATION_HEADER)
                     .removeHeader(Constants.CAPI_GROUP_HEADER)
                     .routeId(routeId);
+        } else if(service.getServiceMeta().isThrottle() && globalThrottleProcessor.isPresent()) {
+            if(service.getServiceMeta().isThrottleGlobal()
+                    && service.getServiceMeta().getThrottleDuration() > -1
+                    && service.getServiceMeta().getThrottleTotalCalls() > -1) {
+                routeDefinition
+                    .process(contentTypeValidator)
+                    .process(metricsProcessor)
+                    .setHeader(Constants.CAPI_META_THROTTLE_DURATION, constant(service.getServiceMeta().getThrottleDuration()))
+                    .setHeader(Constants.CAPI_META_THROTTLE_TOTAL_CALLS_ALLOWED, constant(service.getServiceMeta().getThrottleTotalCalls()))
+                    .process(globalThrottleProcessor.get())
+                    .choice()
+                        .when(header(Constants.CAPI_SHOULD_THROTTLE).isEqualTo("true"))
+                            .delay(header(Constants.CAPI_THROTTLE_DURATION_MILLI))
+                            .asyncDelayed()
+                            .to(routeUtils.buildEndpoints(service))
+                            .endChoice()
+                        .otherwise()
+                            .to(routeUtils.buildEndpoints(service))
+                    .end()
+                    .removeHeader(Constants.X_FORWARDED_HOST)
+                    .removeHeader(Constants.X_FORWARDED_PREFIX)
+                    .removeHeader(Constants.AUTHORIZATION_HEADER)
+                    .removeHeader(Constants.CAPI_GROUP_HEADER)
+                    .removeHeader(Constants.CAPI_SHOULD_THROTTLE)
+                    .removeHeader(Constants.CAPI_THROTTLE_DURATION_MILLI)
+                    .removeHeader(Constants.CAPI_META_THROTTLE_DURATION)
+                    .removeHeader(Constants.CAPI_META_THROTTLE_TOTAL_CALLS_ALLOWED)
+                    .routeId(routeId);
+            }
         } else if(service.getServiceMeta().isTenantAware()) {
             routeDefinition
                     .process(contentTypeValidator)

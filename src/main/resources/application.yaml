@@ -65,12 +65,14 @@ capi:
   namespace: local
   strict: false
   mode: full
+  throttling:
+    enabled: false
   public-endpoint: http://localhost:8380/capi/
   #### Kafka is still experimental ####
   kafka:
     enabled: false
-    host:
-    topic:
+    host: localhost:9092
+    topic: capi
     group-instance:
     group-id:
     ssl:
@@ -120,7 +122,7 @@ capi:
     discovery:
       enabled: true
       timer:
-        interval: 1200000
+        interval: 10000
   # Certificate Management (Editable property)
   # If you want to enable certificate management, please provide a trust store (JKS).
   trust:
@@ -157,19 +159,12 @@ capi:
           X-B3-TraceId,
           X-B3-ParentSpanId,
           Vary
-    error:
-      listener:
-        enabled: true
-        context: /capi-error
-        port: 8389
-      endpoint: localhost:8380/capi-error
-      ssl: false
   # oauth2 support to protect the routes. (Editable properties)
   oauth2:
     cookieName:
     provider:
-      enabled: false
-      keys:
+      enabled: true
+      keys: http://localhost:8080/realms/master/protocol/openid-connect/certs
   opa:
     enabled: false
     endpoint: http://localhost:8181

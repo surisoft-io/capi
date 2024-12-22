@@ -7,13 +7,13 @@
   <groupId>io.surisoft.capi</groupId>
   <artifactId>capi</artifactId>
   <packaging>jar</packaging>
-  <version>4.8.20</version>
+  <version>4.9.00</version>
   <description>${spring.boot-version}</description>
   <name>CAPI Gateway</name>
 
   <properties>
-    <org.apache.camel.springboot-version>4.8.0</org.apache.camel.springboot-version>
-    <spring.boot-version>3.3.3</spring.boot-version>
+    <org.apache.camel.springboot-version>4.9.0</org.apache.camel.springboot-version>
+    <spring.boot-version>3.4.0</spring.boot-version>
 
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
@@ -29,7 +29,7 @@
 
     <wiremock.version>3.0.1</wiremock.version>
     <org.bouncycastle.version>1.70</org.bouncycastle.version>
-    <org.junit.jupiter.version>5.9.3</org.junit.jupiter.version>
+    <org.junit.jupiter.version>5.11.3</org.junit.jupiter.version>
     <jacoco.version>0.8.11</jacoco.version>
     <sonar.organization>surisoft-io</sonar.organization>
     <sonar.host.url>https://sonarcloud.io</sonar.host.url>
@@ -45,7 +45,7 @@
   <parent>
     <groupId>org.springframework.boot</groupId>
     <artifactId>spring-boot-starter-parent</artifactId>
-    <version>3.3.3</version>
+    <version>3.4.0</version>
     <relativePath/>
   </parent>
 
@@ -238,6 +238,16 @@
       <groupId>io.surisoft</groupId>
       <artifactId>scim-controller</artifactId>
       <version>1.0.0</version>
+    </dependency>
+
+    <dependency>
+      <groupId>com.hazelcast</groupId>
+      <artifactId>hazelcast</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.hazelcast</groupId>
+      <artifactId>hazelcast-spring</artifactId>
+      <version>5.5.0</version>
     </dependency>
 
 

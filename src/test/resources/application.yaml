@@ -9,6 +9,8 @@ capi:
   namespace:
   strict: false
   mode: full
+  throttling:
+    enabled: false
   public-endpoint: http://localhost:8380/capi/
   #### Kafka is still experimental ####
   kafka:

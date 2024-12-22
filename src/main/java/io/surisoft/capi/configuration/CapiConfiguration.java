@@ -1,6 +1,5 @@
 package io.surisoft.capi.configuration;
 
-import ch.qos.logback.core.net.ssl.SSL;
 import io.micrometer.core.instrument.Clock;
 import io.micrometer.core.instrument.Tags;
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
@@ -30,7 +29,6 @@ import org.apache.camel.spring.boot.CamelContextConfiguration;
 import org.apache.camel.support.jsse.SSLContextParameters;
 import org.apache.camel.support.jsse.TrustManagersParameters;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
-import org.apache.hc.client5.http.impl.classic.HttpClientBuilder;
 import org.apache.hc.client5.http.impl.classic.HttpClients;
 import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManagerBuilder;
 import org.apache.hc.client5.http.io.HttpClientConnectionManager;
@@ -88,6 +86,7 @@ public class CapiConfiguration {
     private final String sslPassword;
     private final boolean capiDisableRedirect;
     private final int consulTimerInterval;
+    private final boolean capiConsulEnabled;
 
     public CapiConfiguration(@Value("${capi.traces.endpoint}") String tracesEndpoint,
                              HttpUtils httpUtils,
@@ -102,7 +101,8 @@ public class CapiConfiguration {
                              @Value("${server.ssl.key-store}") String sslPath,
                              @Value("${server.ssl.key-store-password}") String sslPassword,
                              @Value("${capi.disable.redirect}") boolean capiDisableRedirect,
-                             @Value("${capi.consul.discovery.timer.interval}") int consulTimerInterval) {
+                             @Value("${capi.consul.discovery.timer.interval}") int consulTimerInterval,
+                             @Value("${capi.consul.discovery.enabled}") boolean capiConsulEnabled) {
 
 
         this.tracesEndpoint = tracesEndpoint;
@@ -119,6 +119,7 @@ public class CapiConfiguration {
         this.sslPassword = sslPassword;
         this.capiDisableRedirect = capiDisableRedirect;
         this.consulTimerInterval = consulTimerInterval;
+        this.capiConsulEnabled = capiConsulEnabled;
 
         if(capiTrustStoreEnabled) {
             createTrustMaterial();
@@ -133,7 +134,7 @@ public class CapiConfiguration {
             public void beforeApplicationStart(CamelContext context) {
                 try {
                     log.debug("Initializing CamelContext Startup Listener");
-                    camelContext.addStartupListener(new CamelStartupListener(consulTimerInterval));
+                    camelContext.addStartupListener(new CamelStartupListener(consulTimerInterval, capiConsulEnabled));
                 } catch (Exception e) {
                     throw new RuntimeException(e);
                 }

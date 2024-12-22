@@ -1,6 +1,7 @@
 package io.surisoft.capi.utils;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.proc.BadJOSEException;
 import com.nimbusds.jose.proc.SecurityContext;
@@ -8,6 +9,7 @@ import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.proc.DefaultJWTProcessor;
 import io.surisoft.capi.exception.AuthorizationException;
 import io.surisoft.capi.oidc.Oauth2Constants;
+import io.surisoft.capi.schema.CapiRestError;
 import io.surisoft.capi.schema.OpaResult;
 import io.surisoft.capi.schema.Service;
 import io.surisoft.capi.service.OpaService;
@@ -17,6 +19,7 @@ import org.apache.camel.Exchange;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
@@ -30,6 +33,7 @@ public class HttpUtils {
 
     private final String authorizationCookieName;
     private final Optional<List<DefaultJWTProcessor<SecurityContext>>> jwtProcessorList;
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     public HttpUtils(@Value("${capi.oauth2.cookieName}") String authorizationCookieName,
                      Optional<List<DefaultJWTProcessor<SecurityContext>>> jwtProcessorList) {
@@ -202,7 +206,7 @@ public class HttpUtils {
     public boolean isAuthorized(String accessToken, String contextPath, Service service, OpaService opaService) {
         try {
             if(service.getServiceMeta().getOpaRego() != null && opaService != null) {
-                OpaResult opaResult = opaService.callOpa(service.getServiceMeta().getOpaRego(), accessToken);
+                OpaResult opaResult = opaService.callOpa(service.getServiceMeta().getOpaRego(), accessToken, true);
                 if(!opaResult.isAllowed()) {
                     return false;
                 }
@@ -265,5 +269,19 @@ public class HttpUtils {
 
     private String normalizeGroup(String group) {
         return group.trim().replaceAll("/", "");
+    }
+
+    public String proxyErrorMapper(CapiRestError capiRestError) {
+        try {
+            return objectMapper.writeValueAsString(capiRestError);
+        } catch (JsonProcessingException e) {
+            return "no-message";
+        }
+    }
+
+    public void sendException(Exchange exchange, String message) {
+        exchange.getIn().setHeader(Constants.REASON_MESSAGE_HEADER, message);
+        exchange.getIn().setHeader(Constants.REASON_CODE_HEADER, HttpStatus.UNAUTHORIZED.value());
+        exchange.setException(new AuthorizationException(message));
     }
 }

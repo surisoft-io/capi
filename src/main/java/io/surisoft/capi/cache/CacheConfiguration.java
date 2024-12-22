@@ -33,7 +33,6 @@ public class CacheConfiguration {
         this.capiConsulHosts = capiConsulHosts;
     }
 
-
     @Bean
     public Cache<String, Service> serviceCache() {
         log.debug("Creating Service Cache");

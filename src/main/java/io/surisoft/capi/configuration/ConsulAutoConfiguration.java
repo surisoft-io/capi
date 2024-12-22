@@ -3,6 +3,7 @@ package io.surisoft.capi.configuration;
 import io.surisoft.capi.cache.StickySessionCacheManager;
 import io.surisoft.capi.processor.ContentTypeValidator;
 import io.surisoft.capi.processor.MetricsProcessor;
+import io.surisoft.capi.processor.GlobalThrottleProcessor;
 import io.surisoft.capi.schema.SSEClient;
 import io.surisoft.capi.schema.Service;
 import io.surisoft.capi.schema.WebsocketClient;
@@ -41,6 +42,7 @@ public class ConsulAutoConfiguration {
     private final boolean strictNamespace;
     private final String capiRunningMode;
     private final ContentTypeValidator contentTypeValidator;
+    private final Optional<GlobalThrottleProcessor> globalThrottleProcessor;
 
     public ConsulAutoConfiguration(@Value("${capi.consul.hosts}") List<String> capiConsulHosts,
                                    @Value("${capi.consul.token}") String consulToken,
@@ -56,7 +58,8 @@ public class ConsulAutoConfiguration {
                                    @Value("${capi.namespace}") String capiNamespace,
                                    @Value("${capi.strict}") boolean strictNamespace,
                                    @Value("${capi.mode}") String capiRunningMode,
-                                   ContentTypeValidator contentTypeValidator) {
+                                   ContentTypeValidator contentTypeValidator,
+                                   Optional<GlobalThrottleProcessor> globalThrottleProcessor) {
         this.capiConsulHosts = capiConsulHosts;
         this.consulToken = consulToken;
         this.capiContext = capiContext;
@@ -72,6 +75,7 @@ public class ConsulAutoConfiguration {
         this.strictNamespace = strictNamespace;
         this.capiRunningMode = capiRunningMode;
         this.contentTypeValidator = contentTypeValidator;
+        this.globalThrottleProcessor = globalThrottleProcessor;
     }
 
     @Bean(name = "consulNodeDiscovery")
@@ -83,7 +87,7 @@ public class ConsulAutoConfiguration {
                                                    HttpUtils httpUtils,
                                                    Cache<String, Service> serviceCache) {
 
-        ConsulNodeDiscovery consulNodeDiscovery = new ConsulNodeDiscovery(camelContext, serviceUtils, routeUtils, metricsProcessor, serviceCache, websocketClientMap, sseClientMap, contentTypeValidator);
+        ConsulNodeDiscovery consulNodeDiscovery = new ConsulNodeDiscovery(camelContext, serviceUtils, routeUtils, metricsProcessor, serviceCache, websocketClientMap, sseClientMap, contentTypeValidator, globalThrottleProcessor);
         consulNodeDiscovery.setHttpUtils(httpUtils);
 
         opaService.ifPresent(consulNodeDiscovery::setOpaService);

@@ -56,10 +56,17 @@ public class ServiceMeta {
 
         private String opaRego;
 
+        @JsonProperty("capi-instance")
         private String namespace;
 
         @JsonProperty("route-group-first")
         private boolean routeGroupFirst;
+
+        private boolean throttle;
+        private boolean throttleGlobal;
+        private long throttleTotalCalls = -1;
+        private long throttleDuration = -1;
+        private boolean rateLimit;
 
     public boolean isSecured() {
         return secured;
@@ -217,5 +224,45 @@ public class ServiceMeta {
 
     public void setRouteGroupFirst(boolean routeGroupFirst) {
         this.routeGroupFirst = routeGroupFirst;
+    }
+
+    public boolean isThrottle() {
+        return throttle;
+    }
+
+    public void setThrottle(boolean throttle) {
+        this.throttle = throttle;
+    }
+
+    public boolean isRateLimit() {
+        return rateLimit;
+    }
+
+    public void setRateLimit(boolean rateLimit) {
+        this.rateLimit = rateLimit;
+    }
+
+    public boolean isThrottleGlobal() {
+        return throttleGlobal;
+    }
+
+    public void setThrottleGlobal(boolean throttleGlobal) {
+        this.throttleGlobal = throttleGlobal;
+    }
+
+    public long getThrottleTotalCalls() {
+        return throttleTotalCalls;
+    }
+
+    public void setThrottleTotalCalls(long throttleTotalCalls) {
+        this.throttleTotalCalls = throttleTotalCalls;
+    }
+
+    public long getThrottleDuration() {
+        return throttleDuration;
+    }
+
+    public void setThrottleDuration(long throttleDuration) {
+        this.throttleDuration = throttleDuration;
     }
 }
