@@ -221,16 +221,16 @@ CAPI only needs to be able to access OPA API's.
 To start CAPI with support for OPA, please make sure to provide the following environment properties:
 
 ```yaml
-opa
+opa:
   enabled: true
   endpoint: http://localhost:8181
 ```
 
 Imagine the following scenario:
 ###  You want CAPI to only allow traffic to your service if the following conditions are met:
-* Token signed by a spefic key provided by you.
+* Token signed by a specific key provided by you.
 * Token not expired.
-* The authorized party whith a list that you control.
+* The authorized party within a list that you control.
 
 For these requirements lets design the following REGO.
 ```go
@@ -269,7 +269,7 @@ claims := payload if {
 }
 ```
 
-After creating this REGO you will need to publish on OPA:
+After creating this REGO you will need to publish it on OPA:
 
 ```bash
 curl --request PUT \
@@ -436,7 +436,7 @@ $ eksctl delete cluster --name capi-demo-1
 #### The example below has the following dependencies:
 * You need Open JDK 17
 * Hashicorp Consul
-* Keycloak (or a compatible oauth2 provide: See `Authorization`)
+* Keycloak (or a compatible OAuth2 provider: See `Authorization`)
 * Any traces collector (Open Telemetry Collector or Zipkin)
 * A certificate for SSL configuration
 * A custom trust store.
