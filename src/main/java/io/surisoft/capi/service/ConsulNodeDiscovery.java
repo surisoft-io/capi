@@ -330,7 +330,7 @@ public class ConsulNodeDiscovery {
 
     private HttpRequest buildServiceNameHttpRequest(String consulHost, String serviceName) {
         HttpRequest.Builder builder = HttpRequest.newBuilder();
-        URI uri = URI.create(consulHost + GET_ALL_SERVICES + "/" + serviceName);
+        URI uri = URI.create(consulHost + GET_SERVICE_BY_NAME + serviceName);
         if (uri.getPath() != null && uri.getPath().contains("..")) {
             throw new IllegalArgumentException("Path traversal detected in URI path: " + uri.getPath());
         }

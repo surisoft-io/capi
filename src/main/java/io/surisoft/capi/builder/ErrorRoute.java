@@ -1,5 +1,6 @@
 package io.surisoft.capi.builder;
 
+import com.hazelcast.console.Echo;
 import io.surisoft.capi.schema.CapiRestError;
 import io.surisoft.capi.utils.Constants;
 import io.surisoft.capi.utils.HttpUtils;
@@ -35,17 +36,18 @@ public class ErrorRoute extends RouteBuilder {
                             capiRestError.setTraceID(exchange.getIn().getHeader(Constants.TRACE_ID_HEADER, String.class));
                         }
                         if(exchange.getIn().getHeader(Constants.REASON_MESSAGE_HEADER) != null && exchange.getIn().getHeader(Constants.REASON_CODE_HEADER) != null) {
+                            exchange.setProperty("serviceResponseCode", exchange.getIn().getHeader(Constants.REASON_CODE_HEADER));
                             capiRestError.setErrorMessage(exchange.getIn().getHeader(Constants.REASON_MESSAGE_HEADER, String.class));
                             capiRestError.setErrorCode(exchange.getIn().getHeader(Constants.REASON_CODE_HEADER, Integer.class));
-                            exchange.getIn().setHeader(Exchange.HTTP_RESPONSE_CODE, constant(Constants.REASON_CODE_HEADER));
                         } else {
-                            exchange.getIn().setHeader(Exchange.HTTP_RESPONSE_CODE, constant(400));
+                            exchange.setProperty("serviceResponseCode", 400);
                             capiRestError.setErrorMessage("Unknown error");
-                            capiRestError.setErrorCode(500);
+                            capiRestError.setErrorCode(400);
                         }
                         exchange.getIn().setBody(httpUtils.proxyErrorMapper(capiRestError));
                     }
                 })
+                .setHeader(Exchange.HTTP_RESPONSE_CODE, exchangeProperty("serviceResponseCode"))
                 .removeHeader(Constants.REASON_MESSAGE_HEADER)
                 .removeHeader(Constants.REASON_CODE_HEADER)
                 .routeId("error-route");

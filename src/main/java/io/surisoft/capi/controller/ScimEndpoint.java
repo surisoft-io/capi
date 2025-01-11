@@ -72,9 +72,7 @@ public class ScimEndpoint {
 
             return new ResponseEntity<>(HttpStatus.OK);
        } catch (Exception e) {
-
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         }
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("result.getErrorMessage()");
     }
-
 }

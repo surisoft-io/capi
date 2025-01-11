@@ -81,7 +81,7 @@ public class RouteUtils {
                 .removeHeader(Constants.CAPI_URL_IN_ERROR)
                 .removeHeader(Constants.CAPI_URI_IN_ERROR)
                 .removeHeader(Constants.ROUTE_ID_HEADER)
-                .removeHeader(Constants.REASON_CODE_HEADER)
+                //.removeHeader(Constants.REASON_CODE_HEADER)
                 .removeHeader(Constants.REASON_MESSAGE_HEADER)
                 .end();
     }
