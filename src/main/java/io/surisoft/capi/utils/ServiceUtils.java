@@ -147,23 +147,17 @@ public class ServiceUtils {
         return false;
     }
 
-    public void removeUnusedService(CamelContext camelContext, RouteUtils routeUtils, Cache<String, Service> serviceCache, List<String> serviceNameList) throws Exception {
-        for (CacheEntry<String, Service> stringServiceCacheEntry : serviceCache.entries()) {
-            Service service = stringServiceCacheEntry.getValue();
-            if (!serviceNameList.contains(service.getName())) {
-                serviceCache.remove(service.getId());
-                if(service.getServiceMeta().getType().equals("websocket") && websocketClientMap.isPresent()) {
-                    websocketUtils.removeClientFromMap(websocketClientMap.get(), service);
-                } else if(service.getServiceMeta().getType().equals("sse") && sseClientMap.isPresent()) {
 
-                    sseClientMap.get().remove(service.getContext());
-                } else {
-                    List<String> serviceRouteIdList = routeUtils.getAllRouteIdForAGivenService(service);
-                    for (String routeId : serviceRouteIdList) {
-                        camelContext.getRouteController().stopRoute(routeId);
-                        camelContext.removeRoute(routeId);
-                    }
-                }
+    public void removeUnusedService(CamelContext camelContext, RouteUtils routeUtils, Service service) throws Exception {
+        if(service.getServiceMeta().getType().equals("websocket") && websocketClientMap.isPresent()) {
+            websocketUtils.removeClientFromMap(websocketClientMap.get(), service);
+        } else if(service.getServiceMeta().getType().equals("sse") && sseClientMap.isPresent()) {
+            sseClientMap.get().remove(service.getContext());
+        } else {
+            List<String> serviceRouteIdList = routeUtils.getAllRouteIdForAGivenService(service);
+            for (String routeId : serviceRouteIdList) {
+                camelContext.getRouteController().stopRoute(routeId);
+                camelContext.removeRoute(routeId);
             }
         }
     }

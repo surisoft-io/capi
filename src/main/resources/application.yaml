@@ -163,7 +163,7 @@ capi:
   oauth2:
     cookieName:
     provider:
-      enabled: true
+      enabled: false
       keys: http://localhost:8080/realms/master/protocol/openid-connect/certs
   opa:
     enabled: false

@@ -1,72 +1,72 @@
 package io.surisoft.capi.schema;
 
-import com.fasterxml.jackson.annotation.JsonGetter;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonSetter;
+import com.fasterxml.jackson.annotation.*;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class ServiceMeta {
 
-        @JsonProperty("root-context")
-        private String rootContext;
+    @JsonProperty("root-context")
+    private String rootContext;
 
-        @JsonProperty("schema")
-        private String schema;
+    @JsonProperty("schema")
+    private String schema;
 
-        @JsonProperty("secured")
-        private boolean secured;
+    @JsonProperty("secured")
+    private boolean secured;
 
-        @JsonProperty("tenant_aware")
-        private boolean tenantAware;
+    @JsonProperty("tenant_aware")
+    private boolean tenantAware;
 
-        @JsonProperty("tenant_id")
-        private String tenantId;
+    @JsonProperty("tenant_id")
+    private String tenantId;
 
-        @JsonProperty("group")
-        private String group;
+    @JsonProperty("group")
+    private String group;
 
-        @JsonProperty("X-B3-TraceId")
-        private boolean b3TraceId;
+    @JsonProperty("X-B3-TraceId")
+    private boolean b3TraceId;
 
-        @JsonProperty("ingress")
-        private String ingress;
+    @JsonProperty("ingress")
+    private String ingress;
 
-        @JsonProperty("sticky_session_enabled")
-        private boolean stickySession;
+    @JsonProperty("sticky_session_enabled")
+    private boolean stickySession;
 
-        @JsonProperty("sticky_session_type")
-        private String stickySessionType;
+    @JsonProperty("sticky_session_type")
+    private String stickySessionType;
 
-        @JsonProperty("sticky_session_key")
-        private String stickySessionKey;
+    @JsonProperty("sticky_session_key")
+    private String stickySessionKey;
 
-        @JsonProperty("type")
-        private String type;
+    @JsonProperty("type")
+    private String type;
 
-        private String subscriptionGroup;
+    private String subscriptionGroup;
 
-        @JsonProperty("allowed-origins")
-        private String allowedOrigins;
+    @JsonProperty("allowed-origins")
+    private String allowedOrigins;
 
-        @JsonProperty("keep-group")
-        private boolean keepGroup;
+    @JsonProperty("keep-group")
+    private boolean keepGroup;
 
-        private String openApiEndpoint;
+    private String openApiEndpoint;
 
-        private String opaRego;
+    private String opaRego;
 
-        @JsonProperty("capi-instance")
-        private String namespace;
+    @JsonProperty("capi-instance")
+    private String capiNamespace;
 
-        @JsonProperty("route-group-first")
-        private boolean routeGroupFirst;
+    @JsonProperty("namespace")
+    private String namespace;
 
-        private boolean throttle;
-        private boolean throttleGlobal;
-        private long throttleTotalCalls = -1;
-        private long throttleDuration = -1;
-        private boolean rateLimit;
+    @JsonProperty("route-group-first")
+    private boolean routeGroupFirst;
+
+    private boolean throttle;
+    private boolean throttleGlobal;
+    private long throttleTotalCalls = -1;
+    private long throttleDuration = -1;
+    private boolean rateLimit;
 
     public boolean isSecured() {
         return secured;
@@ -211,7 +211,12 @@ public class ServiceMeta {
     }
 
     public String getNamespace() {
-        return namespace;
+        if(capiNamespace != null) {
+            return capiNamespace;
+        } else if(namespace != null) {
+            return namespace;
+        }
+        return null;
     }
 
     public void setNamespace(String namespace) {
@@ -264,5 +269,13 @@ public class ServiceMeta {
 
     public void setThrottleDuration(long throttleDuration) {
         this.throttleDuration = throttleDuration;
+    }
+
+    public String getCapiNamespace() {
+        return capiNamespace;
+    }
+
+    public void setCapiNamespace(String capiNamespace) {
+        this.capiNamespace = capiNamespace;
     }
 }

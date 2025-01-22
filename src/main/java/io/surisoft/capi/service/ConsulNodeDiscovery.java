@@ -13,6 +13,7 @@ import org.apache.camel.CamelContext;
 import org.apache.camel.Route;
 import org.apache.camel.util.json.JsonObject;
 import org.cache2k.Cache;
+import org.cache2k.CacheEntry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -79,32 +80,35 @@ public class ConsulNodeDiscovery {
     }
 
     public void processInfo() {
-        lookForRemovedServices();
         Map<String, List<ConsulObject>> serviceListObjects = getAllServices();
+        lookForRemovedServices(serviceListObjects);
         processServices(serviceListObjects);
     }
 
-    private void lookForRemovedServices() {
-        ObjectMapper objectMapper = new ObjectMapper();
-        HttpResponse<String> response;
-        Set<String> services = new HashSet<>();
+    private void lookForRemovedServices(Map<String, List<ConsulObject>> serviceListObjects) {
+        Map<String, ConsulObject> servicesOnConsul = new HashMap<>();
+        for(Map.Entry<String, List<ConsulObject>> entry : serviceListObjects.entrySet()) {
+            List<ConsulObject> serviceList = entry.getValue();
+            for(ConsulObject consulObject : serviceList) {
+                String serviceId = null;
+                if(consulObject.getServiceMeta().isRouteGroupFirst()) {
+                    serviceId = consulObject.getServiceMeta().getGroup() + ":" + consulObject.getServiceName();
+                } else {
+                    serviceId = consulObject.getServiceName() + ":" + consulObject.getServiceMeta().getGroup();
+                }
+                servicesOnConsul.put(serviceId, consulObject);
+            }
+        }
         try {
-            for(String consulHost : consulHostList) {
-                response = client.send(buildServicesHttpRequest(consulHost), HttpResponse.BodyHandlers.ofString());
-                JsonObject responseObject = objectMapper.readValue(response.body(), JsonObject.class);
-                //We want to ignore the consul array
-                responseObject.remove("consul");
-                responseObject.forEach((key, value) -> {
-                    services.add(key);
-                });
+            for(CacheEntry<String, Service> stringServiceCacheEntry : serviceCache.entries()) {
+                if(!servicesOnConsul.containsKey(stringServiceCacheEntry.getKey())) {
+                    log.debug("This service does not on Consul: {}, and will be removed.", stringServiceCacheEntry.getKey());
+                    serviceUtils.removeUnusedService(camelContext, routeUtils, Objects.requireNonNull(serviceCache.get(stringServiceCacheEntry.getKey())));
+                    serviceCache.remove(stringServiceCacheEntry.getKey());
+                }
             }
-            try {
-                serviceUtils.removeUnusedService(camelContext, routeUtils, serviceCache, services.stream().toList());
-            } catch (Exception e) {
-                log.error(e.getMessage(), e);
-            }
-        } catch (IOException | InterruptedException e) {
-            log.error(ErrorMessage.ERROR_CONNECTING_TO_CONSUL);
+        } catch(Exception e) {
+            log.error(e.getMessage());
         }
     }
 
