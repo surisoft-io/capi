@@ -23,6 +23,7 @@ import javax.net.ssl.SSLContext;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -39,19 +40,22 @@ public class WebsocketGateway {
     private final Optional<CapiUndertowTracer> capiUndertowTracer;
     private final List<String> accessControlAllowHeaders;
     private final Map<String, String> managedHeaders;
+    private final String oauth2CookieName;
 
     public WebsocketGateway(@Value("${capi.websocket.server.port}") int port,
                             Map<String, WebsocketClient> webSocketClients,
                             WebsocketUtils websocketUtils,
                             Optional<SSLContext> sslContext,
                             Optional<CapiUndertowTracer> capiUndertowTracer,
-                            @Value("${capi.gateway.cors.management.allowed-headers}") List<String> accessControlAllowHeaders) {
+                            @Value("${capi.gateway.cors.management.allowed-headers}") List<String> accessControlAllowHeaders,
+                            @Value("${capi.oauth2.cookieName}") String oauth2CookieName) {
         this.port = port;
         this.webSocketClients = webSocketClients;
         this.websocketUtils = websocketUtils;
         this.sslContext = sslContext;
         this.capiUndertowTracer = capiUndertowTracer;
         this.accessControlAllowHeaders = accessControlAllowHeaders;
+        this.oauth2CookieName = oauth2CookieName;
 
         managedHeaders = new java.util.HashMap<>(Constants.CAPI_CORS_MANAGED_HEADERS);
         managedHeaders.put("Access-Control-Allow-Headers", StringUtils.join(accessControlAllowHeaders, ","));
@@ -82,12 +86,16 @@ public class WebsocketGateway {
                     WebsocketClient websocketClient = webSocketClients.get(webClientId);
                     if (webSocketClients.containsKey(webClientId)) {
                         if(httpServerExchange.getRequestMethod().equals(HttpString.tryFromString(Constants.OPTIONS_METHODS_VALUE))) {
+                            List<String> localAccessControlAllowHeaders = new ArrayList<>(accessControlAllowHeaders);
+                            if(oauth2CookieName != null && !oauth2CookieName.isEmpty()) {
+                                localAccessControlAllowHeaders.add(oauth2CookieName);
+                            }
                             httpServerExchange.getResponseHeaders().put(HttpString.tryFromString("Access-Control-Max-Age"), Constants.ACCESS_CONTROL_MAX_AGE_VALUE);
                             HeaderValues originHeader = httpServerExchange.getRequestHeaders().get("Origin");
                             processOrigin(httpServerExchange, originHeader.get(0));
                             managedHeaders.forEach((k, v) -> {
                                 if(k.equals(Constants.ACCESS_CONTROL_ALLOW_HEADERS)) {
-                                    v = StringUtils.join(accessControlAllowHeaders, ",");
+                                    v = StringUtils.join(localAccessControlAllowHeaders, ",");
                                 }
                                 httpServerExchange.getResponseHeaders().put(HttpString.tryFromString(k), v);
                             });
