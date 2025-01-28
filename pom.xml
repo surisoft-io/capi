@@ -7,21 +7,21 @@
   <groupId>io.surisoft.capi</groupId>
   <artifactId>capi</artifactId>
   <packaging>jar</packaging>
-  <version>4.9.01</version>
+  <version>4.9.12</version>
   <description>${spring.boot-version}</description>
   <name>CAPI Gateway</name>
 
   <properties>
     <org.apache.camel.springboot-version>4.9.0</org.apache.camel.springboot-version>
-    <spring.boot-version>3.4.0</spring.boot-version>
+    <spring.boot-version>3.4.1</spring.boot-version>
 
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <spring-cloud-sleuth-version>3.1.11</spring-cloud-sleuth-version>
-    <nimbus-jose-jwt-version>9.40</nimbus-jose-jwt-version>
-    <io.micrometer-version>1.13.2</io.micrometer-version>
+    <nimbus-jose-jwt-version>10.0.1</nimbus-jose-jwt-version>
+    <io.micrometer-version>1.14.3</io.micrometer-version>
     <cache2k-version>2.6.1.Final</cache2k-version>
-    <io.swagger.parser.v3.version>2.1.22</io.swagger.parser.v3.version>
+    <io.swagger.parser.v3.version>2.1.25</io.swagger.parser.v3.version>
 
     <jackson-dataformat-xml.version>2.17.0</jackson-dataformat-xml.version>
     <spring.kafka.version>3.2.3</spring.kafka.version>
@@ -45,7 +45,7 @@
   <parent>
     <groupId>org.springframework.boot</groupId>
     <artifactId>spring-boot-starter-parent</artifactId>
-    <version>3.4.0</version>
+    <version>3.4.1</version>
     <relativePath/>
   </parent>
 

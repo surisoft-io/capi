@@ -6,9 +6,7 @@ import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
 import io.micrometer.core.instrument.util.HierarchicalNameMapper;
 import io.micrometer.jmx.JmxMeterRegistry;
 import io.surisoft.capi.exception.RestTemplateErrorHandler;
-import io.surisoft.capi.schema.SSEClient;
-import io.surisoft.capi.schema.Service;
-import io.surisoft.capi.schema.WebsocketClient;
+import io.surisoft.capi.schema.*;
 import io.surisoft.capi.service.CapiTrustManager;
 import io.surisoft.capi.service.ConsistencyChecker;
 import io.surisoft.capi.service.ConsulKVStore;
@@ -35,6 +33,7 @@ import org.apache.hc.client5.http.io.HttpClientConnectionManager;
 import org.apache.hc.client5.http.ssl.SSLConnectionSocketFactory;
 import org.apache.hc.core5.ssl.SSLContextBuilder;
 import org.cache2k.Cache;
+import org.cache2k.Cache2kBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -87,6 +86,8 @@ public class CapiConfiguration {
     private final boolean capiDisableRedirect;
     private final int consulTimerInterval;
     private final boolean capiConsulEnabled;
+    private final Cache<String, Service> serviceCache;
+    private final String consulKvHost;
 
     public CapiConfiguration(@Value("${capi.traces.endpoint}") String tracesEndpoint,
                              HttpUtils httpUtils,
@@ -102,7 +103,9 @@ public class CapiConfiguration {
                              @Value("${server.ssl.key-store-password}") String sslPassword,
                              @Value("${capi.disable.redirect}") boolean capiDisableRedirect,
                              @Value("${capi.consul.discovery.timer.interval}") int consulTimerInterval,
-                             @Value("${capi.consul.discovery.enabled}") boolean capiConsulEnabled) {
+                             @Value("${capi.consul.discovery.enabled}") boolean capiConsulEnabled,
+                             Cache<String, Service> serviceCache,
+                             @Value("${capi.consul.kv.host}") String consulKvHost) {
 
 
         this.tracesEndpoint = tracesEndpoint;
@@ -120,6 +123,8 @@ public class CapiConfiguration {
         this.capiDisableRedirect = capiDisableRedirect;
         this.consulTimerInterval = consulTimerInterval;
         this.capiConsulEnabled = capiConsulEnabled;
+        this.serviceCache = serviceCache;
+        this.consulKvHost = consulKvHost;
 
         if(capiTrustStoreEnabled) {
             createTrustMaterial();
@@ -336,7 +341,7 @@ public class CapiConfiguration {
     public ConsulKVStore consulKVStore(RestTemplate restTemplate,
                                        Cache<String, List<String>> corsHeadersCache,
                                        @Value("${capi.consul.hosts}") List<String> capiConsulHosts) {
-        return new ConsulKVStore(restTemplate, corsHeadersCache, capiConsulHosts.get(0));
+        return new ConsulKVStore(restTemplate, corsHeadersCache, consulKvStoreSubscriptionGroupCache(), serviceCache, httpUtils, capiConsulHosts.get(0), consulKvHost);
     }
 
     private void createSslContext() {
@@ -372,6 +377,18 @@ public class CapiConfiguration {
             return new SSLContextBuilder().loadKeyMaterial(filePath, sslPassword.toCharArray(), sslPassword.toCharArray()).build();
         }
         return null;
+    }
+
+    @Bean
+    @ConditionalOnProperty(prefix = "capi.consul.kv", name = "enabled", havingValue = "true")
+    public Cache<String, ConsulKeyStoreEntry> consulKvStoreSubscriptionGroupCache() {
+        log.debug("Creating Subscription Group Cache");
+        return new Cache2kBuilder<String, ConsulKeyStoreEntry>(){}
+                .name("consulSubscriptionGroupCache-" + hashCode())
+                .eternal(true)
+                .entryCapacity(10000)
+                .storeByReference(true)
+                .build();
     }
 
     private File getFile(String path) {

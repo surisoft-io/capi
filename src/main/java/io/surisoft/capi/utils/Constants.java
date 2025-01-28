@@ -121,6 +121,7 @@ public class Constants {
     public static final String CLIENT_RESPONSE_CODE = "ClientResponseCode";
     public static final String CONSUL_KV_STORE_API = "/v1/kv/";
     public static final String CAPI_CORS_HEADERS_CACHE_KEY = "capi-cors-headers";
+    public static final String CONSUL_SUBSCRIPTION_GROUP_KEY = "subscription-group";
     public static final String CAPI_SHOULD_THROTTLE = "Capi-Should-Throttle";
     public static final String CAPI_THROTTLE_DURATION_MILLI = "Capi-Throttle-Duration";
     public static final String CAPI_META_THROTTLE_DURATION = "Capi-Meta-Throttle-Duration";

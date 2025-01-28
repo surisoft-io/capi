@@ -40,6 +40,8 @@ capi:
   consul:
     kv:
       enabled: false
+      host: http://localhost:8500
+      token:
       timer:
         interval: 20000
     token:

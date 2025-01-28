@@ -114,13 +114,15 @@ capi:
   consul:
     kv:
       enabled: false
+      host: http://localhost:8500
+      token:
       timer:
-        interval: 20000
+        interval: 10000
     token:
     hosts:
       http://localhost:8500
     discovery:
-      enabled: true
+      enabled: false
       timer:
         interval: 10000
   # Certificate Management (Editable property)
@@ -164,7 +166,7 @@ capi:
     cookieName:
     provider:
       enabled: false
-      keys: http://localhost:8080/realms/master/protocol/openid-connect/certs
+      keys:
   opa:
     enabled: false
     endpoint: http://localhost:8181

@@ -1,6 +1,6 @@
 package io.surisoft.capi.cache;
 
-import io.surisoft.capi.schema.ConsulKeyValueStore;
+import io.surisoft.capi.schema.ConsulKeyStoreEntry;
 import io.surisoft.capi.schema.Service;
 import io.surisoft.capi.schema.StickySession;
 import io.surisoft.capi.utils.Constants;
@@ -15,10 +15,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.RestTemplate;
 
-import java.util.Arrays;
-import java.util.Base64;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 @Configuration
 public class CacheConfiguration {
@@ -70,11 +67,11 @@ public class CacheConfiguration {
         //Processing CORS Headers
         log.info("Checking Consul Key Store for CORS Headers key/values");
         try {
-            ResponseEntity<ConsulKeyValueStore[]> consulKeyValueStoreResponse = restTemplate.getForEntity(consulHost + Constants.CONSUL_KV_STORE_API + Constants.CAPI_CORS_HEADERS_CACHE_KEY, ConsulKeyValueStore[].class);
+            ResponseEntity<ConsulKeyStoreEntry[]> consulKeyValueStoreResponse = restTemplate.getForEntity(consulHost + Constants.CONSUL_KV_STORE_API + Constants.CAPI_CORS_HEADERS_CACHE_KEY, ConsulKeyStoreEntry[].class);
             if(!consulKeyValueStoreResponse.getStatusCode().is2xxSuccessful()) {
                 consulKvStoreCache.put(Constants.CAPI_CORS_HEADERS_CACHE_KEY, allowedHeaders);
             } else {
-                ConsulKeyValueStore consulKeyValueStore = Objects.requireNonNull(consulKeyValueStoreResponse.getBody())[0];
+                ConsulKeyStoreEntry consulKeyValueStore = Objects.requireNonNull(consulKeyValueStoreResponse.getBody())[0];
                 List<String> consulDecodedValueAsList = consulKeyValueAsList(consulKeyValueStore.getValue());
                 consulKvStoreCache.put(Constants.CAPI_CORS_HEADERS_CACHE_KEY, consulDecodedValueAsList);
             }

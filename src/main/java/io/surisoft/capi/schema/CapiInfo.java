@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import java.util.Date;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class CapiInfo {
+    private String javaVersion;
     private String capiVersion;
     private String capiSpringVersion;
     private String camelVersion;
@@ -224,5 +225,13 @@ public class CapiInfo {
 
     public void setTracesEndpoint(String tracesEndpoint) {
         this.tracesEndpoint = tracesEndpoint;
+    }
+
+    public String getJavaVersion() {
+        return javaVersion;
+    }
+
+    public void setJavaVersion(String javaVersion) {
+        this.javaVersion = javaVersion;
     }
 }

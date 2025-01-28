@@ -8,6 +8,10 @@ import io.surisoft.capi.utils.Constants;
 import io.surisoft.capi.utils.ErrorMessage;
 import io.surisoft.capi.utils.WebsocketUtils;
 import io.undertow.Undertow;
+import io.undertow.server.HttpServerExchange;
+import io.undertow.util.HttpString;
+import jakarta.servlet.http.HttpServletResponse;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -15,6 +19,10 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 import javax.net.ssl.SSLContext;
+import java.net.MalformedURLException;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -28,17 +36,25 @@ public class WebsocketGateway {
     private final WebsocketUtils websocketUtils;
     private final Optional<SSLContext> sslContext;
     private final Optional<CapiUndertowTracer> capiUndertowTracer;
+    private final List<String> accessControlAllowHeaders;
+    private final Map<String, String> managedHeaders;
 
     public WebsocketGateway(@Value("${capi.websocket.server.port}") int port,
                             Map<String, WebsocketClient> webSocketClients,
                             WebsocketUtils websocketUtils,
                             Optional<SSLContext> sslContext,
-                            Optional<CapiUndertowTracer> capiUndertowTracer) {
+                            Optional<CapiUndertowTracer> capiUndertowTracer,
+                            @Value("${capi.gateway.cors.management.allowed-headers}") List<String> accessControlAllowHeaders) {
         this.port = port;
         this.webSocketClients = webSocketClients;
         this.websocketUtils = websocketUtils;
         this.sslContext = sslContext;
         this.capiUndertowTracer = capiUndertowTracer;
+        this.accessControlAllowHeaders = accessControlAllowHeaders;
+
+        managedHeaders = new java.util.HashMap<>(Constants.CAPI_CORS_MANAGED_HEADERS);
+        managedHeaders.put("Access-Control-Allow-Headers", StringUtils.join(accessControlAllowHeaders, ","));
+
     }
 
     public void runProxy() {
@@ -64,28 +80,41 @@ public class WebsocketGateway {
                     capiUndertowTracer.ifPresent(undertowTracer -> undertowTracer.serverRequest(httpServerExchange, webClientId));
                     WebsocketClient websocketClient = webSocketClients.get(webClientId);
                     if (webSocketClients.containsKey(webClientId)) {
-                        if (httpServerExchange.getProtocol().equals(Constants.PROTOCOL_HTTP)) {
-                            if (websocketAuthorization != null) {
-                                if (websocketAuthorization.isAuthorized(websocketClient, httpServerExchange)) {
-                                    log.debug(ErrorMessage.IS_AUTHORIZED, httpServerExchange.getRequestPath());
-                                    httpServerExchange.setRequestURI(websocketUtils.normalizePathForForwarding(websocketClient, requestPath));
-                                    httpServerExchange.setRelativePath(websocketUtils.normalizePathForForwarding(websocketClient, requestPath));
-                                    websocketClient.getHttpHandler().handleRequest(httpServerExchange);
-                                } else {
-                                    log.debug(ErrorMessage.IS_NOT_AUTHORIZED, httpServerExchange.getRequestPath());
-                                    httpServerExchange.setStatusCode(Constants.FORBIDDEN_CODE);
-                                    httpServerExchange.endExchange();
+                        if(httpServerExchange.getRequestMethod().equals(HttpString.tryFromString(Constants.OPTIONS_METHODS_VALUE))) {
+                            httpServerExchange.getRequestHeaders().add(HttpString.tryFromString("Access-Control-Max-Age"), Constants.ACCESS_CONTROL_MAX_AGE_VALUE);
+                            processOrigin(httpServerExchange, String.valueOf(httpServerExchange.getRequestHeaders().get("Origin")));
+                            managedHeaders.forEach((k, v) -> {
+                                if(k.equals(Constants.ACCESS_CONTROL_ALLOW_HEADERS)) {
+                                    v = StringUtils.join(accessControlAllowHeaders, ",");
                                 }
-                            } else {
-                                if (!websocketClient.requiresSubscription()) {
-                                    log.debug(ErrorMessage.IS_AUTHORIZED, httpServerExchange.getRequestPath());
-                                    httpServerExchange.setRequestURI(websocketUtils.normalizePathForForwarding(websocketClient, requestPath));
-                                    httpServerExchange.setRelativePath(websocketUtils.normalizePathForForwarding(websocketClient, requestPath));
-                                    websocketClient.getHttpHandler().handleRequest(httpServerExchange);
+                                httpServerExchange.getRequestHeaders().add(HttpString.tryFromString(k), v);
+                            });
+                            httpServerExchange.setStatusCode(HttpServletResponse.SC_ACCEPTED);
+                            httpServerExchange.endExchange();
+                        } else {
+                            if (httpServerExchange.getProtocol().equals(Constants.PROTOCOL_HTTP)) {
+                                if (websocketAuthorization != null) {
+                                    if (websocketAuthorization.isAuthorized(websocketClient, httpServerExchange)) {
+                                        log.debug(ErrorMessage.IS_AUTHORIZED, httpServerExchange.getRequestPath());
+                                        httpServerExchange.setRequestURI(websocketUtils.normalizePathForForwarding(websocketClient, requestPath));
+                                        httpServerExchange.setRelativePath(websocketUtils.normalizePathForForwarding(websocketClient, requestPath));
+                                        websocketClient.getHttpHandler().handleRequest(httpServerExchange);
+                                    } else {
+                                        log.debug(ErrorMessage.IS_NOT_AUTHORIZED, httpServerExchange.getRequestPath());
+                                        httpServerExchange.setStatusCode(Constants.FORBIDDEN_CODE);
+                                        httpServerExchange.endExchange();
+                                    }
                                 } else {
-                                    log.debug(ErrorMessage.IS_NOT_AUTHORIZED, httpServerExchange.getRequestPath());
-                                    httpServerExchange.setStatusCode(Constants.FORBIDDEN_CODE);
-                                    httpServerExchange.endExchange();
+                                    if (!websocketClient.requiresSubscription()) {
+                                        log.debug(ErrorMessage.IS_AUTHORIZED, httpServerExchange.getRequestPath());
+                                        httpServerExchange.setRequestURI(websocketUtils.normalizePathForForwarding(websocketClient, requestPath));
+                                        httpServerExchange.setRelativePath(websocketUtils.normalizePathForForwarding(websocketClient, requestPath));
+                                        websocketClient.getHttpHandler().handleRequest(httpServerExchange);
+                                    } else {
+                                        log.debug(ErrorMessage.IS_NOT_AUTHORIZED, httpServerExchange.getRequestPath());
+                                        httpServerExchange.setStatusCode(Constants.FORBIDDEN_CODE);
+                                        httpServerExchange.endExchange();
+                                    }
                                 }
                             }
                         }
@@ -96,5 +125,20 @@ public class WebsocketGateway {
                     }
                 });
         builder.build().start();
+    }
+
+    private void processOrigin(HttpServerExchange request, String origin) {
+        if(isValidOrigin(origin)) {
+            request.getRequestHeaders().add(HttpString.tryFromString(Constants.ACCESS_CONTROL_ALLOW_ORIGIN), origin.replaceAll("(\r\n|\n)", ""));
+        }
+    }
+
+    private boolean isValidOrigin(String origin) {
+        try {
+            new URL(origin).toURI();
+            return true;
+        } catch (MalformedURLException | URISyntaxException e) {
+            return false;
+        }
     }
 }

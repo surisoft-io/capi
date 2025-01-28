@@ -42,6 +42,7 @@ public class ServiceMeta {
     private String type;
 
     private String subscriptionGroup;
+    private boolean allowSubscriptions;
 
     @JsonProperty("allowed-origins")
     private String allowedOrigins;
@@ -172,6 +173,16 @@ public class ServiceMeta {
     @JsonSetter("subscription-group")
     public void setSubscriptionGroup(String subscriptionGroup) {
         this.subscriptionGroup = subscriptionGroup;
+    }
+
+    @JsonGetter("allowSubscriptions")
+    public boolean isAllowSubscriptions() {
+        return allowSubscriptions;
+    }
+
+    @JsonSetter("allow-subscriptions")
+    public void setAllowSubscriptions(boolean allowSubscriptions) {
+        this.allowSubscriptions = allowSubscriptions;
     }
 
     public boolean isKeepGroup() {

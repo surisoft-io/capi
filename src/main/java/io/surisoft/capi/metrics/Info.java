@@ -71,6 +71,7 @@ public class Info {
         capiInfo.setMetricsContextPath(metricsContextPath);
         capiInfo.setTracesEnabled(tracesEnabled);
         capiInfo.setTracesEndpoint(tracesEndpoint);
+        capiInfo.setJavaVersion(String.valueOf(Runtime.version()));
         return capiInfo;
     }
 }
