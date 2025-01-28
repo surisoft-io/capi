@@ -81,13 +81,13 @@ public class WebsocketGateway {
                     WebsocketClient websocketClient = webSocketClients.get(webClientId);
                     if (webSocketClients.containsKey(webClientId)) {
                         if(httpServerExchange.getRequestMethod().equals(HttpString.tryFromString(Constants.OPTIONS_METHODS_VALUE))) {
-                            httpServerExchange.getRequestHeaders().add(HttpString.tryFromString("Access-Control-Max-Age"), Constants.ACCESS_CONTROL_MAX_AGE_VALUE);
+                            httpServerExchange.getResponseHeaders().put(HttpString.tryFromString("Access-Control-Max-Age"), Constants.ACCESS_CONTROL_MAX_AGE_VALUE);
                             processOrigin(httpServerExchange, String.valueOf(httpServerExchange.getRequestHeaders().get("Origin")));
                             managedHeaders.forEach((k, v) -> {
                                 if(k.equals(Constants.ACCESS_CONTROL_ALLOW_HEADERS)) {
                                     v = StringUtils.join(accessControlAllowHeaders, ",");
                                 }
-                                httpServerExchange.getRequestHeaders().add(HttpString.tryFromString(k), v);
+                                httpServerExchange.getResponseHeaders().put(HttpString.tryFromString(k), v);
                             });
                             httpServerExchange.setStatusCode(HttpServletResponse.SC_ACCEPTED);
                             httpServerExchange.endExchange();
@@ -129,7 +129,7 @@ public class WebsocketGateway {
 
     private void processOrigin(HttpServerExchange request, String origin) {
         if(isValidOrigin(origin)) {
-            request.getRequestHeaders().add(HttpString.tryFromString(Constants.ACCESS_CONTROL_ALLOW_ORIGIN), origin.replaceAll("(\r\n|\n)", ""));
+            request.getResponseHeaders().put(HttpString.tryFromString(Constants.ACCESS_CONTROL_ALLOW_ORIGIN), origin.replaceAll("(\r\n|\n)", ""));
         }
     }
 
