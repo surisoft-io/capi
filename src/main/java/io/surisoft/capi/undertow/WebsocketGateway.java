@@ -9,6 +9,7 @@ import io.surisoft.capi.utils.ErrorMessage;
 import io.surisoft.capi.utils.WebsocketUtils;
 import io.undertow.Undertow;
 import io.undertow.server.HttpServerExchange;
+import io.undertow.util.HeaderValues;
 import io.undertow.util.HttpString;
 import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.lang3.StringUtils;
@@ -82,7 +83,8 @@ public class WebsocketGateway {
                     if (webSocketClients.containsKey(webClientId)) {
                         if(httpServerExchange.getRequestMethod().equals(HttpString.tryFromString(Constants.OPTIONS_METHODS_VALUE))) {
                             httpServerExchange.getResponseHeaders().put(HttpString.tryFromString("Access-Control-Max-Age"), Constants.ACCESS_CONTROL_MAX_AGE_VALUE);
-                            processOrigin(httpServerExchange, String.valueOf(httpServerExchange.getRequestHeaders().get("Origin")));
+                            HeaderValues originHeader = httpServerExchange.getRequestHeaders().get("Origin");
+                            processOrigin(httpServerExchange, originHeader.get(0));
                             managedHeaders.forEach((k, v) -> {
                                 if(k.equals(Constants.ACCESS_CONTROL_ALLOW_HEADERS)) {
                                     v = StringUtils.join(accessControlAllowHeaders, ",");
