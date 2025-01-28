@@ -122,7 +122,7 @@ capi:
     hosts:
       http://localhost:8500
     discovery:
-      enabled: false
+      enabled: true
       timer:
         interval: 10000
   # Certificate Management (Editable property)
@@ -148,7 +148,7 @@ capi:
           Access-Control-Request-Method,
           Access-Control-Request-Headers,
           x-referrer,
-          Authorization
+          Authorization,
           X-Csrf-Request,
           Cache-Control,
           pragma,
