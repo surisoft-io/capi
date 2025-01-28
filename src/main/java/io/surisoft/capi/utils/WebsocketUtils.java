@@ -10,12 +10,25 @@ import io.surisoft.capi.schema.WebsocketClient;
 import io.surisoft.capi.tracer.CapiUndertowTracer;
 import io.surisoft.capi.undertow.CAPILoadBalancerProxyClient;
 import io.surisoft.capi.undertow.CAPIProxyHandler;
+import io.undertow.protocols.ssl.UndertowXnioSsl;
 import io.undertow.server.HttpHandler;
 import io.undertow.server.handlers.ResponseCodeHandler;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import org.xnio.OptionMap;
+import org.xnio.Xnio;
+import org.xnio.ssl.XnioSsl;
 
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManagerFactory;
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.net.URI;
+import java.security.KeyManagementException;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.cert.CertificateException;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -26,13 +39,25 @@ public class WebsocketUtils {
     private final String capiContextPath;
     private final Optional<List<DefaultJWTProcessor<SecurityContext>>> defaultJWTProcessor;
     private final Optional<CapiUndertowTracer> capiUndertowTracer;
+    private final String capiTrustStorePath;
+    private final String capiTrustStorePassword;
+    private XnioSsl xnioSsl;
 
     public WebsocketUtils(@Value("${camel.servlet.mapping.context-path}") String capiContextPath,
                           Optional<List<DefaultJWTProcessor<SecurityContext>>> defaultJWTProcessor,
-                          Optional<CapiUndertowTracer> capiUndertowTracer) {
+                          Optional<CapiUndertowTracer> capiUndertowTracer,
+                          @Value("${capi.trust.store.enabled}") boolean capiTrustStoreEnabled,
+                          @Value("${capi.trust.store.path}") String capiTrustStorePath,
+                          @Value("${capi.trust.store.password}") String capiTrustStorePassword) {
         this.capiContextPath = capiContextPath;
         this.defaultJWTProcessor = defaultJWTProcessor;
         this.capiUndertowTracer = capiUndertowTracer;
+        this.capiTrustStorePath = capiTrustStorePath;
+        this.capiTrustStorePassword = capiTrustStorePassword;
+
+        if(capiTrustStoreEnabled) {
+            this.xnioSsl = createXnioSsl();
+        }
     }
 
     public HttpHandler createClientHttpHandler(WebsocketClient webSocketClient, Service service) {
@@ -40,7 +65,8 @@ public class WebsocketUtils {
 
         webSocketClient.getMappingList().forEach((m) -> {
             String schema = service.getServiceMeta().getSchema() == null ? HttpProtocol.HTTP.getProtocol() : service.getServiceMeta().getSchema();
-            loadBalancingProxyClient.addHost(URI.create(schema + "://" + m.getHostname() + ":" + m.getPort()));
+            //loadBalancingProxyClient.addHost(URI.create(schema + "://" + m.getHostname() + ":" + m.getPort()));
+            loadBalancingProxyClient.addHost(URI.create(schema + "://" + m.getHostname() + ":" + m.getPort()), xnioSsl);
         });
         return CAPIProxyHandler
                 .builder()
@@ -99,5 +125,26 @@ public class WebsocketUtils {
     public String normalizeCapiContextPath() {
         String normalized = capiContextPath.replaceAll("/", "").replaceAll("\\*", "");
         return "/" + normalized;
+    }
+
+    public XnioSsl createXnioSsl() {
+        try {
+            KeyStore trustStore = KeyStore.getInstance("JKS");
+            FileInputStream trustStoreFile = new FileInputStream(capiTrustStorePath);
+            trustStore.load(trustStoreFile, capiTrustStorePassword.toCharArray());
+
+            TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+            trustManagerFactory.init(trustStore);
+
+            SSLContext sslContext = SSLContext.getInstance("TLS");
+            sslContext.init(null, trustManagerFactory.getTrustManagers(), null);
+
+            Xnio xnio = Xnio.getInstance();
+            OptionMap optionMap = OptionMap.EMPTY;
+            return new UndertowXnioSsl(xnio, optionMap, sslContext);
+        } catch (NoSuchAlgorithmException | KeyStoreException | IOException | CertificateException |
+                 KeyManagementException e) {
+            throw new RuntimeException(e);
+        }
     }
 }
