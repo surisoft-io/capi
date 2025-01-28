@@ -412,6 +412,7 @@ public class CapiConfiguration {
             capiTrustManager = new CapiTrustManager(filePath.getAbsolutePath(), capiTrustStorePassword);
             createSslContext();
         } catch (Exception e) {
+            log.error(e.getMessage(), e);
             throw new RuntimeException(e);
         }
     }
