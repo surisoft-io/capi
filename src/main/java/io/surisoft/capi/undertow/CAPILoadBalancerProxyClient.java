@@ -4,8 +4,6 @@ import io.surisoft.capi.tracer.CapiUndertowTracer;
 import io.undertow.server.HttpServerExchange;
 import io.undertow.server.handlers.proxy.LoadBalancingProxyClient;
 
-import java.util.Optional;
-
 
 public class CAPILoadBalancerProxyClient extends LoadBalancingProxyClient {
 

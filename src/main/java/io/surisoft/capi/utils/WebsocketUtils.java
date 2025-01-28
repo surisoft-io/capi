@@ -2,6 +2,7 @@ package io.surisoft.capi.utils;
 
 import com.nimbusds.jose.proc.SecurityContext;
 import com.nimbusds.jwt.proc.DefaultJWTProcessor;
+import io.surisoft.capi.configuration.CapiConfiguration;
 import io.surisoft.capi.exception.CapiUndertowException;
 import io.surisoft.capi.oidc.WebsocketAuthorization;
 import io.surisoft.capi.schema.HttpProtocol;
@@ -13,6 +14,8 @@ import io.surisoft.capi.undertow.CAPIProxyHandler;
 import io.undertow.protocols.ssl.UndertowXnioSsl;
 import io.undertow.server.HttpHandler;
 import io.undertow.server.handlers.ResponseCodeHandler;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.xnio.OptionMap;
@@ -36,9 +39,11 @@ import java.util.Optional;
 @Component
 public class WebsocketUtils {
 
+    private static final Logger log = LoggerFactory.getLogger(WebsocketUtils.class);
     private final String capiContextPath;
     private final Optional<List<DefaultJWTProcessor<SecurityContext>>> defaultJWTProcessor;
     private final Optional<CapiUndertowTracer> capiUndertowTracer;
+    private final boolean capiTrustStoreEnabled;
     private final String capiTrustStorePath;
     private final String capiTrustStorePassword;
     private XnioSsl xnioSsl;
@@ -52,6 +57,7 @@ public class WebsocketUtils {
         this.capiContextPath = capiContextPath;
         this.defaultJWTProcessor = defaultJWTProcessor;
         this.capiUndertowTracer = capiUndertowTracer;
+        this.capiTrustStoreEnabled = capiTrustStoreEnabled;
         this.capiTrustStorePath = capiTrustStorePath;
         this.capiTrustStorePassword = capiTrustStorePassword;
 
@@ -62,11 +68,13 @@ public class WebsocketUtils {
 
     public HttpHandler createClientHttpHandler(WebsocketClient webSocketClient, Service service) {
         CAPILoadBalancerProxyClient loadBalancingProxyClient = new CAPILoadBalancerProxyClient(capiUndertowTracer.orElse(null));
-
         webSocketClient.getMappingList().forEach((m) -> {
             String schema = service.getServiceMeta().getSchema() == null ? HttpProtocol.HTTP.getProtocol() : service.getServiceMeta().getSchema();
-            //loadBalancingProxyClient.addHost(URI.create(schema + "://" + m.getHostname() + ":" + m.getPort()));
-            loadBalancingProxyClient.addHost(URI.create(schema + "://" + m.getHostname() + ":" + m.getPort()), xnioSsl);
+            if(capiTrustStoreEnabled) {
+                loadBalancingProxyClient.addHost(URI.create(schema + "://" + m.getHostname() + ":" + m.getPort()), xnioSsl);
+            } else {
+                loadBalancingProxyClient.addHost(URI.create(schema + "://" + m.getHostname() + ":" + m.getPort()));
+            }
         });
         return CAPIProxyHandler
                 .builder()
@@ -144,6 +152,7 @@ public class WebsocketUtils {
             return new UndertowXnioSsl(xnio, optionMap, sslContext);
         } catch (NoSuchAlgorithmException | KeyStoreException | IOException | CertificateException |
                  KeyManagementException e) {
+            log.error(e.getMessage(), e);
             throw new RuntimeException(e);
         }
     }
