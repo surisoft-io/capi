@@ -63,7 +63,6 @@ public class WebsocketGateway {
     }
 
     public void runProxy() {
-
         try {
             websocketAuthorization = websocketUtils.createWebsocketAuthorization();
         } catch (CapiUndertowException e) {

@@ -1,23 +1,30 @@
 package io.surisoft.capi.configuration;
 
+import com.nimbusds.jose.JWSAlgorithm;
+import com.nimbusds.jose.jwk.JWKSet;
+import com.nimbusds.jose.jwk.source.ImmutableJWKSet;
+import com.nimbusds.jose.proc.JWSKeySelector;
+import com.nimbusds.jose.proc.JWSVerificationKeySelector;
+import com.nimbusds.jose.proc.SecurityContext;
+import com.nimbusds.jwt.proc.DefaultJWTProcessor;
 import io.micrometer.core.instrument.Clock;
 import io.micrometer.core.instrument.Tags;
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
 import io.micrometer.core.instrument.util.HierarchicalNameMapper;
 import io.micrometer.jmx.JmxMeterRegistry;
 import io.surisoft.capi.exception.RestTemplateErrorHandler;
-import io.surisoft.capi.schema.*;
+import io.surisoft.capi.schema.ConsulKeyStoreEntry;
+import io.surisoft.capi.schema.SSEClient;
+import io.surisoft.capi.schema.Service;
+import io.surisoft.capi.schema.WebsocketClient;
 import io.surisoft.capi.service.CapiTrustManager;
 import io.surisoft.capi.service.ConsistencyChecker;
 import io.surisoft.capi.service.ConsulKVStore;
-import io.surisoft.capi.tracer.CapiTracer;
-import io.surisoft.capi.tracer.CapiUndertowTracer;
+import io.surisoft.capi.service.ConsulNodeDiscovery;
 import io.surisoft.capi.utils.Constants;
-import io.surisoft.capi.utils.HttpUtils;
 import io.surisoft.capi.utils.RouteUtils;
 import io.surisoft.scim.ScimController;
 import io.surisoft.scim.resources.ControllerConfiguration;
-import okhttp3.OkHttpClient;
 import org.apache.camel.CamelContext;
 import org.apache.camel.component.http.HttpClientConfigurer;
 import org.apache.camel.component.http.HttpComponent;
@@ -30,14 +37,16 @@ import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
 import org.apache.hc.client5.http.impl.classic.HttpClients;
 import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManagerBuilder;
 import org.apache.hc.client5.http.io.HttpClientConnectionManager;
-import org.apache.hc.client5.http.ssl.SSLConnectionSocketFactory;
+import org.apache.hc.client5.http.ssl.DefaultClientTlsStrategy;
 import org.apache.hc.core5.ssl.SSLContextBuilder;
+import org.apache.hc.core5.ssl.TrustStrategy;
 import org.cache2k.Cache;
 import org.cache2k.Cache2kBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
@@ -46,20 +55,27 @@ import org.springframework.core.io.ResourceLoader;
 import org.springframework.http.client.ClientHttpRequestFactory;
 import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 import org.springframework.web.client.RestTemplate;
-import zipkin2.reporter.AsyncReporter;
-import zipkin2.reporter.urlconnection.URLConnectionSender;
 
 import javax.net.ssl.SSLContext;
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.nio.file.Path;
 import java.security.KeyManagementException;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
+import java.text.ParseException;
 import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
@@ -70,11 +86,10 @@ import static org.apache.camel.component.micrometer.routepolicy.MicrometerRouteP
 @Configuration
 public class CapiConfiguration {
     private static final Logger log = LoggerFactory.getLogger(CapiConfiguration.class);
-    private final String tracesEndpoint;
-    private final HttpUtils httpUtils;
     private final boolean capiTrustStoreEnabled;
     private final String capiTrustStorePath;
     private final String capiTrustStorePassword;
+    private final String capiTrustStoreEncoded;
     private final CamelContext camelContext;
     private final ResourceLoader resourceLoader;
     private CapiTrustManager capiTrustManager;
@@ -87,15 +102,13 @@ public class CapiConfiguration {
     private final int consulTimerInterval;
     private final boolean capiConsulEnabled;
     private final Cache<String, Service> serviceCache;
-    private final String consulKvHost;
 
-    public CapiConfiguration(@Value("${capi.traces.endpoint}") String tracesEndpoint,
-                             HttpUtils httpUtils,
-                             CamelContext camelContext,
+    public CapiConfiguration(CamelContext camelContext,
                              ResourceLoader resourceLoader,
                              @Value("${capi.trust.store.enabled}") boolean capiTrustStoreEnabled,
                              @Value("${capi.trust.store.path}") String capiTrustStorePath,
                              @Value("${capi.trust.store.password}") String capiTrustStorePassword,
+                             @Value("${capi.trust.store.encoded}") String capiTrustStoreEncoded,
                              @Value("${capi.gateway.cors.management.allowed-headers}") List<String> allowedHeaders,
                              @Value("${capi.scim.implementation.path}") String capiScimImplementationPath,
                              Environment environment,
@@ -104,17 +117,15 @@ public class CapiConfiguration {
                              @Value("${capi.disable.redirect}") boolean capiDisableRedirect,
                              @Value("${capi.consul.discovery.timer.interval}") int consulTimerInterval,
                              @Value("${capi.consul.discovery.enabled}") boolean capiConsulEnabled,
-                             Cache<String, Service> serviceCache,
-                             @Value("${capi.consul.kv.host}") String consulKvHost) {
+                             Cache<String, Service> serviceCache) {
 
 
-        this.tracesEndpoint = tracesEndpoint;
-        this.httpUtils = httpUtils;
         this.camelContext = camelContext;
         this.resourceLoader = resourceLoader;
         this.capiTrustStoreEnabled = capiTrustStoreEnabled;
         this.capiTrustStorePath = capiTrustStorePath;
         this.capiTrustStorePassword = capiTrustStorePassword;
+        this.capiTrustStoreEncoded = capiTrustStoreEncoded;
         this.allowedHeaders = allowedHeaders;
         this.capiScimImplementationPath = capiScimImplementationPath;
         this.environment = environment;
@@ -124,12 +135,10 @@ public class CapiConfiguration {
         this.consulTimerInterval = consulTimerInterval;
         this.capiConsulEnabled = capiConsulEnabled;
         this.serviceCache = serviceCache;
-        this.consulKvHost = consulKvHost;
 
         if(capiTrustStoreEnabled) {
-            createTrustMaterial();
+            capiTrustManager = createTrustMaterial();
         }
-
     }
 
     @Bean
@@ -194,51 +203,6 @@ public class CapiConfiguration {
         return new HashMap<>();
     }
 
-    @Bean
-    @ConditionalOnProperty(prefix = "capi.traces", name = "enabled", havingValue = "true")
-    CapiTracer capiTracer(CamelContext camelContext) throws CertificateException, IOException, NoSuchAlgorithmException, KeyStoreException, KeyManagementException {
-        camelContext.setUseMDCLogging(true);
-
-        log.debug("Traces Enabled!");
-
-        Set<String> excludePatterns = new HashSet<>();
-        excludePatterns.add("timer://");
-        excludePatterns.add("bean://consulNodeDiscovery");
-        excludePatterns.add("bean://consistencyChecker");
-
-        CapiTracer capiTracer = new CapiTracer(httpUtils);
-
-        URLConnectionSender sender = URLConnectionSender
-                .newBuilder()
-                .readTimeout(100)
-                .endpoint(tracesEndpoint + "/api/v2/spans")
-                .build();
-
-        capiTracer.setSpanReporter(AsyncReporter.builder(sender).build());
-        capiTracer.setIncludeMessageBody(true);
-        capiTracer.setIncludeMessageBodyStreams(true);
-
-        capiTracer.init(camelContext);
-        return capiTracer;
-    }
-
-    @Bean
-    @ConditionalOnProperty(prefix = "capi.traces", name = "enabled", havingValue = "true")
-    CapiUndertowTracer capiUndertowTracer() throws Exception {
-        log.debug("Undertow Traces Enabled!");
-
-        CapiUndertowTracer capiUndertowTracer = new CapiUndertowTracer(httpUtils);
-
-        URLConnectionSender sender = URLConnectionSender
-                .newBuilder()
-                .readTimeout(100)
-                .endpoint(tracesEndpoint + "/api/v2/spans")
-                .build();
-
-        capiUndertowTracer.setSpanReporter(AsyncReporter.builder(sender).build());
-        capiUndertowTracer.init();
-        return capiUndertowTracer;
-    }
 
     @Bean
     public HttpComponent disableFollowRedirect(CamelContext camelContext) {
@@ -283,18 +247,13 @@ public class CapiConfiguration {
     }
 
     @Bean
-    public RestTemplate createRestTemplate() throws IOException, CertificateException, NoSuchAlgorithmException, KeyStoreException, KeyManagementException {
+    public RestTemplate createRestTemplate() throws NoSuchAlgorithmException, KeyStoreException, KeyManagementException {
         HttpClientConnectionManager httpClientConnectionManager;
         if(capiTrustStoreEnabled) {
-            SSLContext sslContext = SSLContextBuilder
-                    .create()
-                    .loadTrustMaterial(getFile(capiTrustStorePath), capiTrustStorePassword.toCharArray())
-                    .build();
-
-            SSLConnectionSocketFactory sslConFactory = new SSLConnectionSocketFactory(sslContext);
+            DefaultClientTlsStrategy sslConFactory = new DefaultClientTlsStrategy(capiSSLContext().getSslContext());
             httpClientConnectionManager = PoolingHttpClientConnectionManagerBuilder
                     .create()
-                    .setSSLSocketFactory(sslConFactory)
+                    .setTlsSocketStrategy(sslConFactory)
                     .build();
 
         } else {
@@ -312,23 +271,6 @@ public class CapiConfiguration {
         return restTemplate;
     }
 
-    @Bean
-    public OkHttpClient httpClient()  {
-        try {
-            OkHttpClient.Builder builder = new OkHttpClient.Builder();
-            if(capiTrustStoreEnabled) {
-                SSLContext sslContext = SSLContextBuilder
-                        .create()
-                        .loadTrustMaterial(getFile(capiTrustStorePath), capiTrustStorePassword.toCharArray())
-                        .build();
-                builder.sslSocketFactory(sslContext.getSocketFactory(), capiTrustManager);
-            }
-            return builder.build();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
-
     @Bean(name = "consistencyChecker")
     public ConsistencyChecker consistencyChecker(CamelContext camelContext,
                                                  RouteUtils routeUtils,
@@ -336,37 +278,59 @@ public class CapiConfiguration {
         return new ConsistencyChecker(camelContext, routeUtils, serviceCache);
     }
 
+    @Bean(name = "capiSslContext")
+    public CapiSslContextHolder capiSSLContext() throws NoSuchAlgorithmException, KeyStoreException, KeyManagementException {
+        log.info("CAPI SSL Context Holder for Dynamic SSL");
+        if(capiTrustStoreEnabled) {
+            TrustStrategy trustStrategy = (X509Certificate[] chain, String authType) -> false;
+            SSLContext sslContext = SSLContextBuilder
+                    .create()
+                    .loadTrustMaterial(capiTrustManager.getKeyStore(), trustStrategy)
+                    .build();
+            return new CapiSslContextHolder(sslContext);
+        }
+        return null;
+    }
+
     @Bean(name = "consulKVStore")
     @ConditionalOnProperty(prefix = "capi.consul.kv", name = "enabled", havingValue = "true")
     public ConsulKVStore consulKVStore(RestTemplate restTemplate,
                                        Cache<String, List<String>> corsHeadersCache,
-                                       @Value("${capi.consul.hosts}") List<String> capiConsulHosts) {
-        return new ConsulKVStore(restTemplate, corsHeadersCache, consulKvStoreSubscriptionGroupCache(), serviceCache, httpUtils, capiConsulHosts.get(0), consulKvHost);
+                                       @Value("${capi.consul.kv.host}") String consulKvHost,
+                                       @Value("${capi.consul.kv.token}") String consulKvToken,
+                                       @Value("${capi.trust.store.password}") String capiTrustStorePassword,
+                                       RouteUtils routeUtils,
+                                       ConsulNodeDiscovery consulNodeDiscovery,
+                                       CapiSslContextHolder capiSslContextHolder,
+                                       CamelContext camelContext) {
+        return new ConsulKVStore(restTemplate, corsHeadersCache, consulKvStoreSubscriptionGroupCache(), routeUtils, consulKvHost, consulKvToken, capiTrustStorePassword, consulNodeDiscovery, capiSslContextHolder, camelContext);
     }
 
-    private void createSslContext() {
-        try {
-            log.info("Starting CAPI HTTP Components SSL Context");
-            File filePath = getFile(capiTrustStorePath);
+    @Bean("sslContextParameters")
+    @ConditionalOnProperty(prefix = "capi.trust.store", name = "enabled", havingValue = "true")
+    public SSLContextParameters createSSLContextParameters() throws Exception {
+        HttpComponent httpComponent = (HttpComponent) camelContext.getComponent("https");
+        CapiTrustManager capiTrustManager;
 
-            HttpComponent httpComponent = (HttpComponent) camelContext.getComponent("https");
-            if(filePath != null) {
-                CapiTrustManager capiTrustManager = new CapiTrustManager(filePath.getAbsolutePath(), capiTrustStorePassword);
-                TrustManagersParameters trustManagersParameters = new TrustManagersParameters();
-                trustManagersParameters.setTrustManager(capiTrustManager);
-
-                SSLContextParameters sslContextParameters = new SSLContextParameters();
-                sslContextParameters.setTrustManagers(trustManagersParameters);
-                sslContextParameters.createSSLContext(camelContext);
-                httpComponent.setSslContextParameters(sslContextParameters);
-
-            } else {
-                log.warn("Could not create SSL Context, the provided certificate path is invalid");
-            }
-
-        } catch(Exception e) {
-            log.error(e.getMessage(), e);
+        if(capiTrustStoreEncoded != null && !capiTrustStoreEncoded.isEmpty()) {
+                InputStream trusStoreInputStream = new ByteArrayInputStream(Base64.getDecoder().decode(capiTrustStoreEncoded.getBytes()));
+                capiTrustManager = new CapiTrustManager(trusStoreInputStream, null, capiTrustStorePassword);
+        } else {
+                File filePath = getFile(capiTrustStorePath);
+                capiTrustManager = new CapiTrustManager(null, filePath.getAbsolutePath(), capiTrustStorePassword);
         }
+
+        TrustManagersParameters trustManagersParameters = new TrustManagersParameters();
+        trustManagersParameters.setTrustManager(capiTrustManager);
+
+        SSLContextParameters sslContextParameters = new SSLContextParameters();
+        sslContextParameters.setTrustManagers(trustManagersParameters);
+        sslContextParameters.setSessionTimeout("1");
+
+        sslContextParameters.createSSLContext(camelContext);
+        httpComponent.setSslContextParameters(sslContextParameters);
+
+        return sslContextParameters;
     }
 
     @Bean
@@ -406,15 +370,21 @@ public class CapiConfiguration {
         return filePath;
     }
 
-    private void createTrustMaterial() {
+    private CapiTrustManager createTrustMaterial() {
+        CapiTrustManager capiTrustManager;
         try {
-            File filePath = getFile(capiTrustStorePath);
-            capiTrustManager = new CapiTrustManager(filePath.getAbsolutePath(), capiTrustStorePassword);
-            createSslContext();
+            if(capiTrustStoreEncoded != null && !capiTrustStoreEncoded.isEmpty()) {
+                InputStream trusStoreInputStream = new ByteArrayInputStream(Base64.getDecoder().decode(capiTrustStoreEncoded.getBytes()));
+                capiTrustManager = new CapiTrustManager(trusStoreInputStream, null, capiTrustStorePassword);
+            } else {
+                File filePath = getFile(capiTrustStorePath);
+                capiTrustManager = new CapiTrustManager(null, filePath.getAbsolutePath(), capiTrustStorePassword);
+            }
         } catch (Exception e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
         }
+        return capiTrustManager;
     }
 
     @Bean(name = "capiCorsFilterStrategy")
@@ -428,5 +398,41 @@ public class CapiConfiguration {
                 environment.containsProperty("scim-controller-auth-password") &&
                 environment.containsProperty("scim-controller-base-url") &&
                 environment.containsProperty("scim-controller-base-path");
+    }
+
+    @Bean
+    @ConditionalOnProperty(prefix = "capi.oauth2.provider", name = "enabled", havingValue = "true")
+    public List<DefaultJWTProcessor<SecurityContext>> getJwtProcessor(Optional<CapiSslContextHolder> capiSslContextHolder) throws IOException, ParseException {
+        log.trace("Starting CAPI JWT Processor");
+        List<DefaultJWTProcessor<SecurityContext>> jwtProcessorList = new ArrayList<>();
+        for(String jwkEndpoint : getOauth2ProviderKeys()) {
+            HttpClient.Builder httpClientBuilder = HttpClient.newBuilder();
+            capiSslContextHolder.ifPresent(sslContextHolder -> httpClientBuilder.sslContext(sslContextHolder.getSslContext()));
+            httpClientBuilder.connectTimeout(Duration.ofSeconds(10));
+            try {
+                HttpClient httpClient = httpClientBuilder.build();
+                HttpRequest request = HttpRequest.newBuilder().uri(new URI(jwkEndpoint)).build();
+                HttpResponse<InputStream> response = httpClient.send(request, HttpResponse.BodyHandlers.ofInputStream());
+                if (response.statusCode() == 200) {
+                    InputStream responseInputStream = response.body();
+                    DefaultJWTProcessor<SecurityContext> jwtProcessor = new DefaultJWTProcessor<>();
+                    JWKSet jwkSet = JWKSet.load(responseInputStream);
+                    ImmutableJWKSet<SecurityContext> keySource = new ImmutableJWKSet<>(jwkSet);
+                    JWSAlgorithm expectedJWSAlg = JWSAlgorithm.RS256;
+                    JWSKeySelector<SecurityContext> keySelector = new JWSVerificationKeySelector<>(expectedJWSAlg, keySource);
+                    jwtProcessor.setJWSKeySelector(keySelector);
+                    jwtProcessorList.add(jwtProcessor);
+                }
+            } catch (URISyntaxException | InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+        }
+        return jwtProcessorList;
+    }
+
+    @Bean
+    @ConfigurationProperties( prefix = "capi.oauth2.provider.keys" )
+    public List<String> getOauth2ProviderKeys(){
+        return new ArrayList<>();
     }
 }

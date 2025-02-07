@@ -2,7 +2,6 @@ package io.surisoft.capi.utils;
 
 import com.nimbusds.jose.proc.SecurityContext;
 import com.nimbusds.jwt.proc.DefaultJWTProcessor;
-import io.surisoft.capi.configuration.CapiConfiguration;
 import io.surisoft.capi.exception.CapiUndertowException;
 import io.surisoft.capi.oidc.WebsocketAuthorization;
 import io.surisoft.capi.schema.HttpProtocol;
@@ -17,6 +16,7 @@ import io.undertow.server.handlers.ResponseCodeHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 import org.xnio.OptionMap;
 import org.xnio.Xnio;
@@ -24,19 +24,23 @@ import org.xnio.ssl.XnioSsl;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManagerFactory;
+import java.io.ByteArrayInputStream;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
 import java.security.KeyManagementException;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateException;
+import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
 @Component
+@ConditionalOnProperty(prefix = "capi.websocket", name = "enabled", havingValue = "true")
 public class WebsocketUtils {
 
     private static final Logger log = LoggerFactory.getLogger(WebsocketUtils.class);
@@ -46,6 +50,7 @@ public class WebsocketUtils {
     private final boolean capiTrustStoreEnabled;
     private final String capiTrustStorePath;
     private final String capiTrustStorePassword;
+    private final String capiTrustStoreEncoded;
     private XnioSsl xnioSsl;
 
     public WebsocketUtils(@Value("${camel.servlet.mapping.context-path}") String capiContextPath,
@@ -53,13 +58,15 @@ public class WebsocketUtils {
                           Optional<CapiUndertowTracer> capiUndertowTracer,
                           @Value("${capi.trust.store.enabled}") boolean capiTrustStoreEnabled,
                           @Value("${capi.trust.store.path}") String capiTrustStorePath,
-                          @Value("${capi.trust.store.password}") String capiTrustStorePassword) {
+                          @Value("${capi.trust.store.password}") String capiTrustStorePassword,
+                          @Value("${capi.trust.store.encoded}") String capiTrustStoreEncoded) {
         this.capiContextPath = capiContextPath;
         this.defaultJWTProcessor = defaultJWTProcessor;
         this.capiUndertowTracer = capiUndertowTracer;
         this.capiTrustStoreEnabled = capiTrustStoreEnabled;
         this.capiTrustStorePath = capiTrustStorePath;
         this.capiTrustStorePassword = capiTrustStorePassword;
+        this.capiTrustStoreEncoded = capiTrustStoreEncoded;
 
         if(capiTrustStoreEnabled) {
             this.xnioSsl = createXnioSsl();
@@ -138,8 +145,13 @@ public class WebsocketUtils {
     public XnioSsl createXnioSsl() {
         try {
             KeyStore trustStore = KeyStore.getInstance("JKS");
-            FileInputStream trustStoreFile = new FileInputStream(capiTrustStorePath);
-            trustStore.load(trustStoreFile, capiTrustStorePassword.toCharArray());
+            if(capiTrustStoreEncoded != null) {
+                InputStream trusStoreInputStream = new ByteArrayInputStream(Base64.getDecoder().decode(capiTrustStoreEncoded.getBytes()));
+                trustStore.load(trusStoreInputStream, this.capiTrustStorePassword.toCharArray());
+            } else {
+                FileInputStream trustStoreFile = new FileInputStream(capiTrustStorePath);
+                trustStore.load(trustStoreFile, capiTrustStorePassword.toCharArray());
+            }
 
             TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
             trustManagerFactory.init(trustStore);

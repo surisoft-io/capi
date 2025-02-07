@@ -2,6 +2,7 @@ package io.surisoft.capi.utils;
 
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
 import io.surisoft.capi.cache.StickySessionCacheManager;
+import io.surisoft.capi.configuration.CapiSslContextHolder;
 import io.surisoft.capi.processor.AuthorizationProcessor;
 import io.surisoft.capi.processor.HttpErrorProcessor;
 import io.surisoft.capi.schema.HttpMethod;
@@ -9,16 +10,25 @@ import io.surisoft.capi.schema.HttpProtocol;
 import io.surisoft.capi.schema.Mapping;
 import io.surisoft.capi.schema.Service;
 import io.surisoft.capi.service.CapiTrustManager;
+import io.surisoft.capi.service.ConsulNodeDiscovery;
 import io.surisoft.capi.tracer.CapiTracer;
+import okhttp3.OkHttpClient;
 import org.apache.camel.CamelContext;
 import org.apache.camel.Route;
 import org.apache.camel.component.http.HttpComponent;
 import org.apache.camel.model.RouteDefinition;
+import org.apache.hc.core5.ssl.SSLContextBuilder;
+import org.apache.hc.core5.ssl.TrustStrategy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.support.DefaultSingletonBeanRegistry;
+import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Component;
 
+import javax.net.ssl.SSLContext;
+import java.io.InputStream;
+import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -35,6 +45,7 @@ public class RouteUtils {
     private final CamelContext camelContext;
     private final Optional<AuthorizationProcessor> authorizationProcessor;
     private final boolean gatewayCorsManagementEnabled;
+    private final CapiSslContextHolder capiSslContextHolder;
 
     public RouteUtils(HttpErrorProcessor httpErrorProcessor,
                       HttpUtils httpUtils,
@@ -42,7 +53,8 @@ public class RouteUtils {
                       Optional<CapiTracer> capiTracer,
                       CamelContext camelContext,
                       Optional<AuthorizationProcessor> authorizationProcessor,
-                      @Value("${capi.gateway.cors.management.enabled}") boolean gatewayCorsManagementEnabled
+                      @Value("${capi.gateway.cors.management.enabled}") boolean gatewayCorsManagementEnabled,
+                      CapiSslContextHolder capiSslContextHolder
     ) {
         this.httpErrorProcessor = httpErrorProcessor;
         this.httpUtils = httpUtils;
@@ -51,7 +63,7 @@ public class RouteUtils {
         this.camelContext = camelContext;
         this.authorizationProcessor = authorizationProcessor;
         this.gatewayCorsManagementEnabled = gatewayCorsManagementEnabled;
-
+        this.capiSslContextHolder = capiSslContextHolder;
     }
 
     public void registerMetric(String routeId) {
@@ -81,8 +93,6 @@ public class RouteUtils {
                 .removeHeader(Constants.CAPI_URL_IN_ERROR)
                 .removeHeader(Constants.CAPI_URI_IN_ERROR)
                 .removeHeader(Constants.ROUTE_ID_HEADER)
-                //.removeHeader(Constants.REASON_CODE_HEADER)
-                .removeHeader(Constants.REASON_MESSAGE_HEADER)
                 .end();
     }
 
@@ -160,12 +170,13 @@ public class RouteUtils {
         return service.getServiceMeta().getStickySessionType().equals("cookie");
     }
 
-    public void reloadTrustStoreManager(String serviceId, boolean undeploy) {
+    public void reloadTrustStoreManager(InputStream inputStream, String capiTrustStorePassword) {
         try {
-            log.trace("Reloading Trust Store Manager after changes for API: {}", serviceId);
+            log.trace("Reloading Trust Store Manager after changes detected");
             HttpComponent httpComponent = (HttpComponent) camelContext.getComponent("https");
             CapiTrustManager capiTrustManager = (CapiTrustManager) httpComponent.getSslContextParameters().getTrustManagers().getTrustManager();
-            capiTrustManager.reloadTrustManager();
+            capiTrustManager.reloadTrustManager(inputStream, capiTrustStorePassword);
+            httpComponent.getSslContextParameters().getTrustManagers().setTrustManager(capiTrustManager);
         } catch(Exception e) {
             log.error(e.getMessage(), e);
         }

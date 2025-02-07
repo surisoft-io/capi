@@ -15,15 +15,14 @@ import java.security.cert.X509Certificate;
 public final class CapiTrustManager implements X509TrustManager {
 
     private static final Logger log = LoggerFactory.getLogger(CapiTrustManager.class);
-    private final String capiTrustStorePassword;
     private final String capiTrustStorePath;
     private X509TrustManager trustManager;
+    private KeyStore keyStore;
 
-    public CapiTrustManager(String capiTrustStorePath, String capiTrustStorePassword) throws Exception {
+    public CapiTrustManager(InputStream capiTrustStoreStream, String capiTrustStorePath, String capiTrustStorePassword) throws Exception {
         log.info("Starting CAPI Trust Store Manager");
-        this.capiTrustStorePassword = capiTrustStorePassword;
         this.capiTrustStorePath = capiTrustStorePath;
-        reloadTrustManager();
+        reloadTrustManager(capiTrustStoreStream, capiTrustStorePassword);
     }
 
     @Override
@@ -42,10 +41,14 @@ public final class CapiTrustManager implements X509TrustManager {
         return trustManager.getAcceptedIssuers();
     }
 
-    public void reloadTrustManager() throws Exception {
-        KeyStore keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
-        try (InputStream in = new FileInputStream(capiTrustStorePath)) {
-            keyStore.load(in, capiTrustStorePassword.toCharArray());
+    public void reloadTrustManager(InputStream capiTrustStoreStream, String capiTrustStorePassword) throws Exception {
+        keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
+        if(capiTrustStoreStream != null) {
+            keyStore.load(capiTrustStoreStream, capiTrustStorePassword.toCharArray());
+        } else {
+            try (InputStream in = new FileInputStream(capiTrustStorePath)) {
+                keyStore.load(in, capiTrustStorePassword.toCharArray());
+            }
         }
 
         TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
@@ -59,7 +62,7 @@ public final class CapiTrustManager implements X509TrustManager {
         }
     }
 
-    public X509TrustManager getTrustManager() {
-        return trustManager;
+    public KeyStore getKeyStore() {
+        return keyStore;
     }
 }

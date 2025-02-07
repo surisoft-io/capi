@@ -1,6 +1,5 @@
 package io.surisoft.capi.builder;
 
-import com.hazelcast.console.Echo;
 import io.surisoft.capi.schema.CapiRestError;
 import io.surisoft.capi.utils.Constants;
 import io.surisoft.capi.utils.HttpUtils;

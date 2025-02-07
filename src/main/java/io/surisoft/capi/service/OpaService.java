@@ -2,7 +2,6 @@ package io.surisoft.capi.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.surisoft.capi.schema.OpaResult;
-import okhttp3.*;
 import org.apache.camel.util.json.JsonObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -11,37 +10,52 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.time.Duration;
+
+import static java.time.temporal.ChronoUnit.SECONDS;
 
 @Component
 @ConditionalOnProperty(prefix = "capi.opa", name = "enabled", havingValue = "true")
 public class OpaService {
 
     private static final Logger log = LoggerFactory.getLogger(OpaService.class);
-    private final OkHttpClient httpClient;
-    @Value("${capi.opa.endpoint}")
-    private String opaEndpoint;
-    public static final MediaType JSON = MediaType.parse("application/json; charset=utf-8");
+    private final String opaEndpoint;
+    private final HttpClient httpClient;
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
-    public OpaService(OkHttpClient okHttpClient) {
-        this.httpClient = okHttpClient;
+    public OpaService(@Value("${capi.opa.endpoint}") String opaEndpoint) {
+        this.opaEndpoint = opaEndpoint;
+        httpClient = HttpClient.newBuilder().build();
     }
 
-    public OpaResult callOpa(String opaRego, String value, boolean isAccessToken) throws IOException {
-        ObjectMapper objectMapper = new ObjectMapper();
-        try (Response opaResponse = httpClient.newCall(buildHttpRequest(opaRego, value, isAccessToken)).execute()) {
-            assert opaResponse.body() != null;
-            return objectMapper.readValue(opaResponse.body().string(), OpaResult.class);
+    public OpaResult callOpa(String opaRego, String value, boolean isAccessToken) {
+        HttpResponse<String> httpResponse;
+        try {
+            httpResponse = httpClient.send(buildHttpRequest(opaRego, value, isAccessToken), HttpResponse.BodyHandlers.ofString());
+            if(httpResponse.statusCode() == 200) {
+                return objectMapper.readValue(httpResponse.body(), OpaResult.class);
+            }
+        } catch (InterruptedException | IOException | URISyntaxException e) {
+            return null;
         }
+        return null;
     }
 
-    private Request buildHttpRequest(String opaRego, String value, boolean isAccessToken) {
-        return new Request.Builder()
-                .url(opaEndpoint + "/v1/data/" + opaRego + "/allow")
-                .post(buildRequestBody(value, isAccessToken))
-                .build();
+    private HttpRequest buildHttpRequest(String opaRego, String value, boolean isAccessToken) throws URISyntaxException {
+        return HttpRequest.newBuilder()
+                    .uri(new URI(opaEndpoint + "/v1/data/" + opaRego + "/allow"))
+                    .setHeader("Media-Type", "application/json")
+                    .timeout(Duration.of(10, SECONDS))
+                    .POST(HttpRequest.BodyPublishers.ofString(buildRequestBody(value, isAccessToken)))
+                    .build();
     }
 
-    private RequestBody buildRequestBody(String value, boolean isAccessToken) {
+    private String buildRequestBody(String value, boolean isAccessToken) {
         JsonObject tokenObject = new JsonObject();
         if(isAccessToken) {
             tokenObject.put("token", value);
@@ -50,6 +64,6 @@ public class OpaService {
         }
         JsonObject inputObject = new JsonObject();
         inputObject.put("input", tokenObject);
-        return RequestBody.create(inputObject.toJson(), JSON);
+        return inputObject.toJson();
     }
 }

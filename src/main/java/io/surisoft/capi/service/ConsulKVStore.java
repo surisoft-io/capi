@@ -1,53 +1,81 @@
 package io.surisoft.capi.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import io.surisoft.capi.schema.SubscriptionGroup;
+import io.surisoft.capi.configuration.CapiSslContextHolder;
 import io.surisoft.capi.schema.ConsulKeyStoreEntry;
-import io.surisoft.capi.schema.Service;
 import io.surisoft.capi.utils.Constants;
-import io.surisoft.capi.utils.HttpUtils;
+import io.surisoft.capi.utils.RouteUtils;
+import org.apache.camel.CamelContext;
+import org.apache.camel.component.http.HttpComponent;
+import org.apache.hc.core5.ssl.SSLContextBuilder;
+import org.apache.hc.core5.ssl.TrustStrategy;
 import org.cache2k.Cache;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.RestTemplate;
 
-import java.util.*;
+import javax.net.ssl.SSLContext;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.security.KeyManagementException;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.cert.X509Certificate;
+import java.util.Arrays;
+import java.util.Base64;
+import java.util.List;
+import java.util.Objects;
 
 public class ConsulKVStore {
 
     private static final Logger log = LoggerFactory.getLogger(ConsulKVStore.class);
     private final RestTemplate restTemplate;
     private final Cache<String, List<String>> corsHeadersCache;
-    private final Cache<String, ConsulKeyStoreEntry> consulSubscriptionGroupCache;
-    private final Cache<String, Service> serviceCache;
-    private final HttpUtils httpUtils;
-    private final String consulHost;
+    private final Cache<String, ConsulKeyStoreEntry> consulTrustStoreCache;
+    private final RouteUtils routeUtils;
     private final String consulKvHost;
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final String consulKvToken;
+    private final String capiTrustStorePassword;
+    private ConsulNodeDiscovery consulNodeDiscovery;
+    private CapiSslContextHolder capiSslContextHolder;
+    private CamelContext camelContext;
 
-    public ConsulKVStore(RestTemplate restTemplate, Cache<String, List<String>> corsHeadersCache, Cache<String, ConsulKeyStoreEntry> consulSubscriptionGroupCache, Cache<String, Service> serviceCache, HttpUtils httpUtils, String consulHost, String consulKvHost) {
+    public ConsulKVStore(RestTemplate restTemplate, Cache<String, List<String>> corsHeadersCache, Cache<String, ConsulKeyStoreEntry> consulTrustStoreCache, RouteUtils routeUtils, String consulKvHost, String consulKvToken, String capiTrustStorePassword, ConsulNodeDiscovery consulNodeDiscovery, CapiSslContextHolder capiSslContextHolder, CamelContext camelContext) {
         this.restTemplate = restTemplate;
         this.corsHeadersCache = corsHeadersCache;
-        this.consulSubscriptionGroupCache = consulSubscriptionGroupCache;
-        this.serviceCache = serviceCache;
-        this.httpUtils = httpUtils;
-        this.consulHost = consulHost;
+        this.consulTrustStoreCache = consulTrustStoreCache;
+        this.routeUtils = routeUtils;
         this.consulKvHost = consulKvHost;
+        this.consulKvToken = consulKvToken;
+        this.capiTrustStorePassword = capiTrustStorePassword;
+        this.consulNodeDiscovery = consulNodeDiscovery;
+        this.capiSslContextHolder = capiSslContextHolder;
+        this.camelContext = camelContext;
     }
 
     public void process() {
         log.debug("Looking for key values...");
         capiCorsHeadersKVCall();
-        syncSubscriptions();
+        syncTrustStore();
     }
 
     private void capiCorsHeadersKVCall() {
         List<String> cachedValueAsList = corsHeadersCache.get("capi-cors-headers");
+        HttpEntity<Void> request;
         try {
-            ResponseEntity<ConsulKeyStoreEntry[]> consulKeyValueStoreResponse = restTemplate.getForEntity(consulHost + Constants.CONSUL_KV_STORE_API + Constants.CAPI_CORS_HEADERS_CACHE_KEY, ConsulKeyStoreEntry[].class);
+            if(consulKvToken != null) {
+                HttpHeaders headers = new HttpHeaders();
+                headers.setBearerAuth(consulKvToken);
+                request = new HttpEntity<>(headers);
+            } else {
+                request = new HttpEntity<>(null);
+            }
+            ResponseEntity<ConsulKeyStoreEntry[]> consulKeyValueStoreResponse = restTemplate.exchange(consulKvHost + Constants.CONSUL_KV_STORE_API + Constants.CAPI_CORS_HEADERS_CACHE_KEY, HttpMethod.GET, request, ConsulKeyStoreEntry[].class);
             if(consulKeyValueStoreResponse.getStatusCode().is2xxSuccessful()) {
                 ConsulKeyStoreEntry consulKeyValueStore = Objects.requireNonNull(consulKeyValueStoreResponse.getBody())[0];
                 List<String> consulDecodedValueAsList = consulKeyValueToList(consulKeyValueStore.getValue());
@@ -65,29 +93,28 @@ public class ConsulKVStore {
         }
     }
 
-    private void syncSubscriptions() {
-        ConsulKeyStoreEntry subscriptionGroupCached = consulSubscriptionGroupCache.get(Constants.CONSUL_SUBSCRIPTION_GROUP_KEY);
-        ConsulKeyStoreEntry subscriptionGroupRemote = getRemoteSubscriptions();
+    private void syncTrustStore() {
+        ConsulKeyStoreEntry cachedTrustStore = consulTrustStoreCache.get(Constants.CONSUL_CAPI_TRUST_STORE_GROUP_KEY);
+        ConsulKeyStoreEntry remoteTrustStore = getRemoteTrustStore();
         try {
             //Found remote
-            if(subscriptionGroupRemote != null ) {
-                if(subscriptionGroupCached != null) {
-                    if(subscriptionGroupRemote.getModifyIndex() != subscriptionGroupCached.getModifyIndex()) {
+            if(remoteTrustStore != null ) {
+                if(cachedTrustStore != null) {
+                    if(remoteTrustStore.getModifyIndex() != cachedTrustStore.getModifyIndex()) {
                         log.debug("The remote object is different from the local, lets update the local");
-                        processSubscriptions(subscriptionGroupRemote, true);
-                        consulSubscriptionGroupCache.put(Constants.CONSUL_SUBSCRIPTION_GROUP_KEY, subscriptionGroupRemote);
+                        processTrustStore(remoteTrustStore);
+                        consulTrustStoreCache.put(Constants.CONSUL_CAPI_TRUST_STORE_GROUP_KEY, remoteTrustStore);
                     } else {
                         log.debug("The remote object is equal to the local, nothing to do for now.");
-                        processSubscriptions(subscriptionGroupCached, false);
-                        consulSubscriptionGroupCache.put(Constants.CONSUL_SUBSCRIPTION_GROUP_KEY, subscriptionGroupCached);
+                        consulTrustStoreCache.put(Constants.CONSUL_CAPI_TRUST_STORE_GROUP_KEY, remoteTrustStore);
                     }
                 } else {
-                    log.debug("Found remote subscriptions but not local, CAPI will cache the remote for the first time.");
-                    processSubscriptions(subscriptionGroupRemote, true);
-                    consulSubscriptionGroupCache.put(Constants.CONSUL_SUBSCRIPTION_GROUP_KEY, subscriptionGroupRemote);
+                    log.debug("Found remote trust store but not local, CAPI will cache the remote for the first time.");
+                    processTrustStore(remoteTrustStore);
+                    consulTrustStoreCache.put(Constants.CONSUL_CAPI_TRUST_STORE_GROUP_KEY, remoteTrustStore);
                 }
             } else {
-                log.debug("No remote subscriptions found, so nothing to do for now.");
+                log.debug("No remote keystore found, so nothing to do for now.");
             }
         } catch(Exception e) {
             log.error(e.getMessage(), e);
@@ -95,8 +122,15 @@ public class ConsulKVStore {
     }
 
     private void updateConsulHeaderKey(String key, String value) {
-        HttpEntity<String> request = new HttpEntity<>(value);
-        restTemplate.put(consulHost + Constants.CONSUL_KV_STORE_API + key, request);
+        HttpEntity<String> request;
+        if(consulKvToken != null) {
+            HttpHeaders headers = new HttpHeaders();
+            headers.setBearerAuth(consulKvToken);
+            request = new HttpEntity<>(value, headers);
+        } else {
+            request = new HttpEntity<>(value);
+        }
+        restTemplate.put(consulKvHost + Constants.CONSUL_KV_STORE_API + key, request);
     }
 
     private List<String> consulKeyValueToList(String encodedValue) {
@@ -104,10 +138,19 @@ public class ConsulKVStore {
         return Arrays.asList(decodedValue.split(",", -1));
     }
 
-    private ConsulKeyStoreEntry getRemoteSubscriptions() {
+    private ConsulKeyStoreEntry getRemoteTrustStore() {
         if(consulKvHost != null) {
+            HttpEntity<Void> request;
             try {
-                ResponseEntity<ConsulKeyStoreEntry[]> consulKeyValueStoreResponse = restTemplate.getForEntity(consulKvHost + Constants.CONSUL_KV_STORE_API + Constants.CONSUL_SUBSCRIPTION_GROUP_KEY, ConsulKeyStoreEntry[].class);
+                if(consulKvToken != null) {
+                    HttpHeaders headers = new HttpHeaders();
+                    headers.setBearerAuth(consulKvToken);
+                    request = new HttpEntity<>(headers);
+                } else {
+                    request = new HttpEntity<>(null);
+                }
+                ResponseEntity<ConsulKeyStoreEntry[]> consulKeyValueStoreResponse = restTemplate.exchange(
+                        consulKvHost + Constants.CONSUL_KV_STORE_API + Constants.CONSUL_CAPI_TRUST_STORE_GROUP_KEY, HttpMethod.GET, request, ConsulKeyStoreEntry[].class);
                 if (consulKeyValueStoreResponse.getStatusCode().is2xxSuccessful()) {
                     return Objects.requireNonNull(consulKeyValueStoreResponse.getBody())[0];
                 }
@@ -118,32 +161,28 @@ public class ConsulKVStore {
         return null;
     }
 
-    private void processSubscriptions(ConsulKeyStoreEntry subscriptionGroupObject, boolean remoteChanges) throws JsonProcessingException {
-        SubscriptionGroup subscriptionGroup = httpUtils.consulKeyValueToList(objectMapper, subscriptionGroupObject.getValue());
-        Set<String> mergedServices = subscriptionGroupObject.getServicesProcessed();
-        if(mergedServices == null) {
-            mergedServices = new HashSet<>();
+    public InputStream consulKeyValueToInputStream(String encodedValue) throws JsonProcessingException {
+        String decodedValue = new String(Base64.getDecoder().decode(encodedValue));
+        return new ByteArrayInputStream(Base64.getDecoder().decode(decodedValue.getBytes()));
+    }
+
+    private void processTrustStore(ConsulKeyStoreEntry trustStoreConsulKeyStoreEntry) throws IOException {
+        try (InputStream trustStoreInputStream = consulKeyValueToInputStream(trustStoreConsulKeyStoreEntry.getValue())) {
+            routeUtils.reloadTrustStoreManager(trustStoreInputStream, capiTrustStorePassword);
         }
-        for(String key : subscriptionGroup.getServices().keySet()) {
-            Service service = serviceCache.get(key);
-            if(service != null) {
-                Set<String> serviceMetaGroups = httpUtils.subscriptionGroupToList(service.getServiceMeta().getSubscriptionGroup());
-                if(remoteChanges) {
-                    serviceMetaGroups.addAll(subscriptionGroup.getServices().get(key));
-                    service.getServiceMeta().setSubscriptionGroup(String.join(",", serviceMetaGroups));
-                    serviceCache.put(key, service);
-                    mergedServices.add(key);
-                } else {
-                    if(!mergedServices.contains(key)) {
-                        log.debug("Found a service for processing subscriptions");
-                        serviceMetaGroups.addAll(subscriptionGroup.getServices().get(key));
-                        service.getServiceMeta().setSubscriptionGroup(String.join(",", serviceMetaGroups));
-                        serviceCache.put(key, service);
-                        mergedServices.add(key);
-                    }
-                }
-                subscriptionGroupObject.setServicesProcessed(mergedServices);
-            }
+
+        try {
+            HttpComponent httpComponent = (HttpComponent) camelContext.getComponent("https");
+            CapiTrustManager capiTrustManager = (CapiTrustManager) httpComponent.getSslContextParameters().getTrustManagers().getTrustManager();
+            TrustStrategy trustStrategy = (X509Certificate[] chain, String authType) -> false;
+            SSLContext sslContext = SSLContextBuilder
+                        .create()
+                        .loadTrustMaterial(capiTrustManager.getKeyStore(), trustStrategy)
+                        .build();
+            capiSslContextHolder.setSslContext(sslContext);
+            consulNodeDiscovery.reloadHttpClient();
+        } catch (NoSuchAlgorithmException | KeyManagementException | KeyStoreException e) {
+            throw new RuntimeException(e);
         }
     }
 }

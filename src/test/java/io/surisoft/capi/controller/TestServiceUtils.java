@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
+import java.net.http.HttpClient;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -939,7 +940,7 @@ class TestServiceUtils {
         serviceMeta.setOpenApiEndpoint("http://localhost:" + wireMockServer.port() + "/api" );
         service.setServiceMeta(serviceMeta);
 
-        serviceUtils.checkIfOpenApiIsEnabled(service);
+        serviceUtils.checkIfOpenApiIsEnabled(service, HttpClient.newHttpClient());
         Assertions.assertNotNull(service.getOpenAPI());
         wireMockServer.stop();
     }
@@ -955,7 +956,7 @@ class TestServiceUtils {
         serviceMeta.setOpenApiEndpoint("http://localhost:" + wireMockServer.port() + "/api" );
         service.setServiceMeta(serviceMeta);
 
-        serviceUtils.checkIfOpenApiIsEnabled(service);
+        serviceUtils.checkIfOpenApiIsEnabled(service, HttpClient.newHttpClient());
         Assertions.assertNull(service.getOpenAPI());
         wireMockServer.stop();
     }

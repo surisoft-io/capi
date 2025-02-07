@@ -39,7 +39,7 @@ management:
     enabled: false
   endpoint:
     camelroutes:
-      enabled: true
+      access: read_only
   endpoints:
     web:
       base-path: /metrics/
@@ -122,9 +122,9 @@ capi:
     hosts:
       http://localhost:8500
     discovery:
-      enabled: true
+      enabled: false
       timer:
-        interval: 10000
+        interval: 40000
   # Certificate Management (Editable property)
   # If you want to enable certificate management, please provide a trust store (JKS).
   trust:
@@ -132,6 +132,7 @@ capi:
       enabled: false
       path:
       password:
+      encoded:
   version: ^project.version^
   name: ^project.name^
   spring:
@@ -166,7 +167,7 @@ capi:
     cookieName:
     provider:
       enabled: false
-      keys:
+      keys: http://localhost:8080/realms/capi/protocol/openid-connect/certs
   opa:
     enabled: false
     endpoint: http://localhost:8181

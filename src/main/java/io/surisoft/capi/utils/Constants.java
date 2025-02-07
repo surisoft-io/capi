@@ -11,8 +11,6 @@ public class Constants {
         throw new IllegalStateException("Utility class");
     }
     public static final String APPLICATION_NAME = "CAPI";
-    public static final String FAIL_HTTP_REST_ENDPOINT_OBJECT = "http:%s?throwExceptionOnFailure=false&bridgeEndpoint=true&copyHeaders=true&connectionClose=true";
-    public static final String FAIL_HTTPS_REST_ENDPOINT_OBJECT = "https:%s?throwExceptionOnFailure=false&bridgeEndpoint=true&copyHeaders=true&connectionClose=true";
     public static final String REASON_CODE_HEADER = "error-reason-code";
     public static final String REASON_MESSAGE_HEADER = "error-reason-message";
     public static final String ROUTE_ID_HEADER = "routeID";
@@ -23,7 +21,6 @@ public class Constants {
     public static final String SET_COOKIE_HEADER = "Set-Cookie";
     public static final String AUTHORIZED_PARTY = "azp";
     public static final String CAPI_INTERNAL_ERROR = "capi-internal-error";
-    public static final String CAPI_INTERNAL_ERROR_CLASS_NAME = "capi-internal-error-class-name";
     public static final String HTTP_CONNECT_TIMEOUT = "connectTimeout=";
     public static final String HTTP_SOCKET_TIMEOUT = "socketTimeout=";
     public static final String CUSTOM_HOST_HEADER = "customHostHeader=";
@@ -121,7 +118,7 @@ public class Constants {
     public static final String CLIENT_RESPONSE_CODE = "ClientResponseCode";
     public static final String CONSUL_KV_STORE_API = "/v1/kv/";
     public static final String CAPI_CORS_HEADERS_CACHE_KEY = "capi-cors-headers";
-    public static final String CONSUL_SUBSCRIPTION_GROUP_KEY = "subscription-group";
+    public static final String CONSUL_CAPI_TRUST_STORE_GROUP_KEY = "capi-trust-store";
     public static final String CAPI_SHOULD_THROTTLE = "Capi-Should-Throttle";
     public static final String CAPI_THROTTLE_DURATION_MILLI = "Capi-Throttle-Duration";
     public static final String CAPI_META_THROTTLE_DURATION = "Capi-Meta-Throttle-Duration";

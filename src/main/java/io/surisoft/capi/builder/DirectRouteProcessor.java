@@ -13,8 +13,6 @@ import org.apache.camel.model.RouteDefinition;
 import org.apache.camel.model.rest.RestDefinition;
 import org.cache2k.Cache;
 
-import java.util.Optional;
-
 public class DirectRouteProcessor extends RouteBuilder {
     private final RouteUtils routeUtils;
     private final Service service;
@@ -27,7 +25,7 @@ public class DirectRouteProcessor extends RouteBuilder {
     private HttpUtils httpUtils;
     private Cache<String, Service> serviceCache;
     private final ContentTypeValidator contentTypeValidator;
-    private final Optional<GlobalThrottleProcessor> globalThrottleProcessor;
+    private final GlobalThrottleProcessor globalThrottleProcessor;
 
     public DirectRouteProcessor(CamelContext camelContext,
                                 Service service,
@@ -37,7 +35,7 @@ public class DirectRouteProcessor extends RouteBuilder {
                                 String capiContext,
                                 String reverseProxyHost,
                                 ContentTypeValidator contentTypeValidator,
-                                Optional<GlobalThrottleProcessor> globalThrottleProcessor) {
+                                GlobalThrottleProcessor globalThrottleProcessor) {
         super(camelContext);
         this.service = service;
         this.routeUtils = routeUtils;
@@ -98,7 +96,7 @@ public class DirectRouteProcessor extends RouteBuilder {
                     .removeHeader(Constants.AUTHORIZATION_HEADER)
                     .removeHeader(Constants.CAPI_GROUP_HEADER)
                     .routeId(routeId);
-        } else if(service.getServiceMeta().isThrottle() && globalThrottleProcessor.isPresent()) {
+        } else if(service.getServiceMeta().isThrottle() && globalThrottleProcessor != null) {
             if(service.getServiceMeta().isThrottleGlobal()
                     && service.getServiceMeta().getThrottleDuration() > -1
                     && service.getServiceMeta().getThrottleTotalCalls() > -1) {
@@ -107,7 +105,7 @@ public class DirectRouteProcessor extends RouteBuilder {
                     .process(metricsProcessor)
                     .setHeader(Constants.CAPI_META_THROTTLE_DURATION, constant(service.getServiceMeta().getThrottleDuration()))
                     .setHeader(Constants.CAPI_META_THROTTLE_TOTAL_CALLS_ALLOWED, constant(service.getServiceMeta().getThrottleTotalCalls()))
-                    .process(globalThrottleProcessor.get())
+                    .process(globalThrottleProcessor)
                     .choice()
                         .when(header(Constants.CAPI_SHOULD_THROTTLE).isEqualTo("true"))
                             .delay(header(Constants.CAPI_THROTTLE_DURATION_MILLI))

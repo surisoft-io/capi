@@ -3,17 +3,18 @@ package io.surisoft.capi.utils;
 import io.surisoft.capi.schema.*;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.parser.OpenAPIV3Parser;
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.Response;
 import org.apache.camel.CamelContext;
 import org.cache2k.Cache;
-import org.cache2k.CacheEntry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -28,8 +29,7 @@ public class ServiceUtils {
     private final Optional<Map<String, SSEClient>> sseClientMap;
     private final RouteUtils routeUtils;
     private final CamelContext camelContext;
-    private final OkHttpClient okHttpClient;
-    private final WebsocketUtils websocketUtils;
+    private final Optional<WebsocketUtils> websocketUtils;
     private final String capiRunningMode;
 
     public ServiceUtils(HttpUtils httpUtils,
@@ -37,14 +37,13 @@ public class ServiceUtils {
                         Optional<Map<String, SSEClient>> sseClientMap,
                         RouteUtils routeUtils,
                         CamelContext camelContext,
-                        OkHttpClient okHttpClient, WebsocketUtils websocketUtils,
+                        Optional<WebsocketUtils> websocketUtils,
                         @Value("${capi.mode}") String capiRunningMode) {
         this.httpUtils = httpUtils;
         this.websocketClientMap = websocketClientMap;
         this.sseClientMap = sseClientMap;
         this.routeUtils = routeUtils;
         this.camelContext = camelContext;
-        this.okHttpClient = okHttpClient;
         this.websocketUtils = websocketUtils;
         this.capiRunningMode = capiRunningMode;
     }
@@ -149,8 +148,8 @@ public class ServiceUtils {
 
 
     public void removeUnusedService(CamelContext camelContext, RouteUtils routeUtils, Service service) throws Exception {
-        if(service.getServiceMeta().getType().equals("websocket") && websocketClientMap.isPresent()) {
-            websocketUtils.removeClientFromMap(websocketClientMap.get(), service);
+        if(service.getServiceMeta().getType().equals("websocket") && websocketClientMap.isPresent() && websocketUtils.isPresent()) {
+            websocketUtils.get().removeClientFromMap(websocketClientMap.get(), service);
         } else if(service.getServiceMeta().getType().equals("sse") && sseClientMap.isPresent()) {
             sseClientMap.get().remove(service.getContext());
         } else {
@@ -162,23 +161,28 @@ public class ServiceUtils {
         }
     }
 
-    public boolean checkIfOpenApiIsEnabled(Service service) {
+    public boolean checkIfOpenApiIsEnabled(Service service, HttpClient httpClient) {
         if(capiRunningMode.equalsIgnoreCase(Constants.FULL_TYPE) && service.getServiceMeta() != null && service.getServiceMeta().getOpenApiEndpoint() != null && !service.getServiceMeta().getOpenApiEndpoint().isEmpty()) {
             try {
-                Request request = new Request.Builder()
-                        .url(service.getServiceMeta().getOpenApiEndpoint())
+                HttpRequest.Builder builder = HttpRequest.newBuilder();
+                URI uri = URI.create(service.getServiceMeta().getOpenApiEndpoint());
+                if (uri.getPath() != null && uri.getPath().contains("..")) {
+                    throw new IllegalArgumentException("Path traversal detected in URI path: " + uri.getPath());
+                }
+                HttpRequest request =  builder
+                        .uri(uri)
+                        .timeout(Duration.ofMinutes(2))
                         .build();
-                Response response = okHttpClient.newCall(request).execute();
 
+                HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
                 log.trace("Calling Remote Open API Spec: {}", service.getServiceMeta().getOpenApiEndpoint());
-                if(response.isSuccessful()) {
+                if(response.statusCode() == 200) {
                     assert response.body() != null;
-                    OpenAPI openAPI = new OpenAPIV3Parser().readContents(response.body().string()).getOpenAPI();
+                    OpenAPI openAPI = new OpenAPIV3Parser().readContents(response.body()).getOpenAPI();
                     service.setOpenAPI(openAPI);
                     return true;
                 } else {
-                    log.warn("Open API specification is invalid for service {}, response code: {}", service.getId(), response.code());
-                    response.close();
+                    log.warn("Open API specification is invalid for service {}, response code: {}", service.getId(), response.statusCode());
                     return false;
                 }
             } catch(Exception e) {

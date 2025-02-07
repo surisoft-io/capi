@@ -1,24 +1,23 @@
 package io.surisoft.capi.metrics;
 
 import io.surisoft.capi.schema.AliasInfo;
+import io.surisoft.capi.service.CapiTrustManager;
 import io.surisoft.capi.utils.Constants;
-import io.surisoft.capi.utils.RouteUtils;
+import org.apache.camel.CamelContext;
+import org.apache.camel.component.http.HttpComponent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.actuate.endpoint.annotation.*;
 import org.springframework.core.io.ResourceLoader;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.stereotype.Component;
+import org.springframework.web.client.RestTemplate;
 
 import java.io.*;
 import java.security.KeyStore;
-import java.security.cert.Certificate;
-import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
-import java.util.Base64;
 import java.util.Enumeration;
 import java.util.List;
 
@@ -30,18 +29,27 @@ public class Truststore {
     private final String capiTrustStorePassword;
     private final boolean capiTrustStoreEnabled;
     private final ResourceLoader resourceLoader;
-    private final RouteUtils routeUtils;
+    private final RestTemplate restTemplate;
+    private final String consulKvHost;
+    private final String consulKvToken;
+    private final CamelContext camelContext;
 
     public Truststore(ResourceLoader resourceLoader,
-                      RouteUtils routeUtils,
+                      RestTemplate restTemplate,
                       @Value("${capi.trust.store.enabled}") boolean capiTrustStoreEnabled,
                       @Value("${capi.trust.store.path}") String capiTrustStorePath,
-                      @Value("${capi.trust.store.password}") String capiTrustStorePassword) {
+                      @Value("${capi.trust.store.password}") String capiTrustStorePassword,
+                      @Value("${capi.consul.kv.host}") String consulKvHost,
+                      @Value("${capi.consul.kv.token}") String consulKvToken,
+                      CamelContext camelContext) {
         this.resourceLoader = resourceLoader;
-        this.routeUtils = routeUtils;
+        this.restTemplate = restTemplate;
         this.capiTrustStoreEnabled = capiTrustStoreEnabled;
         this.capiTrustStorePath = capiTrustStorePath;
         this.capiTrustStorePassword = capiTrustStorePassword;
+        this.consulKvHost = consulKvHost;
+        this.consulKvToken = consulKvToken;
+        this.camelContext = camelContext;
     }
 
     @ReadOperation
@@ -55,9 +63,11 @@ public class Truststore {
             return aliasList;
         }
 
-        try(InputStream is = getInputStream()) {
-            KeyStore keystore = KeyStore.getInstance(KeyStore.getDefaultType());
-            keystore.load(is, capiTrustStorePassword.toCharArray());
+        try {
+            HttpComponent httpComponent = (HttpComponent) camelContext.getComponent("https");
+            CapiTrustManager capiTrustManager = (CapiTrustManager) httpComponent.getSslContextParameters().getTrustManagers().getTrustManager();
+
+            KeyStore keystore = capiTrustManager.getKeyStore();
             Enumeration<String> aliases = keystore.aliases();
             while(aliases.hasMoreElements()) {
                 String alias = aliases.nextElement();
@@ -94,7 +104,6 @@ public class Truststore {
             try(OutputStream storeOutputStream = getOutputStream()) {
                 keystore.store(storeOutputStream, capiTrustStorePassword.toCharArray());
             }
-            //routeUtils.reloadTrustStoreManager(apiId, true);
         } catch (Exception e) {
             log.debug(e.getMessage(), e);
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
@@ -104,47 +113,29 @@ public class Truststore {
     }
 
     @WriteOperation
-    public ResponseEntity<AliasInfo> addCertificate(String alias, String serviceId, String fileBlob) {
-        AliasInfo aliasInfo = new AliasInfo();
-
-        byte[] fileInfo = getBase64Value(fileBlob);
-
-        if(!capiTrustStoreEnabled || fileInfo == null) {
-            aliasInfo = new AliasInfo();
-            aliasInfo.setAdditionalInfo(Constants.NO_CUSTOM_TRUST_STORE_PROVIDED);
-            return new ResponseEntity<>(aliasInfo, HttpStatus.BAD_REQUEST);
-        }
-
-        try(InputStream is = getInputStream()) {
-            KeyStore keystore = KeyStore.getInstance(KeyStore.getDefaultType());
-            keystore.load(is, capiTrustStorePassword.toCharArray());
-
-            CertificateFactory certificateFactory = CertificateFactory.getInstance("X.509");
-            Certificate newTrusted = certificateFactory.generateCertificate(new ByteArrayInputStream(fileInfo));
-
-            X509Certificate x509Object = (X509Certificate) newTrusted;
-            aliasInfo.setSubjectDN(x509Object.getSubjectX500Principal().getName());
-            aliasInfo.setIssuerDN(x509Object.getIssuerX500Principal().getName());
-            aliasInfo.setAlias(alias);
-            aliasInfo.setServiceId(serviceId);
-
-            keystore.setCertificateEntry(alias, newTrusted);
-
-            try(OutputStream storeOutputStream = getOutputStream()) {
-                keystore.store(storeOutputStream, capiTrustStorePassword.toCharArray());
+    public ResponseEntity<AliasInfo> addCertificate(String fileBlob) {
+        if(capiTrustStoreEnabled && consulKvHost != null) {
+            HttpEntity<String> consulRequest;
+            if(consulKvToken != null) {
+                HttpHeaders headers = new HttpHeaders();
+                headers.setBearerAuth(consulKvToken);
+                consulRequest = new HttpEntity<>(fileBlob, headers);
+            } else {
+                consulRequest = new HttpEntity<>(fileBlob);
             }
-            routeUtils.reloadTrustStoreManager(serviceId, false);
-        } catch (Exception e) {
-            log.debug(e.getMessage(), e);
+            ResponseEntity<Void> response = restTemplate.exchange(consulKvHost + Constants.CONSUL_KV_STORE_API + Constants.CONSUL_CAPI_TRUST_STORE_GROUP_KEY, HttpMethod.PUT, consulRequest, Void.class);
+            if(response.getStatusCode().is2xxSuccessful()) {
+                return new ResponseEntity<>(HttpStatus.CREATED);
+            } else {
+                log.error("Error from Persisting Keystore in Consul: {}", response.getStatusCode());
+                return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+            }
+        } else {
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
-
         }
-        return new ResponseEntity<>(aliasInfo, HttpStatus.OK);
     }
 
-
     private InputStream getInputStream() throws IOException {
-        log.trace(capiTrustStorePath);
         if(capiTrustStorePath.startsWith("classpath")) {
             return resourceLoader.getResource(capiTrustStorePath).getInputStream();
         } else {
@@ -158,12 +149,5 @@ public class Truststore {
         } else {
             return new FileOutputStream(capiTrustStorePath);
         }
-    }
-
-    private byte[] getBase64Value(String fileBlob) {
-        if(fileBlob.startsWith("data:application/octet-stream;base64,")) {
-            return Base64.getDecoder().decode(fileBlob.replaceAll("data:application/octet-stream;base64,", ""));
-        }
-        return null;
     }
 }

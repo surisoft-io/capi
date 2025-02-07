@@ -102,7 +102,7 @@ class TestConsulNodeDiscovery {
 
     WireMockServer wireMockServer;
 
-    //@Test
+    @Test
     void testGetAllServices() throws Exception {
         WireMockRule wireMockServer = new WireMockRule(wireMockConfig().dynamicPort());
         wireMockServer.start();
@@ -115,7 +115,7 @@ class TestConsulNodeDiscovery {
         Assertions.assertNotNull(metricsProcessor);
         Assertions.assertNotNull(serviceCache);
 
-        ConsulNodeDiscovery consulNodeDiscovery = new ConsulNodeDiscovery(camelContext, serviceUtils, routeUtils, metricsProcessor, serviceCache, websocketClientMap, sseClientMap, contentTypeValidator, null);
+        ConsulNodeDiscovery consulNodeDiscovery = new ConsulNodeDiscovery(camelContext, serviceUtils, routeUtils, metricsProcessor, serviceCache, websocketClientMap, sseClientMap, contentTypeValidator, null, null);
         consulNodeDiscovery.setOpaService(opaService);
         consulNodeDiscovery.setHttpUtils(httpUtils);
         consulNodeDiscovery.setStickySessionCacheManager(stickySessionCacheManager);
@@ -125,7 +125,8 @@ class TestConsulNodeDiscovery {
         consulNodeDiscovery.processInfo();
 
         Thread.sleep(5000);
-        Assertions.assertEquals(3, routeUtils.getAllActiveRoutes(camelContext).size());
+        List<String> activeRoutes = routeUtils.getAllActiveRoutes(camelContext);
+        Assertions.assertEquals(8, activeRoutes.size());
 
         wireMockServer.stop();
     }

@@ -4,9 +4,10 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.surisoft.capi.builder.DirectRouteProcessor;
 import io.surisoft.capi.cache.StickySessionCacheManager;
+import io.surisoft.capi.configuration.CapiSslContextHolder;
 import io.surisoft.capi.processor.ContentTypeValidator;
-import io.surisoft.capi.processor.MetricsProcessor;
 import io.surisoft.capi.processor.GlobalThrottleProcessor;
+import io.surisoft.capi.processor.MetricsProcessor;
 import io.surisoft.capi.schema.*;
 import io.surisoft.capi.utils.*;
 import org.apache.camel.CamelContext;
@@ -34,7 +35,7 @@ public class ConsulNodeDiscovery {
     private final RouteUtils routeUtils;
     private final MetricsProcessor metricsProcessor;
     private StickySessionCacheManager stickySessionCacheManager;
-    private final HttpClient client;
+    private HttpClient client;
     private static final String GET_ALL_SERVICES = "/v1/catalog/services";
     private static final String GET_SERVICE_BY_NAME = "/v1/catalog/service/";
     private String capiContext;
@@ -52,7 +53,8 @@ public class ConsulNodeDiscovery {
     private String consulToken;
     private String capiRunningMode;
     private final ContentTypeValidator contentTypeValidator;
-    private final Optional<GlobalThrottleProcessor> globalThrottleProcessor;
+    private final GlobalThrottleProcessor globalThrottleProcessor;
+    private final CapiSslContextHolder capiSslContextHolder;
 
     public ConsulNodeDiscovery(CamelContext camelContext,
                                ServiceUtils serviceUtils,
@@ -62,7 +64,8 @@ public class ConsulNodeDiscovery {
                                Map<String, WebsocketClient> websocketClientMap,
                                Map<String, SSEClient> sseClientMap,
                                ContentTypeValidator contentTypeValidator,
-                               Optional<GlobalThrottleProcessor> globalThrottleProcessor) {
+                               GlobalThrottleProcessor globalThrottleProcessor,
+                               CapiSslContextHolder capiSslContextHolder) {
         this.serviceUtils = serviceUtils;
         this.routeUtils = routeUtils;
         this.camelContext = camelContext;
@@ -72,11 +75,14 @@ public class ConsulNodeDiscovery {
         this.sseClientMap = sseClientMap;
         this.contentTypeValidator = contentTypeValidator;
         this.globalThrottleProcessor = globalThrottleProcessor;
+        this.capiSslContextHolder = capiSslContextHolder;
 
-
-        client = HttpClient.newBuilder()
-                .connectTimeout(Duration.ofSeconds(10))
-                .build();
+        HttpClient.Builder httpClientBuilder = HttpClient.newBuilder();
+        if(capiSslContextHolder != null) {
+            httpClientBuilder.sslContext(capiSslContextHolder.getSslContext());
+        }
+        httpClientBuilder.connectTimeout(Duration.ofSeconds(10));
+        client = httpClientBuilder.build();
     }
 
     public void processInfo() {
@@ -184,12 +190,12 @@ public class ConsulNodeDiscovery {
                 Service incomingService = createServiceObject(serviceName, entry.getKey(), entry.getValue(), objectList);
                 Service existingService = serviceCache.peek(incomingService.getId());
                 if(existingService == null) {
-                    if(serviceUtils.checkIfOpenApiIsEnabled(incomingService)) {
+                    if(serviceUtils.checkIfOpenApiIsEnabled(incomingService, client)) {
                         createRoute(incomingService);
                     }
                 } else {
                     if(serviceUtils.updateExistingService(existingService, incomingService, serviceCache)) {
-                        if(serviceUtils.checkIfOpenApiIsEnabled(incomingService)) {
+                        if(serviceUtils.checkIfOpenApiIsEnabled(incomingService, client)) {
                             createRoute(incomingService);
                         }
                     }
@@ -277,7 +283,7 @@ public class ConsulNodeDiscovery {
     private void createRoute(Service incomingService) {
         serviceCache.put(incomingService.getId(), incomingService);
         if(incomingService.getServiceMeta().getType().equalsIgnoreCase(Constants.WEBSOCKET_TYPE) &&
-                (capiRunningMode.equalsIgnoreCase(Constants.WEBSOCKET_TYPE) || capiRunningMode.equalsIgnoreCase(Constants.FULL_TYPE))) {
+                (capiRunningMode.equalsIgnoreCase(Constants.WEBSOCKET_TYPE) || capiRunningMode.equalsIgnoreCase(Constants.FULL_TYPE)) && websocketUtils != null) {
             WebsocketClient websocketClient = websocketUtils.createWebsocketClient(incomingService);
             if(websocketClient != null && websocketClientMap != null) {
                websocketClientMap.put(websocketClient.getServiceId(), websocketClient);
@@ -289,7 +295,7 @@ public class ConsulNodeDiscovery {
                 sseClientMap.put(sseClient.getPath(), sseClient);
             }
 
-        } else if(capiRunningMode.equalsIgnoreCase(Constants.FULL_TYPE)) {
+        } else if(capiRunningMode.equalsIgnoreCase(Constants.FULL_TYPE) && (incomingService.getServiceMeta().getType() == null || incomingService.getServiceMeta().getType().equals("rest"))) {
             List<String> apiRouteIdList = routeUtils.getAllRouteIdForAGivenService(incomingService);
             for(String routeId : apiRouteIdList) {
                 Route existingRoute = camelContext.getRoute(routeId);
@@ -388,5 +394,14 @@ public class ConsulNodeDiscovery {
 
     public void setCapiRunningMode(String capiRunningMode) {
         this.capiRunningMode = capiRunningMode;
+    }
+
+    public void reloadHttpClient() {
+        HttpClient.Builder httpClientBuilder = HttpClient.newBuilder();
+        if(capiSslContextHolder != null) {
+            httpClientBuilder.sslContext(capiSslContextHolder.getSslContext());
+        }
+        httpClientBuilder.connectTimeout(Duration.ofSeconds(10));
+        client = httpClientBuilder.build();
     }
 }

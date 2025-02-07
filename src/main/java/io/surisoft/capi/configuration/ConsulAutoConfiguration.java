@@ -2,8 +2,8 @@ package io.surisoft.capi.configuration;
 
 import io.surisoft.capi.cache.StickySessionCacheManager;
 import io.surisoft.capi.processor.ContentTypeValidator;
-import io.surisoft.capi.processor.MetricsProcessor;
 import io.surisoft.capi.processor.GlobalThrottleProcessor;
+import io.surisoft.capi.processor.MetricsProcessor;
 import io.surisoft.capi.schema.SSEClient;
 import io.surisoft.capi.schema.Service;
 import io.surisoft.capi.schema.WebsocketClient;
@@ -34,7 +34,7 @@ public class ConsulAutoConfiguration {
     private final String reverseProxyHost;
     private final Map<String, WebsocketClient> websocketClientMap;
     private final Map<String, SSEClient> sseClientMap;
-    private final WebsocketUtils websocketUtils;
+    private final Optional<WebsocketUtils> websocketUtils;
     private final SSEUtils sseUtils;
     private final Optional<StickySessionCacheManager> stickySessionCacheManager;
     private final Optional<OpaService> opaService;
@@ -43,6 +43,7 @@ public class ConsulAutoConfiguration {
     private final String capiRunningMode;
     private final ContentTypeValidator contentTypeValidator;
     private final Optional<GlobalThrottleProcessor> globalThrottleProcessor;
+    private final Optional<CapiSslContextHolder> capiSslContextHolder;
 
     public ConsulAutoConfiguration(@Value("${capi.consul.hosts}") List<String> capiConsulHosts,
                                    @Value("${capi.consul.token}") String consulToken,
@@ -51,7 +52,7 @@ public class ConsulAutoConfiguration {
                                    @Value("${capi.reverse.proxy.host}") String reverseProxyHost,
                                    Map<String, WebsocketClient> websocketClientMap,
                                    Map<String, SSEClient> sseClientMap,
-                                   WebsocketUtils websocketUtils,
+                                   Optional<WebsocketUtils> websocketUtils,
                                    SSEUtils sseUtils,
                                    Optional<StickySessionCacheManager> stickySessionCacheManager,
                                    Optional<OpaService> opaService,
@@ -59,7 +60,8 @@ public class ConsulAutoConfiguration {
                                    @Value("${capi.strict}") boolean strictNamespace,
                                    @Value("${capi.mode}") String capiRunningMode,
                                    ContentTypeValidator contentTypeValidator,
-                                   Optional<GlobalThrottleProcessor> globalThrottleProcessor) {
+                                   Optional<GlobalThrottleProcessor> globalThrottleProcessor,
+                                   Optional<CapiSslContextHolder> capiSslContextHolder) {
         this.capiConsulHosts = capiConsulHosts;
         this.consulToken = consulToken;
         this.capiContext = capiContext;
@@ -76,6 +78,7 @@ public class ConsulAutoConfiguration {
         this.capiRunningMode = capiRunningMode;
         this.contentTypeValidator = contentTypeValidator;
         this.globalThrottleProcessor = globalThrottleProcessor;
+        this.capiSslContextHolder = capiSslContextHolder;
     }
 
     @Bean(name = "consulNodeDiscovery")
@@ -87,11 +90,11 @@ public class ConsulAutoConfiguration {
                                                    HttpUtils httpUtils,
                                                    Cache<String, Service> serviceCache) {
 
-        ConsulNodeDiscovery consulNodeDiscovery = new ConsulNodeDiscovery(camelContext, serviceUtils, routeUtils, metricsProcessor, serviceCache, websocketClientMap, sseClientMap, contentTypeValidator, globalThrottleProcessor);
+        ConsulNodeDiscovery consulNodeDiscovery = new ConsulNodeDiscovery(camelContext, serviceUtils, routeUtils, metricsProcessor, serviceCache, websocketClientMap, sseClientMap, contentTypeValidator, globalThrottleProcessor.orElse(null), capiSslContextHolder.orElse(null));
         consulNodeDiscovery.setHttpUtils(httpUtils);
 
         opaService.ifPresent(consulNodeDiscovery::setOpaService);
-        consulNodeDiscovery.setWebsocketUtils(websocketUtils);
+        consulNodeDiscovery.setWebsocketUtils(websocketUtils.orElse(null));
         consulNodeDiscovery.setSSEUtils(sseUtils);
         consulNodeDiscovery.setCapiContext(httpUtils.getCapiContext(capiContext));
         consulNodeDiscovery.setConsulHostList(capiConsulHosts);

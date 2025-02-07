@@ -7,7 +7,6 @@ import com.nimbusds.jose.proc.BadJOSEException;
 import com.nimbusds.jose.proc.SecurityContext;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.proc.DefaultJWTProcessor;
-import io.surisoft.capi.schema.SubscriptionGroup;
 import io.surisoft.capi.exception.AuthorizationException;
 import io.surisoft.capi.oidc.Oauth2Constants;
 import io.surisoft.capi.schema.CapiRestError;
@@ -26,7 +25,10 @@ import org.springframework.stereotype.Component;
 import java.io.IOException;
 import java.net.HttpCookie;
 import java.text.ParseException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Stream;
 
 @Component
@@ -229,24 +231,6 @@ public class HttpUtils {
         return true;
     }
 
-    public boolean isAuthorized(String accessToken) {
-        try {
-            JWTClaimsSet jwtClaimsSet = authorizeRequest(accessToken);
-            Map<String, Object> claimSetMap = jwtClaimsSet.getJSONObjectClaim(Oauth2Constants.REALMS_CLAIM);
-            if(claimSetMap != null && claimSetMap.containsKey(Oauth2Constants.ROLES_CLAIM)) {
-                List<String> roleList = (List<String>) claimSetMap.get(Oauth2Constants.ROLES_CLAIM);
-                if(roleList != null && roleList.contains("consul-admin")) {
-                    return true;
-                }
-            }
-        } catch (AuthorizationException | ParseException e) {
-            log.error(e.getMessage());
-            //General Exception
-            return false;
-        }
-        return false;
-    }
-
     private boolean isApiSubscribed(JWTClaimsSet jwtClaimsSet, String role) throws ParseException, JsonProcessingException {
         Map<String, Object> claimSetMap = jwtClaimsSet.getJSONObjectClaim(Oauth2Constants.REALMS_CLAIM);
         if(claimSetMap != null && claimSetMap.containsKey(Oauth2Constants.ROLES_CLAIM)) {
@@ -311,18 +295,5 @@ public class HttpUtils {
             throw new IllegalArgumentException("Invalid header value");
         }
         return value;
-    }
-
-    public SubscriptionGroup consulKeyValueToList(ObjectMapper mapper, String encodedValue) throws JsonProcessingException {
-        String decodedValue = new String(Base64.getDecoder().decode(encodedValue));
-        return mapper.readValue(decodedValue, SubscriptionGroup.class);
-    }
-
-    public Set<String> subscriptionGroupToList(String subscriptionGroup) {
-        return new HashSet<>(Arrays.asList(subscriptionGroup.split(",")));
-    }
-
-    public Set<String> stringToSet(String data) {
-        return new HashSet<>(Arrays.asList(data.split(",")));
     }
 }

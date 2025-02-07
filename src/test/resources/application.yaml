@@ -6,7 +6,7 @@ server:
     key-store:
     key-store-password:
 capi:
-  namespace:
+  namespace: local
   strict: false
   mode: full
   throttling:
@@ -49,13 +49,14 @@ capi:
     discovery:
       enabled: true
       timer:
-        interval: 5
+        interval: 20000
   #### If you want to enable certificate management, please provide a trust store (JKS). ####
   trust:
     store:
       enabled: false
       path:
       password:
+      encoded:
   version: ^project.version^
   name: ^project.name^
   spring:
