@@ -34,6 +34,7 @@ public class OpaService {
     }
 
     public OpaResult callOpa(String opaRego, String value, boolean isAccessToken) {
+        log.info("Calling opa: {} on  {}", opaRego, opaEndpoint);
         HttpResponse<String> httpResponse;
         try {
             httpResponse = httpClient.send(buildHttpRequest(opaRego, value, isAccessToken), HttpResponse.BodyHandlers.ofString());
