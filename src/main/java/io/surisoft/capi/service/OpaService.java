@@ -41,8 +41,10 @@ public class OpaService {
                 return objectMapper.readValue(httpResponse.body(), OpaResult.class);
             }
         } catch (InterruptedException | IOException | URISyntaxException e) {
+            log.error(e.getMessage());
             return null;
         }
+        log.error("No response from opa: {}", httpResponse.body());
         return null;
     }
 
