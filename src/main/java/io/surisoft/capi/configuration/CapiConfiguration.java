@@ -23,8 +23,6 @@ import io.surisoft.capi.service.ConsulKVStore;
 import io.surisoft.capi.service.ConsulNodeDiscovery;
 import io.surisoft.capi.utils.Constants;
 import io.surisoft.capi.utils.RouteUtils;
-import io.surisoft.scim.ScimController;
-import io.surisoft.scim.resources.ControllerConfiguration;
 import org.apache.camel.CamelContext;
 import org.apache.camel.component.http.HttpClientConfigurer;
 import org.apache.camel.component.http.HttpComponent;
@@ -63,12 +61,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.URL;
-import java.net.URLClassLoader;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.nio.file.Path;
 import java.security.KeyManagementException;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
@@ -78,7 +73,6 @@ import java.security.cert.X509Certificate;
 import java.text.ParseException;
 import java.time.Duration;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicReference;
 
 import static org.apache.camel.component.micrometer.messagehistory.MicrometerMessageHistoryNamingStrategy.MESSAGE_HISTORIES;
 import static org.apache.camel.component.micrometer.routepolicy.MicrometerRoutePolicyNamingStrategy.ROUTE_POLICIES;
@@ -94,7 +88,6 @@ public class CapiConfiguration {
     private final ResourceLoader resourceLoader;
     private CapiTrustManager capiTrustManager;
     private final List<String> allowedHeaders;
-    private final String capiScimImplementationPath;
     private final Environment environment;
     private final String sslPath;
     private final String sslPassword;
@@ -110,7 +103,6 @@ public class CapiConfiguration {
                              @Value("${capi.trust.store.password}") String capiTrustStorePassword,
                              @Value("${capi.trust.store.encoded}") String capiTrustStoreEncoded,
                              @Value("${capi.gateway.cors.management.allowed-headers}") List<String> allowedHeaders,
-                             @Value("${capi.scim.implementation.path}") String capiScimImplementationPath,
                              Environment environment,
                              @Value("${server.ssl.key-store}") String sslPath,
                              @Value("${server.ssl.key-store-password}") String sslPassword,
@@ -127,7 +119,6 @@ public class CapiConfiguration {
         this.capiTrustStorePassword = capiTrustStorePassword;
         this.capiTrustStoreEncoded = capiTrustStoreEncoded;
         this.allowedHeaders = allowedHeaders;
-        this.capiScimImplementationPath = capiScimImplementationPath;
         this.environment = environment;
         this.sslPath = sslPath;
         this.sslPassword = sslPassword;
@@ -157,38 +148,6 @@ public class CapiConfiguration {
             @Override
             public void afterApplicationStart(CamelContext camelContext) {}
         };
-    }
-
-    @Bean
-    @ConditionalOnProperty(prefix = "capi.scim", name = "enabled", havingValue = "true")
-    public ScimController scimController() {
-        AtomicReference<ScimController> scimController = new AtomicReference<>();
-        if(canCreateScimController()) {
-            log.info("CAPI SCIM, looking for a provided implementation.");
-            try {
-                URL jarUrl = Path.of(capiScimImplementationPath).toUri().toURL();
-                try (URLClassLoader urlClassLoader = new URLClassLoader(new URL[] { jarUrl }, CapiConfiguration.class.getClassLoader())) {
-                    ServiceLoader<ScimController> serviceLoader = ServiceLoader.load(ScimController.class, urlClassLoader);
-                    serviceLoader.iterator().forEachRemaining(scimControllerEntry -> {
-                        log.info("Found SCIM Implementation: {}", scimControllerEntry.getClass().getName());
-                        ControllerConfiguration scimControllerConfiguration = new ControllerConfiguration();
-                        scimControllerConfiguration.setUsername(environment.getProperty("scim-controller-auth-username"));
-                        scimControllerConfiguration.setPassword(environment.getProperty("scim-controller-auth-password"));
-                        scimControllerConfiguration.setBaseUrl(environment.getProperty("scim-controller-base-url"));
-                        scimControllerConfiguration.setBasePath(environment.getProperty("scim-controller-base-path"));
-                        scimControllerEntry.init(scimControllerConfiguration);
-                        scimController.set(scimControllerEntry);
-                    });
-                }
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        } else {
-            log.info("SCIM is enabled but scim properties were not found in the environment variables");
-            log.info("The following properties are mandatory: {}", "scim-controller-auth-username, scim-controller-auth-password, scim-controller-base-url, scim-controller-base-path");
-            return null;
-        }
-        return scimController.get();
     }
 
     @Bean
@@ -391,13 +350,6 @@ public class CapiConfiguration {
     @ConditionalOnProperty(prefix = "capi.gateway.cors", name = "management.enabled", havingValue = "true")
     public CapiCorsFilterStrategy capiCorsFilterStrategy() {
         return new CapiCorsFilterStrategy(allowedHeaders);
-    }
-
-    private boolean canCreateScimController() {
-        return environment.containsProperty("scim-controller-auth-username") &&
-                environment.containsProperty("scim-controller-auth-password") &&
-                environment.containsProperty("scim-controller-base-url") &&
-                environment.containsProperty("scim-controller-base-path");
     }
 
     @Bean
