@@ -99,7 +99,8 @@ public class WebsocketUtils {
     }
 
     public String normalizePathForForwarding(WebsocketClient websocketClient, String path) {
-        String pathWithoutCapiContext = path.replaceAll(normalizeCapiContextPath(), "");
+        //String newPath = path.replaceFirst(capiContextPath, "/");
+        String pathWithoutCapiContext = path.replaceFirst(capiContextPath, "/"); //path.replaceAll(normalizeCapiContextPath(), "");
         return pathWithoutCapiContext.replaceAll(websocketClient.getServiceId(), "");
     }
 
@@ -145,7 +146,7 @@ public class WebsocketUtils {
     public XnioSsl createXnioSsl() {
         try {
             KeyStore trustStore = KeyStore.getInstance("JKS");
-            if(capiTrustStoreEncoded != null) {
+            if(capiTrustStoreEncoded != null && !capiTrustStoreEncoded.isEmpty()) {
                 InputStream trusStoreInputStream = new ByteArrayInputStream(Base64.getDecoder().decode(capiTrustStoreEncoded.getBytes()));
                 trustStore.load(trusStoreInputStream, this.capiTrustStorePassword.toCharArray());
             } else {
