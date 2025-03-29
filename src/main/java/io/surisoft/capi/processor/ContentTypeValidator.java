@@ -14,11 +14,19 @@ public class ContentTypeValidator implements Processor {
     @Override
     public void process(Exchange exchange) throws Exception {
         String contentType = (String) exchange.getIn().getHeader(Constants.CONTENT_TYPE);
+        String accptType = (String) exchange.getIn().getHeader(Constants.ACCEPT_TYPE);
         if(contentType == null) {
             contentType = (String) exchange.getIn().getHeader("content-type");
         }
+        if(accptType == null) {
+            accptType = (String) exchange.getIn().getHeader("accept");
+        }
 
         if (contentType != null && contentType.equalsIgnoreCase("text/event-stream")) {
+            log.warn("Content type is not supported");
+            sendException(exchange);
+        }
+        if (accptType != null && accptType.equalsIgnoreCase("text/event-stream")) {
             log.warn("Content type is not supported");
             sendException(exchange);
         }

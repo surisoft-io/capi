@@ -7,6 +7,7 @@ import org.springframework.stereotype.Component;
 
 import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLHandshakeException;
+import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
 
 @Component
@@ -23,6 +24,9 @@ public class HttpErrorProcessor implements Processor {
             exchange.getIn().setHeader(Constants.REASON_CODE_HEADER, 502);
         } else if (cause instanceof UnknownHostException) {
             exchange.getIn().setHeader(Constants.REASON_MESSAGE_HEADER, "Problem with Service host");
+            exchange.getIn().setHeader(Constants.REASON_CODE_HEADER, 502);
+        } else if (cause instanceof SocketTimeoutException) {
+            exchange.getIn().setHeader(Constants.REASON_MESSAGE_HEADER, "The remote server took too long");
             exchange.getIn().setHeader(Constants.REASON_CODE_HEADER, 502);
         }
         exchange.getIn().setHeader(Constants.CAPI_URI_IN_ERROR, exchange.getIn().getHeader(Exchange.HTTP_URI).toString());

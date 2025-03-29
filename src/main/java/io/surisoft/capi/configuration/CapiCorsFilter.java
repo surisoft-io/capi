@@ -7,6 +7,7 @@ import jakarta.servlet.*;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.util.Strings;
 import org.cache2k.Cache;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,10 +20,7 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Component
 @Order(Ordered.HIGHEST_PRECEDENCE)
@@ -47,7 +45,7 @@ public class CapiCorsFilter implements Filter {
         this.accessControlAllowHeaders = accessControlAllowHeaders;
         this.serviceCache = serviceCache;
 
-        managedHeaders = new java.util.HashMap<>(Constants.CAPI_CORS_MANAGED_HEADERS);
+        managedHeaders = new HashMap<>(Constants.CAPI_CORS_MANAGED_HEADERS);
         managedHeaders.put("Access-Control-Allow-Headers", StringUtils.join(accessControlAllowHeaders, ","));
     }
 
@@ -68,7 +66,18 @@ public class CapiCorsFilter implements Filter {
             if(oauth2CookieName != null && !oauth2CookieName.isEmpty()) {
                 localAccessControlAllowHeaders.add(oauth2CookieName);
             }
-            processControlledHeaders(localAccessControlAllowHeaders, response, request, request.getHeader(Constants.ORIGIN_HEADER), true);
+            String origin = Strings.EMPTY;
+            if(request.getHeader(Constants.ORIGIN_HEADER) != null) {
+                if(!request.getHeader(Constants.ORIGIN_HEADER).equals("null")) {
+                    origin = request.getHeader(Constants.ORIGIN_HEADER);
+                }
+            }
+            if(origin.isEmpty()) {
+                if(request.getHeader("Referer") != null) {
+                    origin = request.getHeader("Referer").replaceAll("/$", "");
+                }
+            }
+            processControlledHeaders(localAccessControlAllowHeaders, response, request, origin, true);
         }
 
         if (request.getMethod().equals(Constants.OPTIONS_METHODS_VALUE)) {

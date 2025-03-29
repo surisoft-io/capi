@@ -133,6 +133,16 @@ capi:
       path:
       password:
       encoded:
+  route:
+    socket:
+      timeout: 180000
+    connection:
+      request:
+        #How long does CAPI waits to get a connection from the Connection Pool.
+        timeout: 5000
+    request:
+      # How long does CAPI waits for establishing a connection to the remote server
+      timeout: 5000
   version: ^project.version^
   name: ^project.name^
   spring:
@@ -140,7 +150,7 @@ capi:
   gateway:
     cors:
       management:
-        enabled: true
+        enabled: false
         allowed-headers:
           Origin,
           Accept,
@@ -171,11 +181,6 @@ capi:
   opa:
     enabled: false
     endpoint: http://localhost:8181
-  scim:
-    enabled: false
-    implementation:
-      path:
-
   # Time to live for Sticky Sessions feature
   sticky:
     session:

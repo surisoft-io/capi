@@ -1,10 +1,66 @@
+####################################
+### Application Server specifics ###
+####################################
 server:
+  undertow:
+    accesslog:
+      enabled: false
+      dir:
+      rotate: false
   port: 8380
   ssl:
     enabled: false
     key-store-type: PKCS12
     key-store:
     key-store-password:
+########################
+### Spring specifics ###
+########################
+spring:
+  servlet:
+    multipart:
+      max-file-size: 200MB
+      max-request-size: 200MB
+  autoconfigure:
+    exclude: org.springframework.boot.autoconfigure.security.servlet.UserDetailsServiceAutoConfiguration
+  profiles:
+    active: default
+  # CAPI Banner, keep it, it is beautiful!
+  banner:
+    location: classpath:capi.txt
+  # Allow bean definition overriding (Do not change)
+  main:
+    allow-bean-definition-overriding: true
+# Actuator Metrics Endpoint Configuration (Do not change)
+management:
+  server:
+    port: 8381
+  security:
+    enabled: false
+  endpoint:
+    camelroutes:
+      access: read_only
+  endpoints:
+    web:
+      base-path: /metrics/
+      exposure:
+        include: 'health,prometheus,routes,capi,openapi,truststore,kv,ws-routes'
+#######################
+### Camel Specifics ###
+#######################
+camel:
+  main:
+    name: capi-gateway
+    tracing: false
+  component:
+    metrics:
+      enabled: true
+  servlet:
+    mapping:
+      context-path: /capi/*
+######################
+### CAPI specifics ###
+######################
 capi:
   namespace: local
   strict: false
@@ -15,15 +71,27 @@ capi:
   #### Kafka is still experimental ####
   kafka:
     enabled: false
-    host:
+    host: localhost:9092
+    topic: capi
+    group-instance:
+    group-id:
+    ssl:
+      enabled: false
+      keystore:
+        location:
+        password:
+      truststore:
+        location:
+        password:
   reverse:
     proxy:
       enabled: false
       host: localhost:8380
-  #### If you want to disable routes from following redirects ###
+  # DO NOT CHANGE, unless you know exactly that you CAPI to follow Redirects.
+  # If you want to disable routes from following redirects
   disable:
     redirect: true
-  #### Websocket Gateway (Editable Property) ####
+  # Websocket Gateway (Editable Property)
   websocket:
     enabled: false
     server:
@@ -32,31 +100,49 @@ capi:
     enabled: false
     server:
       port: 8383
-  #### Enable Zipkin
+  # gRPC Gateway (Editable Property)
+  grpc:
+    enabled: false
+    server:
+      host: localhost
+      port: 8384
+  # Enable Traces (Editable Property)
   traces:
     enabled: false
-    endpoint: https://localhost:9411/api/v2/spans
-  #### If you want CAPI to search consul for available APIs to be deployed, enable this feature. ####
+    endpoint: http://localhost:9411
+  # Consul Integration (Editable Property)
   consul:
     kv:
       enabled: false
       host: http://localhost:8500
       token:
       timer:
-        interval: 20000
+        interval: 10000
     token:
-    hosts: http://localhost:8500
+    hosts:
+      http://localhost:8500
     discovery:
-      enabled: true
+      enabled: false
       timer:
-        interval: 20000
-  #### If you want to enable certificate management, please provide a trust store (JKS). ####
+        interval: 40000
+  # Certificate Management (Editable property)
+  # If you want to enable certificate management, please provide a trust store (JKS).
   trust:
     store:
       enabled: false
       path:
       password:
       encoded:
+  route:
+    socket:
+      timeout: 180000
+    connection:
+      request:
+        #How long does CAPI waits to get a connection from the Connection Pool.
+        timeout: 5000
+    request:
+      # How long does CAPI waits for establishing a connection to the remote server
+      timeout: 5000
   version: ^project.version^
   name: ^project.name^
   spring:
@@ -65,94 +151,39 @@ capi:
     cors:
       management:
         enabled: false
-        allowed-headers: >
-          - Origin
-          - Accept
-          - X-Requested-With
-          - Content-Type
-          - Access-Control-Request-Method
-          - Access-Control-Request-Headers
-          - x-referrer
-          - Authorization
-          - Authorization-Propagation
-          - X-Csrf-Request
-          - Cache-Control
-          - pragma
-          - gem-context
-          - x-syncmode
-          - X-Total-Count
-          - Last-Event-ID
-          - X-B3-Sampled
-          - X-B3-SpanId
-          - X-B3-TraceId
-          - X-B3-ParentSpanId
-          - X-Auth-Url-Index
-          - X-Apigateway-Impersonated-Cookie-Name
-          - Vary
-    error:
-      listener:
-        enabled: false
-        context: /capi-error
-        port: 8389
-      #### All calls in error will be bridged to this endpoint ####
-      endpoint: localhost:8380/capi-error
-      ssl: false
+        allowed-headers:
+          Origin,
+          Accept,
+          X-Requested-With,
+          Content-Type,
+          Access-Control-Request-Method,
+          Access-Control-Request-Headers,
+          x-referrer,
+          Authorization,
+          X-Csrf-Request,
+          Cache-Control,
+          pragma,
+          gem-context,
+          x-syncmode,
+          X-Total-Count,
+          Last-Event-ID,
+          X-B3-Sampled,
+          X-B3-SpanId,
+          X-B3-TraceId,
+          X-B3-ParentSpanId,
+          Vary
+  # oauth2 support to protect the routes. (Editable properties)
   oauth2:
     cookieName:
     provider:
       enabled: false
-      keys:
-        - http://localhost:8080/realms/master/protocol/openid-connect/certs
-        - http://localhost:8080/realms/master/protocol/openid-connect/certs
-      host: http://localhost:8080
-      realm: /realms/
-      clientId:
-      clientSecret:
-
+      keys: http://localhost:8080/realms/capi/protocol/openid-connect/certs
   opa:
     enabled: false
     endpoint: http://localhost:8181
-  scim:
-    enabled: false
-    implementation:
-      path:
-
-spring:
-  #### We want persistence to be optional, so we disable autoconfiguration for JPA ####
-  autoconfigure:
-    exclude: org.springframework.boot.autoconfigure.security.servlet.UserDetailsServiceAutoConfiguration
-  profiles:
-    active: default
-  banner:
-    location: classpath:capi.txt
-  main:
-    allow-bean-definition-overriding: true
-camel:
-  component:
-    metrics:
-      enabled: true
-  servlet:
-    mapping:
-      context-path: /capi/*
-  springboot:
-    name: capi-gateway
-
-#### Actuator Metrics Endpoint Configuration ####
-management:
-  security:
-    enabled: false
-  endpoint:
-    camelroutes:
-      enabled: true
-  endpoints:
-    web:
-      base-path: /analytics/
-      exposure:
-        include: 'health,prometheus'
-
-#### Time to live for Sticky Sessions feature ####
-sticky:
-  session:
-    time:
-      to:
-        live: 2
+  # Time to live for Sticky Sessions feature
+  sticky:
+    session:
+      time:
+        to:
+          live: 2

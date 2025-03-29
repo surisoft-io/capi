@@ -85,6 +85,7 @@ public class Constants {
     public static final String CAPI_WS_CLIENT_QUERY = "capi.ws.client.query";
     public static final String CAPI_WS_CLIENT_SCHEME = "capi.ws.client.scheme";
     public static final String CONTENT_TYPE = "Content-Type";
+    public static final String ACCEPT_TYPE = "Accept";
     public static final HttpString HTTP_STRING_CONTENT_TYPE = new HttpString("Content-Type");
     public static final int HTTPS_PORT = 443;
     public static final int HTTP_PORT = 80;

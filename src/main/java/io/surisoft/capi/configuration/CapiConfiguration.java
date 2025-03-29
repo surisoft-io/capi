@@ -47,7 +47,6 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.core.env.Environment;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.http.client.ClientHttpRequestFactory;
@@ -88,7 +87,6 @@ public class CapiConfiguration {
     private final ResourceLoader resourceLoader;
     private CapiTrustManager capiTrustManager;
     private final List<String> allowedHeaders;
-    private final Environment environment;
     private final String sslPath;
     private final String sslPassword;
     private final boolean capiDisableRedirect;
@@ -103,7 +101,6 @@ public class CapiConfiguration {
                              @Value("${capi.trust.store.password}") String capiTrustStorePassword,
                              @Value("${capi.trust.store.encoded}") String capiTrustStoreEncoded,
                              @Value("${capi.gateway.cors.management.allowed-headers}") List<String> allowedHeaders,
-                             Environment environment,
                              @Value("${server.ssl.key-store}") String sslPath,
                              @Value("${server.ssl.key-store-password}") String sslPassword,
                              @Value("${capi.disable.redirect}") boolean capiDisableRedirect,
@@ -119,7 +116,6 @@ public class CapiConfiguration {
         this.capiTrustStorePassword = capiTrustStorePassword;
         this.capiTrustStoreEncoded = capiTrustStoreEncoded;
         this.allowedHeaders = allowedHeaders;
-        this.environment = environment;
         this.sslPath = sslPath;
         this.sslPassword = sslPassword;
         this.capiDisableRedirect = capiDisableRedirect;

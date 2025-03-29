@@ -46,6 +46,9 @@ public class RouteUtils {
     private final Optional<AuthorizationProcessor> authorizationProcessor;
     private final boolean gatewayCorsManagementEnabled;
     private final CapiSslContextHolder capiSslContextHolder;
+    private final int socketTimeout;
+    private final int connectionRequestTimeout;
+    private final int requestTimeout;
 
     public RouteUtils(HttpErrorProcessor httpErrorProcessor,
                       HttpUtils httpUtils,
@@ -54,7 +57,10 @@ public class RouteUtils {
                       CamelContext camelContext,
                       Optional<AuthorizationProcessor> authorizationProcessor,
                       @Value("${capi.gateway.cors.management.enabled}") boolean gatewayCorsManagementEnabled,
-                      CapiSslContextHolder capiSslContextHolder
+                      CapiSslContextHolder capiSslContextHolder,
+                      @Value("${capi.route.socket.timeout}") int socketTimeout,
+                      @Value("${capi.route.connection.request.timeout}") int connectionRequestTimeout,
+                      @Value("${capi.route.request.timeout}") int requestTimeout
     ) {
         this.httpErrorProcessor = httpErrorProcessor;
         this.httpUtils = httpUtils;
@@ -64,6 +70,9 @@ public class RouteUtils {
         this.authorizationProcessor = authorizationProcessor;
         this.gatewayCorsManagementEnabled = gatewayCorsManagementEnabled;
         this.capiSslContextHolder = capiSslContextHolder;
+        this.socketTimeout = socketTimeout;
+        this.connectionRequestTimeout = connectionRequestTimeout;
+        this.requestTimeout = requestTimeout;
     }
 
     public void registerMetric(String routeId) {
@@ -96,6 +105,13 @@ public class RouteUtils {
                 .end();
     }
 
+    private String buildTimeouts() {
+        return "&" +
+                "soTimeout=" + socketTimeout + "&" +
+                "connectionRequestTimeout=" +  connectionRequestTimeout + "&" +
+                "connectTimeout=" + requestTimeout;
+    }
+
     public String[] buildEndpoints(Service service) {
         List<String> transformedEndpointList = new ArrayList<>();
         for(Mapping mapping : service.getMappingList()) {
@@ -108,9 +124,9 @@ public class RouteUtils {
 
             String endpoint;
             if(mapping.getPort() > -1) {
-                endpoint = httpProtocol.getProtocol() + "://" + mapping.getHostname() + ":" + mapping.getPort() + mapping.getRootContext() + "?bridgeEndpoint=true&throwExceptionOnFailure=false";
+                endpoint = httpProtocol.getProtocol() + "://" + mapping.getHostname() + ":" + mapping.getPort() + mapping.getRootContext() + "?bridgeEndpoint=true&throwExceptionOnFailure=false" + buildTimeouts();
             } else {
-                endpoint = httpProtocol.getProtocol() + "://" + mapping.getHostname() + mapping.getRootContext() + "?bridgeEndpoint=true&throwExceptionOnFailure=false";
+                endpoint = httpProtocol.getProtocol() + "://" + mapping.getHostname() + mapping.getRootContext() + "?bridgeEndpoint=true&throwExceptionOnFailure=false" + buildTimeouts();
             }
             if(mapping.isIngress()) {
                 endpoint = httpUtils.setIngressEndpoint(endpoint, mapping.getHostname());

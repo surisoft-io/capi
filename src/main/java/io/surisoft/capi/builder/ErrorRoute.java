@@ -49,6 +49,7 @@ public class ErrorRoute extends RouteBuilder {
                 .setHeader(Exchange.HTTP_RESPONSE_CODE, exchangeProperty("serviceResponseCode"))
                 .removeHeader(Constants.REASON_MESSAGE_HEADER)
                 .removeHeader(Constants.REASON_CODE_HEADER)
-                .routeId("error-route");
+                .routeId("error-route")
+                .end();
     }
 }

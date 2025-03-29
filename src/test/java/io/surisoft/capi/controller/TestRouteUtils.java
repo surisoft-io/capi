@@ -38,8 +38,8 @@ class TestRouteUtils {
     void testBuildEndpoints() {
 
         List<String> expectedEndpointList = new ArrayList<>();
-        expectedEndpointList.add("https://first.domain:8380/?bridgeEndpoint=true&throwExceptionOnFailure=false");
-        expectedEndpointList.add("https://second.domain:8381/?bridgeEndpoint=true&throwExceptionOnFailure=false");
+        expectedEndpointList.add("https://first.domain:8380/?bridgeEndpoint=true&throwExceptionOnFailure=false&soTimeout=180000&connectionRequestTimeout=5000&connectTimeout=5000");
+        expectedEndpointList.add("https://second.domain:8381/?bridgeEndpoint=true&throwExceptionOnFailure=false&soTimeout=180000&connectionRequestTimeout=5000&connectTimeout=5000");
 
         Service service = new Service();
         ServiceMeta serviceMeta = new ServiceMeta();
