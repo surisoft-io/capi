@@ -1,0 +1,40 @@
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  namespace: {{ .Values.capi.namespace }}
+  name: {{ .Values.capi.name }}
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ .Values.capi.name }}
+  minReplicas: 3
+  maxReplicas: 30
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 60 
+      policies:
+      - type: Pods
+        value: 1           
+        periodSeconds: 30 
+      selectPolicy: Max     
+    scaleDown:
+      stabilizationWindowSeconds: 90 
+      policies:
+      - type: Pods
+        value: 1            
+        periodSeconds: 30  
+      selectPolicy: Max
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 60
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 70      

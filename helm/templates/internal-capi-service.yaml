@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: {{ .Values.capi.namespace }}
+  labels:
+    service: {{ .Values.capi.name }}
+  name: {{ .Values.capi.name }}
+  annotations:
+spec:
+  ports:
+  - name: http
+    port: 8380
+    targetPort: 8380
+  type: ClusterIP
+  selector:
+    service: {{ .Values.capi.name }}

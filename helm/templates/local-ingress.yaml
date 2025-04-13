@@ -1,0 +1,19 @@
+{{ if .Values.capi.deployment.local }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  namespace: {{ .Values.capi.namespace }}
+  name: {{ .Values.capi.name }}-ingress
+spec:
+  rules:
+    - host: ingress.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name:  {{ .Values.capi.name }}
+                port:
+                  number: 8380
+{{ end }}

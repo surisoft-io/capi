@@ -1,0 +1,14 @@
+{{ if .Values.capi.throttling.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: hazelcast-service
+  namespace: {{ .Values.capi.namespace }}
+spec:
+  clusterIP: None
+  selector:
+    app: {{ .Values.capi.name }}
+  ports:
+    - port: 5701
+      targetPort: 5701
+{{ end }}

@@ -1,0 +1,37 @@
+{{ if .Values.capi.deployment.eks }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  namespace: {{ .Values.capi.namespace }}
+  labels:
+    service: {{ .Values.capi.name }}
+  name: {{ .Values.capi.name }}
+  annotations:
+    alb.ingress.kubernetes.io/certificate-arn: {{ .Values.ssl.certificate}}
+    alb.ingress.kubernetes.io/subnets: {{ .Values.network.subnet }}
+    alb.ingress.kubernetes.io/security-groups: {{ .Values.network.security.group }}
+    alb.ingress.kubernetes.io/scheme: {{ .Values.network.scheme }}
+    external-dns.alpha.kubernetes.io/hostname: {{ .Values.network.host }}
+    alb.ingress.kubernetes.io/load-balancer-name: {{ .Values.network.loadbalancer }}
+    alb.ingress.kubernetes.io/backend-protocol: {{ .Values.network.backend.protocol }}
+    alb.ingress.kubernetes.io/target-type: {{ .Values.network.target.ip }}
+    alb.ingress.kubernetes.io/healthcheck-path: /health
+    alb.ingress.kubernetes.io/success-codes: "200"
+    alb.ingress.kubernetes.io/listen-port: '[{"HTTPS": 443}]'
+spec:
+  ingressClassName: alb
+  tls:
+    - hosts:
+      - {{ .Values.network.host }}
+  rules:
+    - host: {{ .Values.network.host }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ .Values.capi.name }}
+                port:
+                  number: 8380
+  {{ end }}

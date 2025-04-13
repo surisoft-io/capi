@@ -1,0 +1,118 @@
+replicaCount: 2
+
+image:
+  repository: surisoft/capi:4.11.1
+  pullPolicy: Always
+  tag: ""
+
+ssl:
+  certificate:
+
+network:
+  subnet:
+  security:
+    group:
+  scheme:
+  host:
+  loadbalancer:
+  backend:
+    protocol:
+  target:
+    ip:
+
+service:
+  port: 8380
+
+management:
+  port: 8381
+capi:
+  instance:
+    name: capi
+    strict: false
+  deployment:
+    eks: false
+    local: false
+  name: capi
+  namespace: capi-default
+  throttling:
+    enabled: true
+  metrics:
+    host: capi-metrics.capi-default.svc.cluster.local
+  context:
+    path: /api/*
+  trust:
+    store:
+      enabled: false
+      path:
+      password:
+  consul:
+    hosts: http://host.docker.internal:8500
+    discovery:
+      enabled: true
+      timer:
+        interval: 30000
+  traces:
+    enabled: true
+    endpoint: http://ccaoptel01.cc.cec.eu.int:1992
+
+oauth2:
+  provider:
+    enabled: false
+    keys:
+
+opa:
+  enabled: false
+  endpoint:
+
+logging:
+  level:
+    root: INFO
+  io:
+    surisoft:
+      capi:
+        lb: TRACE
+server:
+  ssl:
+    enabled: false
+    key:
+      store:
+        type: JKS
+        path:
+        alias:
+        password:
+spring:
+  profiles:
+    active: dev
+#Default trust store and certificate for localhost
+trust:
+  store:
+    name:
+    encoded:
+certificate:
+  name:
+  encoded:
+
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+
+podAnnotations: {}
+
+podSecurityContext: {}
+
+securityContext: {}
+
+resources: {}
+
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 80
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}

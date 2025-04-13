@@ -1,0 +1,107 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: {{ .Values.capi.namespace }}
+  labels:
+    service: {{ .Values.capi.name }}
+  name: {{ .Values.capi.name }}
+spec:
+  selector:
+    matchLabels:
+      service: {{ .Values.capi.name }}
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      namespace: {{ .Values.capi.namespace }}
+      labels:
+        service: {{ .Values.capi.name }}
+    spec:
+      containers:
+      - env:
+        - name: capi.strict
+          value: {{ quote .Values.capi.instance.strict }}
+        - name: capi.namespace
+          value: {{ .Values.capi.instance.name }}
+        - name: spring.profiles.active
+          value: {{ quote .Values.spring.profiles.active }}
+        - name: capi.consul.discovery.enabled
+          value: {{ quote .Values.capi.consul.discovery.enabled }}
+        - name: spring.servlet.multipart.max-file-size
+          value: 80MB
+        - name: spring.servlet.multipart.max-request-size
+          value: 80MB
+        - name: capi.consul.discovery.timer.interval
+          value: {{ quote .Values.capi.consul.discovery.timer.interval }}
+        - name: capi.consul.hosts
+          value: {{ quote .Values.capi.consul.hosts }}
+        ## Trust Store Configuration      
+        - name: capi.trust.store.enabled
+          value: {{ quote .Values.capi.trust.store.enabled }}
+        - name: capi.trust.store.path
+          value: {{ quote .Values.capi.trust.store.path }}
+        - name: capi.trust.store.password
+          value: {{ quote .Values.capi.trust.store.password }}
+        - name: capi.oauth2.provider.enabled
+          value: {{ quote .Values.oauth2.provider.enabled }}
+        - name: capi.oauth2.provider.keys
+          value: {{ quote .Values.oauth2.provider.keys }}   
+        - name: capi.gateway.cors.management.enabled
+          value: 'true'     
+        - name: capi.opa.enabled
+          value: {{ quote .Values.opa.enabled }}
+        - name: capi.opa.endpoint
+          value: {{ quote .Values.opa.endpoint }}    
+        - name: camel.servlet.mapping.context-path
+          value: {{ quote .Values.capi.context.path }}    
+        - name: capi.traces.enabled
+          value: {{ quote .Values.capi.traces.enabled }} 
+        - name: capi.traces.endpoint
+          value: {{ quote .Values.capi.traces.endpoint }}
+        - name: server.undertow.accesslog.enabled
+          value: 'false'
+        - name: server.undertow.accesslog.rotate
+          value: 'true'
+        - name: server.undertow.accesslog.dir
+          value: accesslogs
+        - name: pod-name
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        image: {{ .Values.image.repository }}
+        imagePullPolicy: Always  
+        name: {{ quote .Values.capi.name }}
+        ports:
+        - containerPort: 8380
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "2Gi"
+            cpu: "1"
+        volumeMounts:
+        {{ if .Values.server.ssl.enabled }}
+        - name: capi-certificate
+          mountPath: /keys/capi.jks
+          subPath: capi.jks
+        {{ end }}
+        {{ if .Values.capi.trust.store.enabled }}  
+        - name: truststore
+          mountPath: /keys/truststore.jks
+          subPath: truststore.jks  
+        {{ end }}  
+      restartPolicy: Always
+      volumes:
+      {{ if .Values.server.ssl.enabled }}
+      - name: capi-certificate
+        configMap:
+          name: capi-certificate
+      {{ end }}
+      {{ if .Values.capi.trust.store.enabled }}    
+      - name: truststore
+        configMap:
+          name: truststore
+      {{ end }}    
+status: {}
+

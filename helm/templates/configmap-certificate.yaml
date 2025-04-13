@@ -1,0 +1,9 @@
+{{ if .Values.server.ssl.enabled }}
+apiVersion: v1
+binaryData:
+  {{ .Values.certificate.name }}: {{ .Values.certificate.encoded }}
+kind: ConfigMap
+metadata:
+  namespace: {{ .Values.namespace }}
+  name: capi-certificate
+{{ end }}

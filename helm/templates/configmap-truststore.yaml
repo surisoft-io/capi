@@ -1,0 +1,9 @@
+{{ if .Values.capi.trust.store.enabled }}
+apiVersion: v1
+binaryData:
+  {{ .Values.trust.store.name}}: {{ .Values.trust.store.encoded}}
+kind: ConfigMap
+metadata:
+  namespace: {{ .Values.namespace }}
+  name: truststore
+{{ end }}
