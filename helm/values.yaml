@@ -52,8 +52,8 @@ capi:
       timer:
         interval: 30000
   traces:
-    enabled: true
-    endpoint: http://ccaoptel01.cc.cec.eu.int:1992
+    enabled: false
+    endpoint:
 
 oauth2:
   provider:
