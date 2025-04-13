@@ -1,5 +1,6 @@
 package io.surisoft.capi.processor;
 
+import io.surisoft.capi.exception.AuthorizationException;
 import io.surisoft.capi.oidc.Oauth2Constants;
 import io.surisoft.capi.schema.Service;
 import io.surisoft.capi.schema.ThrottleServiceObject;
@@ -12,6 +13,7 @@ import org.cache2k.Cache;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -39,8 +41,11 @@ public class GlobalThrottleProcessor implements Processor {
                 ThrottleServiceObject throttleServiceObject = throttleCacheManager.getGlobal(service.getId());
                 if(throttleServiceObject != null) {
                     if(throttleServiceObject.getCurrentCalls() > throttleServiceObject.getTotalCallsAllowed()) {
-                        exchange.getIn().setHeader(Constants.CAPI_SHOULD_THROTTLE, true);
-                        exchange.getIn().setHeader(Constants.CAPI_THROTTLE_DURATION_MILLI, throttleServiceObject.remainingTime());
+                        //exchange.getIn().setHeader(Constants.CAPI_SHOULD_THROTTLE, true);
+                        //exchange.getIn().setHeader(Constants.CAPI_THROTTLE_DURATION_MILLI, throttleServiceObject.remainingTime());
+                        exchange.getIn().setHeader(Constants.REASON_MESSAGE_HEADER, "Too Many requests");
+                        exchange.getIn().setHeader(Constants.REASON_CODE_HEADER, HttpStatus.TOO_MANY_REQUESTS.value());
+                        exchange.setException(new AuthorizationException("Too Many requests"));
                     } else {
                         currentCall = throttleServiceObject.getCurrentCalls() + 1;
                         throttleServiceObject.setCurrentCalls(currentCall);

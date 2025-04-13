@@ -15,16 +15,16 @@ public class GlobalThrottleCacheListener implements EntryUpdatedListener<String,
     private static final Logger log = LoggerFactory.getLogger(GlobalThrottleCacheListener.class);
     @Override
     public void entryUpdated(EntryEvent<String, ThrottleServiceObject> entryEvent) {
-        log.info("Throttle cache entry updated");
+        log.info("Throttle cache entry updated: {}", entryEvent.getMember().toString());
     }
 
     @Override
     public void entryRemoved(EntryEvent<String, ThrottleServiceObject> entryEvent) {
-        log.info("Throttle cache entry removed");
+        log.info("Throttle cache entry removed: {}", entryEvent.getMember().toString());
     }
 
     @Override
     public void entryExpired(EntryEvent<String, ThrottleServiceObject> entryEvent) {
-        log.info("Throttle cache entry expired");
+        log.info("Throttle cache entry expired: {}", entryEvent.getMember().toString());
     }
 }

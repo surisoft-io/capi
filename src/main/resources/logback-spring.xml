@@ -21,6 +21,7 @@
     <springProfile name="default">
         <include resource="org/springframework/boot/logging/logback/console-appender.xml"/>
         <logger name="org.springframework" level="INFO"/>
+        <logger name="com.hazelcast" level="ERROR"/>
         <root level="info">
             <appender-ref ref="CONSOLE"/>
         </root>
@@ -31,6 +32,7 @@
     <springProfile name="dev">
         <include resource="org/springframework/boot/logging/logback/console-appender.xml"/>
         <logger name="org.springframework" level="INFO"/>
+        <logger name="com.hazelcast" level="ERROR"/>
         <root level="info">
             <appender-ref ref="FILE-ROLLING" />
             <appender-ref ref="CONSOLE"/>
@@ -42,6 +44,7 @@
     </springProfile>
     <springProfile name="prod">
         <logger name="org.springframework" level="INFO"/>
+        <logger name="com.hazelcast" level="ERROR"/>
          <logger name="org.apache.hc.client5.http.protocol.ResponseProcessCookies" level="ERROR">
             <appender-ref ref="FILE-ROLLING" />
         </logger>

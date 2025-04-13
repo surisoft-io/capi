@@ -62,6 +62,8 @@ camel:
 ### CAPI specifics ###
 ######################
 capi:
+  kube:
+    namespace:
   namespace: local
   strict: false
   mode: full
