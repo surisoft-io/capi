@@ -21,7 +21,7 @@
     <springProfile name="default">
         <include resource="org/springframework/boot/logging/logback/console-appender.xml"/>
         <logger name="org.springframework" level="INFO"/>
-        <logger name="com.hazelcast" level="ERROR"/>
+        <!--logger name="com.hazelcast" level="ERROR"/-->
         <root level="info">
             <appender-ref ref="CONSOLE"/>
         </root>

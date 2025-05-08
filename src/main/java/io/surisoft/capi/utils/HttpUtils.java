@@ -231,6 +231,21 @@ public class HttpUtils {
         return true;
     }
 
+    public boolean isAuthorized(String accessToken, String subscriptionGroup) {
+        try {
+            JWTClaimsSet jwtClaimsSet = authorizeRequest(accessToken);
+            if(subscriptionGroup == null) {
+                return false;
+            }
+            if(!isTokenInGroup(jwtClaimsSet, subscriptionGroup)) {
+                return false;
+            }
+        } catch (AuthorizationException e) {
+            return false;
+        }
+        return true;
+    }
+
     private boolean isApiSubscribed(JWTClaimsSet jwtClaimsSet, String role) throws ParseException, JsonProcessingException {
         Map<String, Object> claimSetMap = jwtClaimsSet.getJSONObjectClaim(Oauth2Constants.REALMS_CLAIM);
         if(claimSetMap != null && claimSetMap.containsKey(Oauth2Constants.ROLES_CLAIM)) {

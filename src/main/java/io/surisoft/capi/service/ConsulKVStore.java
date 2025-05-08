@@ -26,10 +26,7 @@ import java.security.KeyManagementException;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.X509Certificate;
-import java.util.Arrays;
-import java.util.Base64;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 public class ConsulKVStore {
 
@@ -44,8 +41,9 @@ public class ConsulKVStore {
     private ConsulNodeDiscovery consulNodeDiscovery;
     private CapiSslContextHolder capiSslContextHolder;
     private CamelContext camelContext;
+    private OpaService opaService;
 
-    public ConsulKVStore(RestTemplate restTemplate, Cache<String, List<String>> corsHeadersCache, Cache<String, ConsulKeyStoreEntry> consulTrustStoreCache, RouteUtils routeUtils, String consulKvHost, String consulKvToken, String capiTrustStorePassword, ConsulNodeDiscovery consulNodeDiscovery, CapiSslContextHolder capiSslContextHolder, CamelContext camelContext) {
+    public ConsulKVStore(RestTemplate restTemplate, Cache<String, List<String>> corsHeadersCache, Cache<String, ConsulKeyStoreEntry> consulTrustStoreCache, RouteUtils routeUtils, String consulKvHost, String consulKvToken, String capiTrustStorePassword, ConsulNodeDiscovery consulNodeDiscovery, CapiSslContextHolder capiSslContextHolder, CamelContext camelContext, OpaService opaService) {
         this.restTemplate = restTemplate;
         this.corsHeadersCache = corsHeadersCache;
         this.consulTrustStoreCache = consulTrustStoreCache;
@@ -56,6 +54,7 @@ public class ConsulKVStore {
         this.consulNodeDiscovery = consulNodeDiscovery;
         this.capiSslContextHolder = capiSslContextHolder;
         this.camelContext = camelContext;
+        this.opaService = opaService;
     }
 
     public void process() {
@@ -181,6 +180,9 @@ public class ConsulKVStore {
                         .build();
             capiSslContextHolder.setSslContext(sslContext);
             consulNodeDiscovery.reloadHttpClient();
+            if(opaService != null) {
+                opaService.reloadHttpClient();
+            }
         } catch (NoSuchAlgorithmException | KeyManagementException | KeyStoreException e) {
             throw new RuntimeException(e);
         }

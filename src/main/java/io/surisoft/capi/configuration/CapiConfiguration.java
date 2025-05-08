@@ -17,10 +17,7 @@ import io.surisoft.capi.schema.ConsulKeyStoreEntry;
 import io.surisoft.capi.schema.SSEClient;
 import io.surisoft.capi.schema.Service;
 import io.surisoft.capi.schema.WebsocketClient;
-import io.surisoft.capi.service.CapiTrustManager;
-import io.surisoft.capi.service.ConsistencyChecker;
-import io.surisoft.capi.service.ConsulKVStore;
-import io.surisoft.capi.service.ConsulNodeDiscovery;
+import io.surisoft.capi.service.*;
 import io.surisoft.capi.utils.Constants;
 import io.surisoft.capi.utils.RouteUtils;
 import org.apache.camel.CamelContext;
@@ -257,8 +254,9 @@ public class CapiConfiguration {
                                        RouteUtils routeUtils,
                                        ConsulNodeDiscovery consulNodeDiscovery,
                                        CapiSslContextHolder capiSslContextHolder,
-                                       CamelContext camelContext) {
-        return new ConsulKVStore(restTemplate, corsHeadersCache, consulKvStoreSubscriptionGroupCache(), routeUtils, consulKvHost, consulKvToken, capiTrustStorePassword, consulNodeDiscovery, capiSslContextHolder, camelContext);
+                                       CamelContext camelContext,
+                                       Optional<OpaService> opaService) {
+        return new ConsulKVStore(restTemplate, corsHeadersCache, consulKvStoreSubscriptionGroupCache(), routeUtils, consulKvHost, consulKvToken, capiTrustStorePassword, consulNodeDiscovery, capiSslContextHolder, camelContext, opaService.orElse(null));
     }
 
     @Bean("sslContextParameters")

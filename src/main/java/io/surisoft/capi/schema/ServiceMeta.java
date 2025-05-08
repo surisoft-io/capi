@@ -69,6 +69,11 @@ public class ServiceMeta {
     private long throttleDuration = -1;
     private boolean rateLimit;
 
+    @JsonProperty("expose-open-api-definition")
+    private boolean exposeOpenApiDefinition;
+    @JsonProperty("secure-open-api-definition")
+    private boolean secureOpenApiDefinition;
+
     public boolean isSecured() {
         return secured;
     }
@@ -288,5 +293,19 @@ public class ServiceMeta {
 
     public void setCapiNamespace(String capiNamespace) {
         this.capiNamespace = capiNamespace;
+    }
+
+    public boolean isExposeOpenApiDefinition() {
+        return exposeOpenApiDefinition;
+    }
+    public void setExposeOpenApiDefinition(boolean exposeOpenApiDefinition) {
+        this.exposeOpenApiDefinition = exposeOpenApiDefinition;
+    }
+
+    public boolean isSecureOpenApiDefinition() {
+        return secureOpenApiDefinition;
+    }
+    public void setSecureOpenApiDefinition(boolean secureOpenApiDefinition) {
+        this.secureOpenApiDefinition = secureOpenApiDefinition;
     }
 }

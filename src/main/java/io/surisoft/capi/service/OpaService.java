@@ -1,6 +1,7 @@
 package io.surisoft.capi.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.surisoft.capi.configuration.CapiSslContextHolder;
 import io.surisoft.capi.schema.OpaResult;
 import org.apache.camel.util.json.JsonObject;
 import org.slf4j.Logger;
@@ -25,12 +26,19 @@ public class OpaService {
 
     private static final Logger log = LoggerFactory.getLogger(OpaService.class);
     private final String opaEndpoint;
-    private final HttpClient httpClient;
+    private HttpClient httpClient;
     private final ObjectMapper objectMapper = new ObjectMapper();
+    private final CapiSslContextHolder capiSslContextHolder;
 
-    public OpaService(@Value("${capi.opa.endpoint}") String opaEndpoint) {
+    public OpaService(@Value("${capi.opa.endpoint}") String opaEndpoint, CapiSslContextHolder capiSslContextHolder) {
         this.opaEndpoint = opaEndpoint;
-        httpClient = HttpClient.newBuilder().build();
+        this.capiSslContextHolder = capiSslContextHolder;
+        HttpClient.Builder httpClientBuilder = HttpClient.newBuilder();
+        if(capiSslContextHolder != null) {
+            httpClientBuilder.sslContext(capiSslContextHolder.getSslContext());
+        }
+        httpClientBuilder.connectTimeout(Duration.ofSeconds(10));
+        httpClient = httpClientBuilder.build();
     }
 
     public OpaResult callOpa(String opaRego, String value, boolean isAccessToken) {
@@ -66,5 +74,14 @@ public class OpaService {
         JsonObject inputObject = new JsonObject();
         inputObject.put("input", tokenObject);
         return inputObject.toJson();
+    }
+
+    public void reloadHttpClient() {
+        HttpClient.Builder httpClientBuilder = HttpClient.newBuilder();
+        if(capiSslContextHolder != null) {
+            httpClientBuilder.sslContext(capiSslContextHolder.getSslContext());
+        }
+        httpClientBuilder.connectTimeout(Duration.ofSeconds(10));
+        httpClient = httpClientBuilder.build();
     }
 }

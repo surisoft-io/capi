@@ -88,6 +88,7 @@ public class ThrottleCacheManager {
 
         config.addMapConfig(globalMapConfig());
         config.addMapConfig(consumerMapConfig());
+        config.getJetConfig().setEnabled(true);
         return config;
     }
 
