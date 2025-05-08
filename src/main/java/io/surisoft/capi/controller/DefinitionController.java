@@ -41,7 +41,7 @@ public class DefinitionController {
         this.httpUtils = httpUtils;
     }
 
-    @GetMapping("/{serviceId}")
+    @GetMapping(path= "/{serviceId}", produces="application/json")
     public ResponseEntity<JsonObject> getServiceOpenApi(@PathVariable String serviceId, HttpServletRequest request) {
         if(serviceCache.containsKey(serviceId)) {
             try {
@@ -53,16 +53,12 @@ public class DefinitionController {
                             if(accessToken != null) {
                                 if(httpUtils.isAuthorized(accessToken, service.getServiceMeta().getSubscriptionGroup())) {
                                     JsonObject responseObject = getDefinition(service);
-                                    ResponseEntity<JsonObject> responseEntity = new ResponseEntity<>(responseObject, HttpStatus.OK);
-                                    responseEntity.getHeaders().add("Content-Type", "application/json");
-                                    return responseEntity;
+                                    return new ResponseEntity<>(responseObject, HttpStatus.OK);
                                 }
                             }
                         } else {
                             JsonObject responseObject = getDefinition(service);
-                            ResponseEntity<JsonObject> responseEntity = new ResponseEntity<>(responseObject, HttpStatus.OK);
-                            responseEntity.getHeaders().add("Content-Type", "application/json");
-                            return responseEntity;
+                            return new ResponseEntity<>(responseObject, HttpStatus.OK);
                         }
                     }
                 }
