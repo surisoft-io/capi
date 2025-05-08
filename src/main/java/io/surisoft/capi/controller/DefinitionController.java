@@ -53,12 +53,16 @@ public class DefinitionController {
                             if(accessToken != null) {
                                 if(httpUtils.isAuthorized(accessToken, service.getServiceMeta().getSubscriptionGroup())) {
                                     JsonObject responseObject = getDefinition(service);
-                                    return new ResponseEntity<>(responseObject, HttpStatus.OK);
+                                    ResponseEntity<JsonObject> responseEntity = new ResponseEntity<>(responseObject, HttpStatus.OK);
+                                    responseEntity.getHeaders().add("Content-Type", "application/json");
+                                    return responseEntity;
                                 }
                             }
                         } else {
                             JsonObject responseObject = getDefinition(service);
-                            return new ResponseEntity<>(responseObject, HttpStatus.OK);
+                            ResponseEntity<JsonObject> responseEntity = new ResponseEntity<>(responseObject, HttpStatus.OK);
+                            responseEntity.getHeaders().add("Content-Type", "application/json");
+                            return responseEntity;
                         }
                     }
                 }
