@@ -9,8 +9,9 @@ ARG JAR_FILE=target/capi-${CAPI_VERSION}.jar
 COPY ${JAR_FILE} /capi/app.jar
 
 ENTRYPOINT exec java -XX:InitialHeapSize=512m \
-                     -XX:MaxHeapSize=1g \
                      -XX:+UseG1GC \
+                     -XX:MaxGCPauseMillis=100 \
+                     -XX:+ParallelRefProcEnabled \
                      -XX:+HeapDumpOnOutOfMemoryError \
                      -XX:HeapDumpPath=/capi/logs/heap-dump.hprof \
                      -jar /capi/app.jar
