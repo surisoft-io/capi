@@ -24,7 +24,7 @@
     <io.swagger.parser.v3.version>2.1.25</io.swagger.parser.v3.version>
 
     <jackson-dataformat-xml.version>2.17.0</jackson-dataformat-xml.version>
-    <spring.kafka.version>3.2.3</spring.kafka.version>
+    <spring.kafka.version>3.3.6</spring.kafka.version>
     <camel-zipkin-starter.version>3.22.1</camel-zipkin-starter.version>
 
     <wiremock.version>3.0.1</wiremock.version>
