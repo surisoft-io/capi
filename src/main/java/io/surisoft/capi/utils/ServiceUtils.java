@@ -93,7 +93,12 @@ public class ServiceUtils {
                                       Service incomingService,
                                       Cache<String, Service> serviceCache) {
 
-        if(!Objects.equals(existingService.getServiceIdConsul(), incomingService.getServiceIdConsul())) {
+        if(!Objects.equals(existingService.getModifyIndex(), incomingService.getModifyIndex())) {
+            redeployService(incomingService, existingService, serviceCache);
+            serviceCache.remove(existingService.getId());
+            return true;
+        }
+        /*if(!Objects.equals(existingService.getServiceIdConsul(), incomingService.getServiceIdConsul())) {
             redeployService(incomingService, existingService, serviceCache);
             serviceCache.remove(existingService.getId());
             return true;
@@ -101,7 +106,7 @@ public class ServiceUtils {
             redeployService(incomingService, existingService, serviceCache);
             serviceCache.remove(existingService.getId());
             return true;
-        } else {
+        }*/ else {
             log.trace("No changes detected for Service: {}.", existingService.getId());
             return false;
         }

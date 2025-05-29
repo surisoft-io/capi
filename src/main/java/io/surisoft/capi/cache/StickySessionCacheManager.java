@@ -49,7 +49,7 @@ public class StickySessionCacheManager {
         if(notifyOtherInstances) {
             CapiEvent capiEvent = new CapiEvent();
             capiEvent.setId(UUID.randomUUID().toString());
-            capiEvent.setInstanceId(capiInstance);
+            //capiEvent.setInstanceId(capiInstance);
             capiEvent.setKey(stickySession.getParamName());
             capiEvent.setValue(stickySession.getParamValue());
             capiEvent.setNodeIndex(stickySession.getNodeIndex());

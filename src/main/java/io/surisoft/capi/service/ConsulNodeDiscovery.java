@@ -6,7 +6,7 @@ import io.surisoft.capi.builder.DirectRouteProcessor;
 import io.surisoft.capi.cache.StickySessionCacheManager;
 import io.surisoft.capi.configuration.CapiSslContextHolder;
 import io.surisoft.capi.processor.ContentTypeValidator;
-import io.surisoft.capi.processor.GlobalThrottleProcessor;
+import io.surisoft.capi.processor.ThrottleProcessor;
 import io.surisoft.capi.processor.MetricsProcessor;
 import io.surisoft.capi.schema.*;
 import io.surisoft.capi.utils.*;
@@ -53,7 +53,7 @@ public class ConsulNodeDiscovery {
     private String consulToken;
     private String capiRunningMode;
     private final ContentTypeValidator contentTypeValidator;
-    private final GlobalThrottleProcessor globalThrottleProcessor;
+    private final ThrottleProcessor throttleProcessor;
     private final CapiSslContextHolder capiSslContextHolder;
 
     public ConsulNodeDiscovery(CamelContext camelContext,
@@ -64,7 +64,7 @@ public class ConsulNodeDiscovery {
                                Map<String, WebsocketClient> websocketClientMap,
                                Map<String, SSEClient> sseClientMap,
                                ContentTypeValidator contentTypeValidator,
-                               GlobalThrottleProcessor globalThrottleProcessor,
+                               ThrottleProcessor throttleProcessor,
                                CapiSslContextHolder capiSslContextHolder) {
         this.serviceUtils = serviceUtils;
         this.routeUtils = routeUtils;
@@ -74,7 +74,7 @@ public class ConsulNodeDiscovery {
         this.websocketClientMap = websocketClientMap;
         this.sseClientMap = sseClientMap;
         this.contentTypeValidator = contentTypeValidator;
-        this.globalThrottleProcessor = globalThrottleProcessor;
+        this.throttleProcessor = throttleProcessor;
         this.capiSslContextHolder = capiSslContextHolder;
 
         HttpClient.Builder httpClientBuilder = HttpClient.newBuilder();
@@ -108,7 +108,7 @@ public class ConsulNodeDiscovery {
         try {
             for(CacheEntry<String, Service> stringServiceCacheEntry : serviceCache.entries()) {
                 if(!servicesOnConsul.containsKey(stringServiceCacheEntry.getKey())) {
-                    log.debug("This service does not on Consul: {}, and will be removed.", stringServiceCacheEntry.getKey());
+                    log.debug("This service is not on Consul: {}, and will be removed.", stringServiceCacheEntry.getKey());
                     serviceUtils.removeUnusedService(camelContext, routeUtils, Objects.requireNonNull(serviceCache.get(stringServiceCacheEntry.getKey())));
                     serviceCache.remove(stringServiceCacheEntry.getKey());
                 }
@@ -246,13 +246,13 @@ public class ConsulNodeDiscovery {
         return null;
     }
 
-    public String getServiceIdConsul(String key, List<ConsulObject> consulObject) {
+    public int getModifyIndex(String key, List<ConsulObject> consulObject) {
         for(ConsulObject entry : consulObject) {
             if(Objects.equals(getServiceNodeGroup(entry), key)) {
-                return entry.getServiceId();
+                return entry.getModifyIndex();
             }
         }
-        return null;
+        return -1;
     }
 
     private Service createServiceObject(String serviceName, String key, Set<Mapping> mappingList, List<ConsulObject> consulResponse) {
@@ -272,43 +272,47 @@ public class ConsulNodeDiscovery {
 
         incomingService.setMappingList(mappingList);
         incomingService.setServiceMeta(getServiceMeta(key, consulResponse));
-        incomingService.setServiceIdConsul(getServiceIdConsul(key, consulResponse));
+        //incomingService.setServiceIdConsul(getServiceIdConsul(key, consulResponse));
         incomingService.setRoundRobinEnabled(incomingService.getMappingList().size() != 1 && !incomingService.getServiceMeta().isTenantAware() && !incomingService.getServiceMeta().isStickySession());
         incomingService.setFailOverEnabled(incomingService.getMappingList().size() != 1 && !incomingService.getServiceMeta().isTenantAware() && !incomingService.getServiceMeta().isStickySession());
+
+        incomingService.setModifyIndex(getModifyIndex(key, consulResponse));
 
         serviceUtils.validateServiceType(incomingService);
         return incomingService;
     }
 
     private void createRoute(Service incomingService) {
-        serviceCache.put(incomingService.getId(), incomingService);
-        if(incomingService.getServiceMeta().getType().equalsIgnoreCase(Constants.WEBSOCKET_TYPE) &&
-                (capiRunningMode.equalsIgnoreCase(Constants.WEBSOCKET_TYPE) || capiRunningMode.equalsIgnoreCase(Constants.FULL_TYPE)) && websocketUtils != null) {
-            WebsocketClient websocketClient = websocketUtils.createWebsocketClient(incomingService);
-            if(websocketClient != null && websocketClientMap != null) {
-               websocketClientMap.put(websocketClient.getServiceId(), websocketClient);
-            }
-        } else if(incomingService.getServiceMeta().getType().equalsIgnoreCase(Constants.SSE_TYPE) &&
-                ((capiRunningMode.equalsIgnoreCase(Constants.SSE_TYPE) || capiRunningMode.equalsIgnoreCase(Constants.FULL_TYPE)))) {
-            SSEClient sseClient = sseUtils.createSSEClient(incomingService);
-            if(sseClient != null && sseClientMap != null) {
-                sseClientMap.put(sseClient.getPath(), sseClient);
-            }
+        if(incomingService.getServiceMeta().getState() == null || incomingService.getServiceMeta().getState().equals(State.PUBLISHED)) {
+            serviceCache.put(incomingService.getId(), incomingService);
+            if(incomingService.getServiceMeta().getType().equalsIgnoreCase(Constants.WEBSOCKET_TYPE) &&
+                    (capiRunningMode.equalsIgnoreCase(Constants.WEBSOCKET_TYPE) || capiRunningMode.equalsIgnoreCase(Constants.FULL_TYPE)) && websocketUtils != null) {
+                WebsocketClient websocketClient = websocketUtils.createWebsocketClient(incomingService);
+                if(websocketClient != null && websocketClientMap != null) {
+                    websocketClientMap.put(websocketClient.getServiceId(), websocketClient);
+                }
+            } else if(incomingService.getServiceMeta().getType().equalsIgnoreCase(Constants.SSE_TYPE) &&
+                    ((capiRunningMode.equalsIgnoreCase(Constants.SSE_TYPE) || capiRunningMode.equalsIgnoreCase(Constants.FULL_TYPE)))) {
+                SSEClient sseClient = sseUtils.createSSEClient(incomingService);
+                if(sseClient != null && sseClientMap != null) {
+                    sseClientMap.put(sseClient.getPath(), sseClient);
+                }
 
-        } else if(capiRunningMode.equalsIgnoreCase(Constants.FULL_TYPE) && (incomingService.getServiceMeta().getType() == null || incomingService.getServiceMeta().getType().equals("rest"))) {
-            List<String> apiRouteIdList = routeUtils.getAllRouteIdForAGivenService(incomingService);
-            for(String routeId : apiRouteIdList) {
-                Route existingRoute = camelContext.getRoute(routeId);
-                if(existingRoute == null) {
-                    try {
-                        DirectRouteProcessor directRouteProcessor = new DirectRouteProcessor(camelContext, incomingService, routeUtils, metricsProcessor, routeId, capiContext, reverseProxyHost, contentTypeValidator, globalThrottleProcessor);
-                        directRouteProcessor.setHttpUtils(httpUtils);
-                        directRouteProcessor.setOpaService(opaService);
-                        directRouteProcessor.setStickySessionCacheManager(stickySessionCacheManager);
-                        directRouteProcessor.setServiceCache(serviceCache);
-                        camelContext.addRoutes(directRouteProcessor);
-                    } catch (Exception e) {
-                        log.error(e.getMessage(), e);
+            } else if(capiRunningMode.equalsIgnoreCase(Constants.FULL_TYPE) && (incomingService.getServiceMeta().getType() == null || incomingService.getServiceMeta().getType().equals("rest"))) {
+                List<String> apiRouteIdList = routeUtils.getAllRouteIdForAGivenService(incomingService);
+                for(String routeId : apiRouteIdList) {
+                    Route existingRoute = camelContext.getRoute(routeId);
+                    if(existingRoute == null) {
+                        try {
+                            DirectRouteProcessor directRouteProcessor = new DirectRouteProcessor(camelContext, incomingService, routeUtils, metricsProcessor, routeId, capiContext, reverseProxyHost, contentTypeValidator, throttleProcessor);
+                            directRouteProcessor.setHttpUtils(httpUtils);
+                            directRouteProcessor.setOpaService(opaService);
+                            directRouteProcessor.setStickySessionCacheManager(stickySessionCacheManager);
+                            directRouteProcessor.setServiceCache(serviceCache);
+                            camelContext.addRoutes(directRouteProcessor);
+                        } catch (Exception e) {
+                            log.error(e.getMessage(), e);
+                        }
                     }
                 }
             }

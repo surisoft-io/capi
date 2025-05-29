@@ -73,6 +73,8 @@ public class ServiceMeta {
     private boolean exposeOpenApiDefinition;
     @JsonProperty("secure-open-api-definition")
     private boolean secureOpenApiDefinition;
+    @JsonProperty("state")
+    private State state;
 
     public boolean isSecured() {
         return secured;
@@ -298,6 +300,7 @@ public class ServiceMeta {
     public boolean isExposeOpenApiDefinition() {
         return exposeOpenApiDefinition;
     }
+
     public void setExposeOpenApiDefinition(boolean exposeOpenApiDefinition) {
         this.exposeOpenApiDefinition = exposeOpenApiDefinition;
     }
@@ -305,7 +308,16 @@ public class ServiceMeta {
     public boolean isSecureOpenApiDefinition() {
         return secureOpenApiDefinition;
     }
+
     public void setSecureOpenApiDefinition(boolean secureOpenApiDefinition) {
         this.secureOpenApiDefinition = secureOpenApiDefinition;
+    }
+
+    public State getState() {
+        return state;
+    }
+
+    public void setState(State state) {
+        this.state = state;
     }
 }

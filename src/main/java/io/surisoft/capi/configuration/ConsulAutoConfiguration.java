@@ -2,7 +2,7 @@ package io.surisoft.capi.configuration;
 
 import io.surisoft.capi.cache.StickySessionCacheManager;
 import io.surisoft.capi.processor.ContentTypeValidator;
-import io.surisoft.capi.processor.GlobalThrottleProcessor;
+import io.surisoft.capi.processor.ThrottleProcessor;
 import io.surisoft.capi.processor.MetricsProcessor;
 import io.surisoft.capi.schema.SSEClient;
 import io.surisoft.capi.schema.Service;
@@ -42,7 +42,7 @@ public class ConsulAutoConfiguration {
     private final boolean strictNamespace;
     private final String capiRunningMode;
     private final ContentTypeValidator contentTypeValidator;
-    private final Optional<GlobalThrottleProcessor> globalThrottleProcessor;
+    private final Optional<ThrottleProcessor> globalThrottleProcessor;
     private final Optional<CapiSslContextHolder> capiSslContextHolder;
 
     public ConsulAutoConfiguration(@Value("${capi.consul.hosts}") List<String> capiConsulHosts,
@@ -60,7 +60,7 @@ public class ConsulAutoConfiguration {
                                    @Value("${capi.strict}") boolean strictNamespace,
                                    @Value("${capi.mode}") String capiRunningMode,
                                    ContentTypeValidator contentTypeValidator,
-                                   Optional<GlobalThrottleProcessor> globalThrottleProcessor,
+                                   Optional<ThrottleProcessor> globalThrottleProcessor,
                                    Optional<CapiSslContextHolder> capiSslContextHolder) {
         this.capiConsulHosts = capiConsulHosts;
         this.consulToken = consulToken;

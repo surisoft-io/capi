@@ -1,5 +1,7 @@
 package io.surisoft.capi.processor;
 
+import com.nimbusds.jwt.JWTClaimsSet;
+import com.nimbusds.jwt.SignedJWT;
 import io.surisoft.capi.exception.AuthorizationException;
 import io.surisoft.capi.oidc.Oauth2Constants;
 import io.surisoft.capi.schema.Service;
@@ -15,6 +17,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 
+import java.text.ParseException;
 import java.util.Optional;
 
 @Component
@@ -46,10 +49,11 @@ public class AuthorizationProcessor implements Processor {
                     sendException(exchange, "Not subscribed");
                 }
                 propagateAuthorization(exchange, accessToken);
+                prepareForThrottleIfNeeded(service, accessToken, exchange);
             } else {
                 sendException(exchange, "No authorization header provided");
             }
-        } catch (AuthorizationException e) {
+        } catch (AuthorizationException | ParseException e) {
             sendException(exchange, e.getMessage());
         }
     }
@@ -63,6 +67,19 @@ public class AuthorizationProcessor implements Processor {
     private void propagateAuthorization(Exchange exchange, String accessToken) {
         if(accessToken != null) {
             exchange.getIn().setHeader(Constants.AUTHORIZATION_HEADER, Constants.BEARER + accessToken.replaceAll("(\r\n|\n)", ""));
+        }
+    }
+
+    private void prepareForThrottleIfNeeded(Service service, String accessToken, Exchange exchange) throws ParseException {
+        if(service.getServiceMeta().isThrottle() && !service.getServiceMeta().isThrottleGlobal()) {
+            SignedJWT signedJWT = SignedJWT.parse(accessToken);
+            JWTClaimsSet claimsSet = signedJWT.getJWTClaimsSet();
+            long throttleTotalCalls = claimsSet.getLongClaim("throttleTotalCalls");
+            long throttleDuration = claimsSet.getLongClaim("throttleDuration");
+            String throttleConsumerKey = claimsSet.getStringClaim("azp");
+            exchange.getIn().setHeader(Constants.CAPI_META_THROTTLE_CONSUMER_KEY, throttleConsumerKey);
+            exchange.getIn().setHeader(Constants.CAPI_META_THROTTLE_DURATION, throttleDuration);
+            exchange.getIn().setHeader(Constants.CAPI_META_THROTTLE_TOTAL_CALLS_ALLOWED, throttleTotalCalls);
         }
     }
 }

@@ -102,12 +102,6 @@ capi:
     enabled: false
     server:
       port: 8383
-  # gRPC Gateway (Editable Property)
-  grpc:
-    enabled: false
-    server:
-      host: localhost
-      port: 8384
   # Enable Traces (Editable Property)
   traces:
     enabled: false
@@ -124,7 +118,7 @@ capi:
     hosts:
       http://localhost:8500
     discovery:
-      enabled: false
+      enabled: true
       timer:
         interval: 40000
   # Certificate Management (Editable property)
@@ -189,3 +183,9 @@ capi:
       time:
         to:
           live: 2
+logging:
+  level:
+    com:
+      hazelcast:
+        system:
+          logo: OFF

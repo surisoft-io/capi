@@ -7,24 +7,24 @@
   <groupId>io.surisoft.capi</groupId>
   <artifactId>capi</artifactId>
   <packaging>jar</packaging>
-  <version>4.11.2</version>
+  <version>4.11.3</version>
   <description>${spring.boot-version}</description>
   <name>CAPI Gateway</name>
 
   <properties>
     <org.apache.camel.springboot-version>4.11.0</org.apache.camel.springboot-version>
-    <spring.boot-version>3.4.4</spring.boot-version>
+    <spring.boot-version>3.4.6</spring.boot-version>
 
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <spring-cloud-sleuth-version>3.1.11</spring-cloud-sleuth-version>
-    <nimbus-jose-jwt-version>10.0.1</nimbus-jose-jwt-version>
-    <io.micrometer-version>1.14.3</io.micrometer-version>
+    <nimbus-jose-jwt-version>10.3</nimbus-jose-jwt-version>
+    <io.micrometer-version>1.15.0</io.micrometer-version>
     <cache2k-version>2.6.1.Final</cache2k-version>
-    <io.swagger.parser.v3.version>2.1.25</io.swagger.parser.v3.version>
+    <io.swagger.parser.v3.version>2.1.27</io.swagger.parser.v3.version>
 
-    <jackson-dataformat-xml.version>2.17.0</jackson-dataformat-xml.version>
-    <spring.kafka.version>3.2.3</spring.kafka.version>
+    <jackson-dataformat-xml.version>2.19.0</jackson-dataformat-xml.version>
+    <spring.kafka.version>3.3.6</spring.kafka.version>
     <camel-zipkin-starter.version>3.22.1</camel-zipkin-starter.version>
 
     <wiremock.version>3.0.1</wiremock.version>
@@ -36,16 +36,12 @@
     <sonar.java.coveragePlugin>jacoco</sonar.java.coveragePlugin>
     <sonar.dynamicAnalysis>reuseReports</sonar.dynamicAnalysis>
     <sonar.jacoco.reportPath>${project.basedir}/../target/jacoco.exec</sonar.jacoco.reportPath>
-
-    <grpc.api.version>1.58.0</grpc.api.version>
-    <com.google.api.grpc.version>2.17.0</com.google.api.grpc.version>
-
   </properties>
 
   <parent>
     <groupId>org.springframework.boot</groupId>
     <artifactId>spring-boot-starter-parent</artifactId>
-    <version>3.4.4</version>
+    <version>3.4.6</version>
     <relativePath/>
   </parent>
 
@@ -239,15 +235,6 @@
       <artifactId>camel-stream-starter</artifactId>
       <version>${org.apache.camel.springboot-version}</version>
     </dependency>
-    <dependency>
-      <groupId>com.hazelcast</groupId>
-      <artifactId>hazelcast</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>com.hazelcast</groupId>
-      <artifactId>hazelcast-spring</artifactId>
-      <version>5.5.0</version>
-    </dependency>
   </dependencies>
 <build>
   <resources>
@@ -338,11 +325,4 @@
     </plugin>
 </plugins>
 </build>
-  <repositories>
-    <repository>
-      <id>github</id>
-      <name>GitHub CAPI Apache Maven Packages</name>
-      <url>https://maven.pkg.github.com/surisoft-io/scim-controller</url>
-    </repository>
-  </repositories>
 </project>

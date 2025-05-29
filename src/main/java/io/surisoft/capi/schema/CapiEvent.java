@@ -1,6 +1,6 @@
 package io.surisoft.capi.schema;
 
-import io.surisoft.capi.kafka.CapiInstance;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.io.Serializable;
 
@@ -10,8 +10,10 @@ public class CapiEvent implements Serializable {
     private String key;
     private String value;
     private int nodeIndex;
+    private String instanceId;
 
-    private CapiInstance instanceId;
+    @JsonProperty("throttleServiceObject")
+    private ThrottleServiceObject throttleServiceObject;
 
     public String getKey() {
         return key;
@@ -45,11 +47,11 @@ public class CapiEvent implements Serializable {
         this.value = value;
     }
 
-    public CapiInstance getInstanceId() {
+    public String getInstanceId() {
         return instanceId;
     }
 
-    public void setInstanceId(CapiInstance instanceId) {
+    public void setInstanceId(String instanceId) {
         this.instanceId = instanceId;
     }
 
@@ -59,5 +61,13 @@ public class CapiEvent implements Serializable {
 
     public void setNodeIndex(int nodeIndex) {
         this.nodeIndex = nodeIndex;
+    }
+
+    public ThrottleServiceObject getThrottleServiceObject() {
+        return throttleServiceObject;
+    }
+
+    public void setThrottleServiceObject(ThrottleServiceObject throttleServiceObject) {
+        this.throttleServiceObject = throttleServiceObject;
     }
 }

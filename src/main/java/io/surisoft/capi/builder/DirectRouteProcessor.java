@@ -25,7 +25,7 @@ public class DirectRouteProcessor extends RouteBuilder {
     private HttpUtils httpUtils;
     private Cache<String, Service> serviceCache;
     private final ContentTypeValidator contentTypeValidator;
-    private final GlobalThrottleProcessor globalThrottleProcessor;
+    private final ThrottleProcessor throttleProcessor;
 
     public DirectRouteProcessor(CamelContext camelContext,
                                 Service service,
@@ -35,7 +35,7 @@ public class DirectRouteProcessor extends RouteBuilder {
                                 String capiContext,
                                 String reverseProxyHost,
                                 ContentTypeValidator contentTypeValidator,
-                                GlobalThrottleProcessor globalThrottleProcessor) {
+                                ThrottleProcessor throttleProcessor) {
         super(camelContext);
         this.service = service;
         this.routeUtils = routeUtils;
@@ -44,7 +44,7 @@ public class DirectRouteProcessor extends RouteBuilder {
         this.metricsProcessor = metricsProcessor;
         this.reverseProxyHost = reverseProxyHost;
         this.contentTypeValidator = contentTypeValidator;
-        this.globalThrottleProcessor = globalThrottleProcessor;
+        this.throttleProcessor = throttleProcessor;
     }
 
     @Override
@@ -96,16 +96,17 @@ public class DirectRouteProcessor extends RouteBuilder {
                     .removeHeader(Constants.AUTHORIZATION_HEADER)
                     .removeHeader(Constants.CAPI_GROUP_HEADER)
                     .routeId(routeId);
-        } else if(service.getServiceMeta().isThrottle() && globalThrottleProcessor != null) {
-            if(service.getServiceMeta().isThrottleGlobal()
-                    && service.getServiceMeta().getThrottleDuration() > -1
-                    && service.getServiceMeta().getThrottleTotalCalls() > -1) {
+        } else if(service.getServiceMeta().isThrottle() && throttleProcessor != null) {
+            //global throttling
+            //if(service.getServiceMeta().isThrottleGlobal()
+            //        && service.getServiceMeta().getThrottleDuration() > -1
+            //        && service.getServiceMeta().getThrottleTotalCalls() > -1) {
                 routeDefinition
                     .process(contentTypeValidator)
                     .process(metricsProcessor)
-                    .setHeader(Constants.CAPI_META_THROTTLE_DURATION, constant(service.getServiceMeta().getThrottleDuration()))
-                    .setHeader(Constants.CAPI_META_THROTTLE_TOTAL_CALLS_ALLOWED, constant(service.getServiceMeta().getThrottleTotalCalls()))
-                    .process(globalThrottleProcessor)
+                    //.setHeader(Constants.CAPI_META_THROTTLE_DURATION, constant(service.getServiceMeta().getThrottleDuration()))
+                    //.setHeader(Constants.CAPI_META_THROTTLE_TOTAL_CALLS_ALLOWED, constant(service.getServiceMeta().getThrottleTotalCalls()))
+                    .process(throttleProcessor)
                     .to(routeUtils.buildEndpoints(service))
                     .end()
                     .removeHeader(Constants.X_FORWARDED_HOST)
@@ -117,7 +118,7 @@ public class DirectRouteProcessor extends RouteBuilder {
                     .removeHeader(Constants.CAPI_META_THROTTLE_DURATION)
                     .removeHeader(Constants.CAPI_META_THROTTLE_TOTAL_CALLS_ALLOWED)
                     .routeId(routeId);
-            }
+            //}
         } else if(service.getServiceMeta().isTenantAware()) {
             routeDefinition
                     .process(contentTypeValidator)

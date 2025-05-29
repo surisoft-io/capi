@@ -1,50 +1,64 @@
 package io.surisoft.capi.schema;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import java.io.Serializable;
 
 public class ThrottleServiceObject implements Serializable {
 
-    private final String serviceId;
-    private final long totalCallsAllowed;
+    private String serviceId;
+    private String consumerKey;
+    private long totalCallsAllowed;
     private long currentCalls;
-    private final long expirationTime;
-    private final long expirationDuration;
+    private long expirationTime;
 
-    public ThrottleServiceObject(String serviceId, long expirationDuration, long totalCallsAllowed) {
+    public ThrottleServiceObject() {}
+
+    public ThrottleServiceObject(String serviceId, String consumerKey, long totalCallsAllowed, long expirationDuration) {
         this.serviceId = serviceId;
+        this.consumerKey = consumerKey;
         this.totalCallsAllowed = totalCallsAllowed;
-        this.expirationDuration = expirationDuration;
+        this.currentCalls = 1;
         this.expirationTime = System.currentTimeMillis() + expirationDuration;
     }
 
-    public boolean isObjectExpired() {
-        return System.currentTimeMillis() > expirationTime;
-    }
-
-    public long remainingTime() {
-        if(!isObjectExpired()) {
-            return expirationTime - System.currentTimeMillis();
-        }
-        return 0;
-    }
-
-    public long getExpirationDuration() {
-        return expirationDuration;
+    @JsonIgnore
+    public String getCacheKey() {
+        return serviceId;
     }
 
     public String getServiceId() {
         return serviceId;
     }
 
-    public long getTotalCallsAllowed() {
-        return totalCallsAllowed;
-    }
-
     public long getCurrentCalls() {
         return currentCalls;
     }
 
-    public void setCurrentCalls(long currentCalls) {
-        this.currentCalls = currentCalls;
+    @JsonIgnore
+    public boolean isExpired() {
+        return System.currentTimeMillis() > expirationTime;
+    }
+
+    @JsonIgnore
+    public boolean canCall() {
+        return !isExpired() && currentCalls < totalCallsAllowed;
+    }
+
+    @JsonIgnore
+    public void increment() {
+        currentCalls++;
+    }
+
+    public long getExpirationTime() {
+        return expirationTime;
+    }
+
+    public long getTotalCallsAllowed() {
+        return totalCallsAllowed;
+    }
+
+    public String getConsumerKey() {
+        return consumerKey;
     }
 }

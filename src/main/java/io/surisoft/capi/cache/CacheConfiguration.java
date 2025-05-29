@@ -3,6 +3,7 @@ package io.surisoft.capi.cache;
 import io.surisoft.capi.schema.ConsulKeyStoreEntry;
 import io.surisoft.capi.schema.Service;
 import io.surisoft.capi.schema.StickySession;
+import io.surisoft.capi.schema.ThrottleServiceObject;
 import io.surisoft.capi.utils.Constants;
 import org.cache2k.Cache;
 import org.cache2k.Cache2kBuilder;
@@ -79,6 +80,18 @@ public class CacheConfiguration {
             consulKvStoreCache.put(Constants.CAPI_CORS_HEADERS_CACHE_KEY, allowedHeaders);
         }
         return consulKvStoreCache;
+    }
+
+    @Bean
+    @ConditionalOnProperty(prefix = "capi.throttling", name = "enabled", havingValue = "true")
+    public Cache<String, ThrottleServiceObject> createLocalThrottleCache() {
+        log.debug("Creating Throttle Cache");
+        return new Cache2kBuilder<String, ThrottleServiceObject>(){}
+                .name("throttleServiceObject-" + hashCode())
+                .eternal(true)
+                .entryCapacity(10000)
+                .storeByReference(true)
+                .build();
     }
 
     private List<String> consulKeyValueAsList(String encodedValue) {

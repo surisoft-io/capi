@@ -1,7 +1,6 @@
 package io.surisoft.capi.utils;
 
 import io.undertow.util.HttpString;
-import org.apache.commons.lang3.StringUtils;
 
 import java.util.List;
 import java.util.Map;
@@ -120,6 +119,7 @@ public class Constants {
     public static final String CONSUL_KV_STORE_API = "/v1/kv/";
     public static final String CAPI_CORS_HEADERS_CACHE_KEY = "capi-cors-headers";
     public static final String CONSUL_CAPI_TRUST_STORE_GROUP_KEY = "capi-trust-store";
+    public static final String CAPI_META_THROTTLE_CONSUMER_KEY = "Capi-Meta-Throttle-Consumer-Key";
     public static final String CAPI_SHOULD_THROTTLE = "Capi-Should-Throttle";
     public static final String CAPI_THROTTLE_DURATION_MILLI = "Capi-Throttle-Duration";
     public static final String CAPI_META_THROTTLE_DURATION = "Capi-Meta-Throttle-Duration";

@@ -62,6 +62,7 @@ public class CapiTracer extends ServiceSupport implements RoutePolicyFactory, St
         exclusions.add("bean://consistencyChecker");
         exclusions.add("timer://consistency-checker");
         exclusions.add("timer://consul-KV-Store");
+        exclusions.add("kafka://capi");
         this.httpUtils = httpUtils;
     }
 
