@@ -74,12 +74,14 @@ public class AuthorizationProcessor implements Processor {
         if(service.getServiceMeta().isThrottle() && !service.getServiceMeta().isThrottleGlobal()) {
             SignedJWT signedJWT = SignedJWT.parse(accessToken);
             JWTClaimsSet claimsSet = signedJWT.getJWTClaimsSet();
-            long throttleTotalCalls = claimsSet.getLongClaim("throttleTotalCalls");
-            long throttleDuration = claimsSet.getLongClaim("throttleDuration");
-            String throttleConsumerKey = claimsSet.getStringClaim("azp");
-            exchange.getIn().setHeader(Constants.CAPI_META_THROTTLE_CONSUMER_KEY, throttleConsumerKey);
-            exchange.getIn().setHeader(Constants.CAPI_META_THROTTLE_DURATION, throttleDuration);
-            exchange.getIn().setHeader(Constants.CAPI_META_THROTTLE_TOTAL_CALLS_ALLOWED, throttleTotalCalls);
+            if(claimsSet.getClaims().containsKey("throttleTotalCalls") && claimsSet.getClaims().get("throttleTotalCalls") != null) {
+                long throttleTotalCalls = claimsSet.getLongClaim("throttleTotalCalls");
+                long throttleDuration = claimsSet.getLongClaim("throttleDuration");
+                String throttleConsumerKey = claimsSet.getStringClaim("azp");
+                exchange.getIn().setHeader(Constants.CAPI_META_THROTTLE_CONSUMER_KEY, throttleConsumerKey);
+                exchange.getIn().setHeader(Constants.CAPI_META_THROTTLE_DURATION, throttleDuration);
+                exchange.getIn().setHeader(Constants.CAPI_META_THROTTLE_TOTAL_CALLS_ALLOWED, throttleTotalCalls);
+            }
         }
     }
 }
