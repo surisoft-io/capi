@@ -1,5 +1,7 @@
 package io.surisoft.capi.processor;
 
+import com.nimbusds.jwt.JWTClaimsSet;
+import com.nimbusds.jwt.SignedJWT;
 import io.surisoft.capi.exception.AuthorizationException;
 import io.surisoft.capi.oidc.Oauth2Constants;
 import io.surisoft.capi.schema.Service;
@@ -15,6 +17,8 @@ import org.cache2k.Cache;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatusCode;
+
+import java.text.ParseException;
 
 public class OpenApiProcessor implements Processor {
     private static final Logger log = LoggerFactory.getLogger(OpenApiProcessor.class);
@@ -68,6 +72,7 @@ public class OpenApiProcessor implements Processor {
                                         sendException("Invalid authentication", Constants.UNAUTHORIZED_CODE, exchange);
                                     } else {
                                         propagateAuthorization(exchange, accessToken);
+                                        prepareForThrottleIfNeeded(service, accessToken, exchange);
                                     }
                                 } else {
                                     sendException("Call not allowed", Constants.UNAUTHORIZED_CODE, exchange);
@@ -75,7 +80,7 @@ public class OpenApiProcessor implements Processor {
                             } else {
                                 sendException("No authorization provided", Constants.UNAUTHORIZED_CODE, exchange);
                             }
-                        } catch (AuthorizationException e) {
+                        } catch (AuthorizationException | ParseException e) {
                             sendException(e.getMessage(), Constants.BAD_REQUEST_CODE, exchange);
                         }
                     }
@@ -136,6 +141,21 @@ public class OpenApiProcessor implements Processor {
     private void propagateAuthorization(Exchange exchange, String accessToken) {
         if(accessToken != null) {
             exchange.getIn().setHeader(Constants.AUTHORIZATION_HEADER, Constants.BEARER + accessToken.replaceAll("(\r\n|\n)", ""));
+        }
+    }
+
+    private void prepareForThrottleIfNeeded(Service service, String accessToken, Exchange exchange) throws ParseException {
+        if(service.getServiceMeta().isThrottle() && !service.getServiceMeta().isThrottleGlobal()) {
+            SignedJWT signedJWT = SignedJWT.parse(accessToken);
+            JWTClaimsSet claimsSet = signedJWT.getJWTClaimsSet();
+            if(claimsSet.getClaims().containsKey("throttleTotalCalls") && claimsSet.getClaims().get("throttleTotalCalls") != null) {
+                long throttleTotalCalls = claimsSet.getLongClaim("throttleTotalCalls");
+                long throttleDuration = claimsSet.getLongClaim("throttleDuration");
+                String throttleConsumerKey = claimsSet.getStringClaim("azp");
+                exchange.getIn().setHeader(Constants.CAPI_META_THROTTLE_CONSUMER_KEY, throttleConsumerKey);
+                exchange.getIn().setHeader(Constants.CAPI_META_THROTTLE_DURATION, throttleDuration);
+                exchange.getIn().setHeader(Constants.CAPI_META_THROTTLE_TOTAL_CALLS_ALLOWED, throttleTotalCalls);
+            }
         }
     }
 }
