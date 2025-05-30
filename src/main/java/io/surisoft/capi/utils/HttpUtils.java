@@ -6,6 +6,7 @@ import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.proc.BadJOSEException;
 import com.nimbusds.jose.proc.SecurityContext;
 import com.nimbusds.jwt.JWTClaimsSet;
+import com.nimbusds.jwt.SignedJWT;
 import com.nimbusds.jwt.proc.DefaultJWTProcessor;
 import io.surisoft.capi.exception.AuthorizationException;
 import io.surisoft.capi.oidc.Oauth2Constants;
@@ -310,5 +311,26 @@ public class HttpUtils {
             throw new IllegalArgumentException("Invalid header value");
         }
         return value;
+    }
+
+    public void prepareForThrottleIfNeeded(Service service, String accessToken, Exchange exchange) throws ParseException {
+        if(service.getServiceMeta().isThrottle() && !service.getServiceMeta().isThrottleGlobal()) {
+            SignedJWT signedJWT = SignedJWT.parse(accessToken);
+            JWTClaimsSet claimsSet = signedJWT.getJWTClaimsSet();
+            if(claimsSet.getClaims().containsKey("throttleTotalCalls") && claimsSet.getClaims().get("throttleTotalCalls") != null) {
+                long throttleTotalCalls = claimsSet.getLongClaim("throttleTotalCalls");
+                long throttleDuration = claimsSet.getLongClaim("throttleDuration");
+                String throttleConsumerKey = claimsSet.getStringClaim("azp");
+                exchange.getIn().setHeader(Constants.CAPI_META_THROTTLE_CONSUMER_KEY, throttleConsumerKey);
+                exchange.getIn().setHeader(Constants.CAPI_META_THROTTLE_DURATION, throttleDuration);
+                exchange.getIn().setHeader(Constants.CAPI_META_THROTTLE_TOTAL_CALLS_ALLOWED, throttleTotalCalls);
+            }
+        }
+    }
+
+    public void propagateAuthorization(Exchange exchange, String accessToken) {
+        if(accessToken != null) {
+            exchange.getIn().setHeader(Constants.AUTHORIZATION_HEADER, Constants.BEARER + accessToken.replaceAll("(\r\n|\n)", ""));
+        }
     }
 }

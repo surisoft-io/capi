@@ -1,7 +1,5 @@
 package io.surisoft.capi.processor;
 
-import com.nimbusds.jwt.JWTClaimsSet;
-import com.nimbusds.jwt.SignedJWT;
 import io.surisoft.capi.exception.AuthorizationException;
 import io.surisoft.capi.oidc.Oauth2Constants;
 import io.surisoft.capi.schema.Service;
@@ -10,13 +8,11 @@ import io.surisoft.capi.utils.Constants;
 import io.surisoft.capi.utils.HttpUtils;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.Operation;
-import io.vavr.collection.List;
 import org.apache.camel.Exchange;
 import org.apache.camel.Processor;
 import org.cache2k.Cache;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.http.HttpStatusCode;
 
 import java.text.ParseException;
 
@@ -71,8 +67,8 @@ public class OpenApiProcessor implements Processor {
                                     if(!httpUtils.isAuthorized(accessToken, contextPath, service, opaService)) {
                                         sendException("Invalid authentication", Constants.UNAUTHORIZED_CODE, exchange);
                                     } else {
-                                        propagateAuthorization(exchange, accessToken);
-                                        prepareForThrottleIfNeeded(service, accessToken, exchange);
+                                        httpUtils.propagateAuthorization(exchange, accessToken);
+                                        httpUtils.prepareForThrottleIfNeeded(service, accessToken, exchange);
                                     }
                                 } else {
                                     sendException("Call not allowed", Constants.UNAUTHORIZED_CODE, exchange);
@@ -136,26 +132,5 @@ public class OpenApiProcessor implements Processor {
         exchange.getIn().setHeader(Constants.REASON_CODE_HEADER, errorCode);
         exchange.getIn().setHeader(Constants.REASON_MESSAGE_HEADER, message);
         exchange.setException(new AuthorizationException(message));
-    }
-
-    private void propagateAuthorization(Exchange exchange, String accessToken) {
-        if(accessToken != null) {
-            exchange.getIn().setHeader(Constants.AUTHORIZATION_HEADER, Constants.BEARER + accessToken.replaceAll("(\r\n|\n)", ""));
-        }
-    }
-
-    private void prepareForThrottleIfNeeded(Service service, String accessToken, Exchange exchange) throws ParseException {
-        if(service.getServiceMeta().isThrottle() && !service.getServiceMeta().isThrottleGlobal()) {
-            SignedJWT signedJWT = SignedJWT.parse(accessToken);
-            JWTClaimsSet claimsSet = signedJWT.getJWTClaimsSet();
-            if(claimsSet.getClaims().containsKey("throttleTotalCalls") && claimsSet.getClaims().get("throttleTotalCalls") != null) {
-                long throttleTotalCalls = claimsSet.getLongClaim("throttleTotalCalls");
-                long throttleDuration = claimsSet.getLongClaim("throttleDuration");
-                String throttleConsumerKey = claimsSet.getStringClaim("azp");
-                exchange.getIn().setHeader(Constants.CAPI_META_THROTTLE_CONSUMER_KEY, throttleConsumerKey);
-                exchange.getIn().setHeader(Constants.CAPI_META_THROTTLE_DURATION, throttleDuration);
-                exchange.getIn().setHeader(Constants.CAPI_META_THROTTLE_TOTAL_CALLS_ALLOWED, throttleTotalCalls);
-            }
-        }
     }
 }
