@@ -16,16 +16,20 @@ public class HttpErrorProcessor implements Processor {
     public void process(Exchange exchange) {
         Exception cause = exchange.getProperty(Exchange.EXCEPTION_CAUGHT, Exception.class);
         if(cause instanceof SSLHandshakeException) {
+            exchange.setProperty(Constants.REASON_MESSAGE_HEADER, "Problem with Service certificate");
             exchange.getIn().setHeader(Constants.REASON_MESSAGE_HEADER, "Problem with Service certificate");
             exchange.getIn().setHeader(Constants.REASON_CODE_HEADER, 502);
         }
         if (cause instanceof SSLException) {
+            exchange.setProperty(Constants.REASON_MESSAGE_HEADER, "Problem with Service certificate");
             exchange.getIn().setHeader(Constants.REASON_MESSAGE_HEADER, "Problem with Service certificate");
             exchange.getIn().setHeader(Constants.REASON_CODE_HEADER, 502);
         } else if (cause instanceof UnknownHostException) {
+            exchange.setProperty(Constants.REASON_MESSAGE_HEADER, "Problem with Service host");
             exchange.getIn().setHeader(Constants.REASON_MESSAGE_HEADER, "Problem with Service host");
             exchange.getIn().setHeader(Constants.REASON_CODE_HEADER, 502);
         } else if (cause instanceof SocketTimeoutException) {
+            exchange.setProperty(Constants.REASON_MESSAGE_HEADER, "The remote server took too long");
             exchange.getIn().setHeader(Constants.REASON_MESSAGE_HEADER, "The remote server took too long");
             exchange.getIn().setHeader(Constants.REASON_CODE_HEADER, 502);
         }

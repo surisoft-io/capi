@@ -321,6 +321,9 @@ public class HttpUtils {
                 long throttleTotalCalls = claimsSet.getLongClaim("throttleTotalCalls");
                 long throttleDuration = claimsSet.getLongClaim("throttleDuration");
                 String throttleConsumerKey = claimsSet.getStringClaim("azp");
+                exchange.setProperty(Constants.CAPI_META_THROTTLE_DURATION, throttleDuration);
+                exchange.setProperty(Constants.CAPI_META_THROTTLE_TOTAL_CALLS_ALLOWED, throttleTotalCalls);
+
                 exchange.getIn().setHeader(Constants.CAPI_META_THROTTLE_CONSUMER_KEY, throttleConsumerKey);
                 exchange.getIn().setHeader(Constants.CAPI_META_THROTTLE_DURATION, throttleDuration);
                 exchange.getIn().setHeader(Constants.CAPI_META_THROTTLE_TOTAL_CALLS_ALLOWED, throttleTotalCalls);

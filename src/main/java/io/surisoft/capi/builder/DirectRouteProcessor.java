@@ -117,6 +117,7 @@ public class DirectRouteProcessor extends RouteBuilder {
                     .removeHeader(Constants.CAPI_THROTTLE_DURATION_MILLI)
                     .removeHeader(Constants.CAPI_META_THROTTLE_DURATION)
                     .removeHeader(Constants.CAPI_META_THROTTLE_TOTAL_CALLS_ALLOWED)
+                    .removeHeader(Constants.CAPI_META_THROTTLE_CONSUMER_KEY)
                     .routeId(routeId);
             //}
         } else if(service.getServiceMeta().isTenantAware()) {

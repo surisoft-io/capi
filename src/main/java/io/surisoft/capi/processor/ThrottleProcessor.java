@@ -58,7 +58,9 @@ public class ThrottleProcessor implements Processor {
                 if(service.getServiceMeta().isThrottleGlobal() &&
                         service.getServiceMeta().getThrottleDuration() > -1 &&
                         service.getServiceMeta().getThrottleTotalCalls() > -1) {
-                    if(!canContinue(service, null, false, -1, -1)) {
+                    if(!canContinue(exchange, service, null, false, -1, -1)) {
+                        exchange.setProperty(Constants.REASON_MESSAGE_HEADER, "Too Many requests");
+
                         exchange.getIn().setHeader(Constants.REASON_MESSAGE_HEADER, "Too Many requests");
                         exchange.getIn().setHeader(Constants.REASON_CODE_HEADER, HttpStatus.TOO_MANY_REQUESTS.value());
                         exchange.setException(new AuthorizationException("Too Many requests"));
@@ -68,7 +70,9 @@ public class ThrottleProcessor implements Processor {
                     if(exchange.getIn().getHeader(Constants.CAPI_META_THROTTLE_CONSUMER_KEY) != null &&
                             exchange.getIn().getHeader(Constants.CAPI_META_THROTTLE_DURATION) != null &&
                             exchange.getIn().getHeader(Constants.CAPI_META_THROTTLE_TOTAL_CALLS_ALLOWED) != null) {
-                        if(!canContinue(service, (String) exchange.getIn().getHeader(Constants.CAPI_META_THROTTLE_CONSUMER_KEY), true, (Long) exchange.getIn().getHeader(Constants.CAPI_META_THROTTLE_TOTAL_CALLS_ALLOWED), (Long) exchange.getIn().getHeader(Constants.CAPI_META_THROTTLE_DURATION))) {
+                        if(!canContinue(exchange, service, (String) exchange.getIn().getHeader(Constants.CAPI_META_THROTTLE_CONSUMER_KEY), true, (Long) exchange.getIn().getHeader(Constants.CAPI_META_THROTTLE_TOTAL_CALLS_ALLOWED), (Long) exchange.getIn().getHeader(Constants.CAPI_META_THROTTLE_DURATION))) {
+                            exchange.setProperty(Constants.REASON_MESSAGE_HEADER, "Too Many requests");
+
                             exchange.getIn().setHeader(Constants.REASON_MESSAGE_HEADER, "Too Many requests");
                             exchange.getIn().setHeader(Constants.REASON_CODE_HEADER, HttpStatus.TOO_MANY_REQUESTS.value());
                             exchange.setException(new AuthorizationException("Too Many requests"));
@@ -81,7 +85,7 @@ public class ThrottleProcessor implements Processor {
         }
     }
 
-    public boolean canContinue(Service service, String consumerKey, boolean consumerThrottle, long totalCallsAllowed, long expirationDuration) {
+    public boolean canContinue(Exchange exchange, Service service, String consumerKey, boolean consumerThrottle, long totalCallsAllowed, long expirationDuration) {
         String cacheKey = consumerThrottle ? service.getId() + ":" + consumerKey : service.getId();
         ThrottleServiceObject throttleServiceObject = throttleServiceObjectCache.get(cacheKey);
 
@@ -94,6 +98,9 @@ public class ThrottleProcessor implements Processor {
             throttleServiceObject = new ThrottleServiceObject(cacheKey, consumerThrottle ? consumerKey : null, totalCallsAllowed, expirationDuration);
             throttleServiceObjectCache.put(cacheKey, throttleServiceObject);
             sendToKafka(throttleServiceObject);
+
+            exchange.setProperty(Constants.CAPI_META_THROTTLE_CURRENT_CALL_NUMBER, throttleServiceObject.getCurrentCalls());
+
             return true;
         }
 
@@ -101,6 +108,9 @@ public class ThrottleProcessor implements Processor {
             throttleServiceObject.increment();
             throttleServiceObjectCache.put(cacheKey, throttleServiceObject);
             sendToKafka(throttleServiceObject);
+
+            exchange.setProperty(Constants.CAPI_META_THROTTLE_CURRENT_CALL_NUMBER, throttleServiceObject.getCurrentCalls());
+
             return true;
         }
 

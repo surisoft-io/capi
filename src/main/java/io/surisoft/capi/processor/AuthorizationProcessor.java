@@ -57,6 +57,7 @@ public class AuthorizationProcessor implements Processor {
     }
 
     private void sendException(Exchange exchange, String message) {
+        exchange.setProperty(Constants.REASON_MESSAGE_HEADER, message);
         exchange.getIn().setHeader(Constants.REASON_MESSAGE_HEADER, message);
         exchange.getIn().setHeader(Constants.REASON_CODE_HEADER, HttpStatus.UNAUTHORIZED.value());
         exchange.setException(new AuthorizationException(message));

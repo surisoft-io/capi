@@ -26,6 +26,22 @@ public class CapiTracerServerResponseAdapter {
             span.tag(Constants.CAMEL_SERVER_EXCHANGE_FAILURE, message);
         }
 
+        if(exchange.getProperties().containsKey(Constants.CAPI_META_THROTTLE_DURATION)) {
+            span.tag(Constants.CAPI_META_THROTTLE_DURATION, exchange.getProperty(Constants.CAPI_META_THROTTLE_DURATION, String.class));
+        }
+
+        if(exchange.getProperties().containsKey(Constants.CAPI_META_THROTTLE_TOTAL_CALLS_ALLOWED)) {
+            span.tag(Constants.CAPI_META_THROTTLE_TOTAL_CALLS_ALLOWED, exchange.getProperty(Constants.CAPI_META_THROTTLE_TOTAL_CALLS_ALLOWED, String.class));
+        }
+
+        if(exchange.getProperties().containsKey(Constants.CAPI_META_THROTTLE_CURRENT_CALL_NUMBER)) {
+            span.tag(Constants.CAPI_META_THROTTLE_CURRENT_CALL_NUMBER, exchange.getProperty(Constants.CAPI_META_THROTTLE_CURRENT_CALL_NUMBER, String.class));
+        }
+
+        if(exchange.getProperties().containsKey(Constants.REASON_MESSAGE_HEADER)) {
+            span.tag(Constants.REASON_MESSAGE_HEADER, exchange.getProperty(Constants.REASON_MESSAGE_HEADER, String.class));
+        }
+
         HttpServletRequest httpServletRequest = (HttpServletRequest) exchange.getIn().getHeader(Constants.CAMEL_HTTP_SERVLET_REQUEST);
 
         if(httpServletRequest != null && httpServletRequest.getMethod() != null) {
