@@ -1,4 +1,4 @@
-name: capi
+name: capi-quayio
 on:
   push:
     branches: [ master ]
@@ -25,7 +25,7 @@ jobs:
       run: mvn package  -DskipTests --file pom.xml
     - name: Docker login
       run: |
-          docker login -u surisoft+surisoft -p ${{ secrets.QUAY_IO_TOKEN }}
+          docker login -u surisoft+surisoft -p ${{ secrets.QUAY_IO_TOKEN }} quay.io
     - name: Build and push multi-platform image
       run: |
         docker buildx create --use
