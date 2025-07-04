@@ -31,6 +31,10 @@ public class SSEClient {
         this.httpHandler = httpHandler;
     }
 
+    public boolean isRequiresSubscription() {
+        return requiresSubscription;
+    }
+
     public boolean requiresSubscription() {
         return requiresSubscription;
     }
