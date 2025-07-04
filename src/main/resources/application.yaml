@@ -2,6 +2,7 @@
 ### Application Server specifics ###
 ####################################
 server:
+  max-http-request-header-size: 65536
   undertow:
     accesslog:
       enabled: false
@@ -44,7 +45,7 @@ management:
     web:
       base-path: /metrics/
       exposure:
-        include: 'health,prometheus,routes,capi,openapi,truststore,kv,ws-routes'
+        include: 'health,prometheus,routes,capi,openapi,truststore,kv,ws-routes,sseroutes'
 #######################
 ### Camel Specifics ###
 #######################
@@ -170,7 +171,7 @@ capi:
           Vary
   # oauth2 support to protect the routes. (Editable properties)
   oauth2:
-    cookieName:
+    cookieName: x-apigateway-authorization-cookie-name
     provider:
       enabled: false
       keys: http://localhost:8080/realms/capi/protocol/openid-connect/certs
