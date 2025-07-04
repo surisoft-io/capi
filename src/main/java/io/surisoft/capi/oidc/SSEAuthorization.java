@@ -26,13 +26,13 @@ public class SSEAuthorization {
         this.jwtProcessorList = jwtProcessorList;
     }
 
-    public boolean isAuthorized(SSEClient websocketClient, HttpServerExchange httpServerExchange) {
-        if(!websocketClient.requiresSubscription()) {
+    public boolean isAuthorized(SSEClient sseClient, HttpServerExchange httpServerExchange) {
+        if(!sseClient.requiresSubscription()) {
             return true;
         }
         if(httpServerExchange.getRequestHeaders().contains(Oauth2Constants.AUTHORIZATION_HEADER)
                 || httpServerExchange.getQueryParameters().containsKey(Oauth2Constants.AUTHORIZATION_QUERY)) {
-            return isApiSubscribed(httpServerExchange, websocketClient.getSubscriptionRole());
+            return isApiSubscribed(httpServerExchange, sseClient.getSubscriptionRole());
         }
         return false;
     }
@@ -61,7 +61,7 @@ public class SSEAuthorization {
                     }
                 }
             }
-            if(isTokenInGroup(jwtClaimsSet, "capi")) {
+            if(isTokenInGroup(jwtClaimsSet, role)) {
                 return true;
             }
         } catch (ParseException e) {

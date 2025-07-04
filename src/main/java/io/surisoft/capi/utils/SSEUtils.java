@@ -85,6 +85,9 @@ public class SSEUtils {
         sseClient.setPath(sseContext);
         sseClient.setRequiresSubscription(service.getServiceMeta().isSecured());
         sseClient.setHttpHandler(createClientHttpHandler(sseClient, service));
+        if(service.getServiceMeta().getSubscriptionGroup() != null) {
+            sseClient.setSubscriptionRole(service.getServiceMeta().getSubscriptionGroup());
+        }
         return sseClient;
     }
 
