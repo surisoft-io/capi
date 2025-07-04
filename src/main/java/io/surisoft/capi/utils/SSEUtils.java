@@ -12,6 +12,7 @@ import io.undertow.server.handlers.ResponseCodeHandler;
 import io.undertow.server.handlers.proxy.LoadBalancingProxyClient;
 import io.undertow.server.handlers.proxy.ProxyHandler;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 import java.net.URI;
@@ -19,6 +20,7 @@ import java.util.List;
 import java.util.Optional;
 
 @Component
+@ConditionalOnProperty(prefix = "capi.sse", name = "enabled", havingValue = "true")
 public class SSEUtils {
 
     private final String capiContextPath;

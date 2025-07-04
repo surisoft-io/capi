@@ -4,6 +4,7 @@ import io.surisoft.capi.exception.CapiUndertowException;
 import io.surisoft.capi.oidc.SSEAuthorization;
 import io.surisoft.capi.schema.SSEClient;
 import io.surisoft.capi.utils.Constants;
+import io.surisoft.capi.utils.ErrorMessage;
 import io.surisoft.capi.utils.SSEUtils;
 import io.undertow.Undertow;
 import org.slf4j.Logger;
@@ -76,6 +77,10 @@ public class SSEGateway {
                                 httpServerExchange.endExchange();
                             }
                         }
+                    } else {
+                        log.debug(ErrorMessage.IS_NOT_PRESENT, httpServerExchange.getRequestPath());
+                        httpServerExchange.setStatusCode(Constants.NOT_FOUND_CODE);
+                        httpServerExchange.endExchange();
                     }
                 });
         builder.build().start();
