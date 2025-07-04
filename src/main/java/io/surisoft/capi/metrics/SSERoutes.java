@@ -1,7 +1,6 @@
 package io.surisoft.capi.metrics;
 
 import io.surisoft.capi.schema.SSEClient;
-import io.surisoft.capi.schema.WebsocketClient;
 import org.springframework.boot.actuate.endpoint.annotation.Endpoint;
 import org.springframework.boot.actuate.endpoint.annotation.ReadOperation;
 import org.springframework.stereotype.Component;

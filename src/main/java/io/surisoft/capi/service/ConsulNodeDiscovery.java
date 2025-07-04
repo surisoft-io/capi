@@ -292,7 +292,8 @@ public class ConsulNodeDiscovery {
                     websocketClientMap.put(websocketClient.getServiceId(), websocketClient);
                 }
             } else if(incomingService.getServiceMeta().getType().equalsIgnoreCase(Constants.SSE_TYPE) &&
-                    ((capiRunningMode.equalsIgnoreCase(Constants.SSE_TYPE) || capiRunningMode.equalsIgnoreCase(Constants.FULL_TYPE)))) {
+                    (capiRunningMode.equalsIgnoreCase(Constants.SSE_TYPE) || capiRunningMode.equalsIgnoreCase(Constants.FULL_TYPE))) {
+                log.trace("Creating SSE client for service: {}", incomingService.getId());
                 SSEClient sseClient = sseUtils.createSSEClient(incomingService);
                 if(sseClient != null && sseClientMap != null) {
                     sseClientMap.put(sseClient.getPath(), sseClient);
