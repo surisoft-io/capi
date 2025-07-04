@@ -296,7 +296,7 @@ public class ConsulNodeDiscovery {
                 log.trace("Creating SSE client for service: {}", incomingService.getId());
                 SSEClient sseClient = sseUtils.createSSEClient(incomingService);
                 if(sseClient != null && sseClientMap != null) {
-                    sseClientMap.put(sseClient.getPath(), sseClient);
+                    sseClientMap.put(sseClient.getApiId(), sseClient);
                 }
 
             } else if(capiRunningMode.equalsIgnoreCase(Constants.FULL_TYPE) && (incomingService.getServiceMeta().getType() == null || incomingService.getServiceMeta().getType().equals("rest"))) {
