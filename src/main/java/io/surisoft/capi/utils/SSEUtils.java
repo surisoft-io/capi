@@ -32,12 +32,15 @@ public class SSEUtils {
         this.defaultJWTProcessor = defaultJWTProcessor;
     }
 
-    public HttpHandler createClientHttpHandler(SSEClient webSocketClient, Service service) {
+    public HttpHandler createClientHttpHandler(SSEClient sseClient, Service service) {
         LoadBalancingProxyClient loadBalancingProxyClient = new LoadBalancingProxyClient();
-
-        webSocketClient.getMappingList().forEach((m) -> {
-            String schema = service.getServiceMeta().getSchema() == null ? HttpProtocol.HTTP.getProtocol() : service.getServiceMeta().getSchema();
-            loadBalancingProxyClient.addHost(URI.create(schema + "://" + m.getHostname() + ":" + m.getPort()));
+        sseClient.getMappingList().forEach((m) -> {
+            if(m.getHostname().contains("http://") || m.getHostname().contains("https://")) {
+                loadBalancingProxyClient.addHost(URI.create(m.getHostname() + ":" + m.getPort()));
+            } else {
+                String schema = service.getServiceMeta().getSchema() == null ? HttpProtocol.HTTP.getProtocol() : service.getServiceMeta().getSchema();
+                loadBalancingProxyClient.addHost(URI.create(schema + "://" + m.getHostname() + ":" + m.getPort()));
+            }
         });
         return ProxyHandler
                 .builder()
