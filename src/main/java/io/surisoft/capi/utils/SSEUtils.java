@@ -92,4 +92,15 @@ public class SSEUtils {
         String normalized = capiContextPath.replaceAll("/", "").replaceAll("\\*", "");
         return "/" + normalized;
     }
+
+    public String getWebclientId(String originalRequest) {
+        String[] pathParts = originalRequest.split("/");
+        if(pathParts.length < 4) {
+            return null;
+        }
+        if(!pathParts[1].equals(normalizeBaseContextName())) {
+            return null;
+        }
+        return  "/" + pathParts[2] + "/" + pathParts[3];
+    }
 }

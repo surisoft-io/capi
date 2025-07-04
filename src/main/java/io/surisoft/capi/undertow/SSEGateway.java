@@ -3,6 +3,7 @@ package io.surisoft.capi.undertow;
 import io.surisoft.capi.exception.CapiUndertowException;
 import io.surisoft.capi.oidc.SSEAuthorization;
 import io.surisoft.capi.schema.SSEClient;
+import io.surisoft.capi.schema.WebsocketClient;
 import io.surisoft.capi.utils.Constants;
 import io.surisoft.capi.utils.ErrorMessage;
 import io.surisoft.capi.utils.SSEUtils;
@@ -52,25 +53,26 @@ public class SSEGateway {
         builder
                 .setHandler(httpServerExchange -> {
                     String requestPath = httpServerExchange.getRequestPath();
-                    String serviceDefinitionPath = sseUtils.getPathDefinition(requestPath);
-                    if (sseClients.containsKey(serviceDefinitionPath)) {
+                    String webClientId = sseUtils.getWebclientId(requestPath);
+                    SSEClient sseClient = sseClients.get(webClientId);
+                    if (sseClients.containsKey(webClientId)) {
                         if (sseAuthorization != null) {
-                            if (sseAuthorization.isAuthorized(sseClients.get(serviceDefinitionPath), httpServerExchange)) {
+                            if (sseAuthorization.isAuthorized(sseClient, httpServerExchange)) {
                                 log.info("{} is authorized!", httpServerExchange.getRequestPath());
-                                httpServerExchange.setRequestURI(sseUtils.normalizePathForForwarding(sseClients.get(serviceDefinitionPath), requestPath));
-                                httpServerExchange.setRelativePath(sseUtils.normalizePathForForwarding(sseClients.get(serviceDefinitionPath), requestPath));
-                                sseClients.get(serviceDefinitionPath).getHttpHandler().handleRequest(httpServerExchange);
+                                httpServerExchange.setRequestURI(sseUtils.normalizePathForForwarding(sseClient, requestPath));
+                                httpServerExchange.setRelativePath(sseUtils.normalizePathForForwarding(sseClient, requestPath));
+                                sseClient.getHttpHandler().handleRequest(httpServerExchange);
                             } else {
                                 log.info("{} is not authorized!", httpServerExchange.getRequestPath());
                                 httpServerExchange.setStatusCode(403);
                                 httpServerExchange.endExchange();
                             }
                         } else {
-                            if (!sseClients.get(serviceDefinitionPath).requiresSubscription()) {
+                            if (!sseClient.requiresSubscription()) {
                                 log.info("{} is authorized!", httpServerExchange.getRequestPath());
-                                httpServerExchange.setRequestURI(sseUtils.normalizePathForForwarding(sseClients.get(serviceDefinitionPath), requestPath));
-                                httpServerExchange.setRelativePath(sseUtils.normalizePathForForwarding(sseClients.get(serviceDefinitionPath), requestPath));
-                                sseClients.get(serviceDefinitionPath).getHttpHandler().handleRequest(httpServerExchange);
+                                httpServerExchange.setRequestURI(sseUtils.normalizePathForForwarding(sseClient, requestPath));
+                                httpServerExchange.setRelativePath(sseUtils.normalizePathForForwarding(sseClient, requestPath));
+                                sseClient.getHttpHandler().handleRequest(httpServerExchange);
                             } else {
                                 log.info("{} is not authorized!", httpServerExchange.getRequestPath());
                                 httpServerExchange.setStatusCode(403);
