@@ -77,15 +77,19 @@ public class SSEUtils {
     public SSEClient createSSEClient(Service service) {
 
         //The path should be the same for all the nodes, so we take the first just to set the path.
-        String sseContext = Constants.CAPI_CONTEXT + service.getContext() + service.getMappingList().stream().toList().get(0).getRootContext();
+        String sseContext = normalizeCapiContextPath() + service.getContext() + service.getMappingList().stream().toList().get(0).getRootContext();
 
         SSEClient sseClient = new SSEClient();
-
         sseClient.setApiId(service.getContext());
         sseClient.setMappingList(service.getMappingList());
         sseClient.setPath(sseContext);
         sseClient.setRequiresSubscription(service.getServiceMeta().isSecured());
         sseClient.setHttpHandler(createClientHttpHandler(sseClient, service));
         return sseClient;
+    }
+
+    public String normalizeCapiContextPath() {
+        String normalized = capiContextPath.replaceAll("/", "").replaceAll("\\*", "");
+        return "/" + normalized;
     }
 }
