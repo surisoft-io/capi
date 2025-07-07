@@ -64,7 +64,7 @@ public class SSEAuthorization {
             if(isTokenInGroup(jwtClaimsSet, role)) {
                 return true;
             }
-        } catch (ParseException e) {
+        } catch (ParseException | NullPointerException e) {
             log.warn(e.getMessage(), e);
         }
         return false;

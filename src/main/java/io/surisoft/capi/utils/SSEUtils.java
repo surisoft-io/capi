@@ -58,7 +58,7 @@ public class SSEUtils {
     }
 
     public String normalizePathForForwarding(SSEClient sseClient, String path) {
-        String pathWithoutCapiContext = path.replaceAll(Constants.CAPI_CONTEXT, "");
+        String pathWithoutCapiContext = path.replaceFirst(capiContextPath, "/");
         return pathWithoutCapiContext.replaceAll(sseClient.getApiId(), "");
     }
 
