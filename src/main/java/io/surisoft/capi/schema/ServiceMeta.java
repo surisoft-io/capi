@@ -229,9 +229,9 @@ public class ServiceMeta {
     }
 
     public String getNamespace() {
-        if(capiNamespace != null) {
+        if(capiNamespace != null && !capiNamespace.isEmpty()) {
             return capiNamespace;
-        } else if(namespace != null) {
+        } else if(namespace != null && !namespace.isEmpty()) {
             return namespace;
         }
         return null;
