@@ -38,7 +38,6 @@ public class OpenApiProcessor implements Processor {
     }
 
     public boolean validateRequest(Exchange exchange) {
-        try {
             String callingPath = (String) exchange.getIn().getHeader("CamelHttpPath");
             String callingMethod = (String) exchange.getIn().getHeader("CamelHttpMethod");
 
@@ -85,16 +84,11 @@ public class OpenApiProcessor implements Processor {
                     }
                 }
             }
-        } catch (Exception e) {
-            log.error("Error validating request", e);
-        }
         return false;
     }
 
     private boolean isPathMatch(String requestPath, String definedPath) {
         // Remove leading slashes
-        log.debug(requestPath);
-        log.debug(definedPath);
         while (requestPath.startsWith("/")) {
             requestPath = requestPath.substring(1);
         }
