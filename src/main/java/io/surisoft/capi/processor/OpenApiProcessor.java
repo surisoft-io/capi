@@ -38,57 +38,63 @@ public class OpenApiProcessor implements Processor {
     }
 
     public boolean validateRequest(Exchange exchange) {
-        String callingPath = (String) exchange.getIn().getHeader("CamelHttpPath");
-        String callingMethod = (String) exchange.getIn().getHeader("CamelHttpMethod");
+        try {
+            String callingPath = (String) exchange.getIn().getHeader("CamelHttpPath");
+            String callingMethod = (String) exchange.getIn().getHeader("CamelHttpMethod");
 
-        for (String path : openAPI.getPaths().keySet()) {
-            // Check if the requestPath matches any of the defined paths
-            if (isPathMatch(callingPath, path)) {
-                Operation operation = switch (callingMethod.toLowerCase()) {
-                    case "get" -> openAPI.getPaths().get(path).getGet();
-                    case "post" -> openAPI.getPaths().get(path).getPost();
-                    case "put" -> openAPI.getPaths().get(path).getPut();
-                    case "patch" -> openAPI.getPaths().get(path).getPatch();
-                    case "delete" -> openAPI.getPaths().get(path).getDelete();
-                    default -> null;
-                };
-                if (operation != null) {
-                    // The provided HTTP method is allowed for this path
-                    // You can also perform additional validation for the request here
-                    // (e.g., validate path parameters, request body, and response)
-                    if(operation.getSecurity() != null) {
-                        String accessToken;
-                        try {
-                            accessToken = httpUtils.processAuthorizationAccessToken(exchange);
-                            if(accessToken != null) {
-                                String contextPath = (String) exchange.getIn().getHeader(Oauth2Constants.CAMEL_SERVLET_CONTEXT_PATH);
-                                Service service = serviceCache.get(httpUtils.contextToRole(contextPath));
-                                if(service != null) {
-                                    if(!httpUtils.isAuthorized(accessToken, contextPath, service, opaService)) {
-                                        sendException("Invalid authentication", Constants.UNAUTHORIZED_CODE, exchange);
+            for (String path : openAPI.getPaths().keySet()) {
+                // Check if the requestPath matches any of the defined paths
+                if (isPathMatch(callingPath, path)) {
+                    Operation operation = switch (callingMethod.toLowerCase()) {
+                        case "get" -> openAPI.getPaths().get(path).getGet();
+                        case "post" -> openAPI.getPaths().get(path).getPost();
+                        case "put" -> openAPI.getPaths().get(path).getPut();
+                        case "patch" -> openAPI.getPaths().get(path).getPatch();
+                        case "delete" -> openAPI.getPaths().get(path).getDelete();
+                        default -> null;
+                    };
+                    if (operation != null) {
+                        // The provided HTTP method is allowed for this path
+                        // You can also perform additional validation for the request here
+                        // (e.g., validate path parameters, request body, and response)
+                        if (operation.getSecurity() != null) {
+                            String accessToken;
+                            try {
+                                accessToken = httpUtils.processAuthorizationAccessToken(exchange);
+                                if (accessToken != null) {
+                                    String contextPath = (String) exchange.getIn().getHeader(Oauth2Constants.CAMEL_SERVLET_CONTEXT_PATH);
+                                    Service service = serviceCache.get(httpUtils.contextToRole(contextPath));
+                                    if (service != null) {
+                                        if (!httpUtils.isAuthorized(accessToken, contextPath, service, opaService)) {
+                                            sendException("Invalid authentication", Constants.UNAUTHORIZED_CODE, exchange);
+                                        } else {
+                                            httpUtils.propagateAuthorization(exchange, accessToken);
+                                            httpUtils.prepareForThrottleIfNeeded(service, accessToken, exchange);
+                                        }
                                     } else {
-                                        httpUtils.propagateAuthorization(exchange, accessToken);
-                                        httpUtils.prepareForThrottleIfNeeded(service, accessToken, exchange);
+                                        sendException("Call not allowed", Constants.UNAUTHORIZED_CODE, exchange);
                                     }
                                 } else {
-                                    sendException("Call not allowed", Constants.UNAUTHORIZED_CODE, exchange);
+                                    sendException("No authorization provided", Constants.UNAUTHORIZED_CODE, exchange);
                                 }
-                            } else {
-                                sendException("No authorization provided", Constants.UNAUTHORIZED_CODE, exchange);
+                            } catch (AuthorizationException | ParseException e) {
+                                sendException(e.getMessage(), Constants.BAD_REQUEST_CODE, exchange);
                             }
-                        } catch (AuthorizationException | ParseException e) {
-                            sendException(e.getMessage(), Constants.BAD_REQUEST_CODE, exchange);
                         }
+                        return true;
                     }
-                    return true;
                 }
             }
+        } catch (Exception e) {
+            log.error("Error validating request", e);
         }
         return false;
     }
 
     private boolean isPathMatch(String requestPath, String definedPath) {
         // Remove leading slashes
+        log.debug(requestPath);
+        log.debug(definedPath);
         while (requestPath.startsWith("/")) {
             requestPath = requestPath.substring(1);
         }
@@ -104,7 +110,7 @@ public class OpenApiProcessor implements Processor {
 
         // Remove trailing slashes
         while (definedPath.endsWith("/")) {
-            definedPath = definedPath.substring(0, requestPath.length() - 1);
+            definedPath = definedPath.substring(0, definedPath.length() - 1);
         }
 
         // Split paths by '/' to handle individual segments
