@@ -35,7 +35,7 @@ public class ConsulAutoConfiguration {
     private final Map<String, WebsocketClient> websocketClientMap;
     private final Map<String, SSEClient> sseClientMap;
     private final Optional<WebsocketUtils> websocketUtils;
-    private final SSEUtils sseUtils;
+    private final Optional<SSEUtils> sseUtils;
     private final Optional<StickySessionCacheManager> stickySessionCacheManager;
     private final Optional<OpaService> opaService;
     private final String capiNamespace;
@@ -53,7 +53,7 @@ public class ConsulAutoConfiguration {
                                    Map<String, WebsocketClient> websocketClientMap,
                                    Map<String, SSEClient> sseClientMap,
                                    Optional<WebsocketUtils> websocketUtils,
-                                   SSEUtils sseUtils,
+                                   Optional<SSEUtils> sseUtils,
                                    Optional<StickySessionCacheManager> stickySessionCacheManager,
                                    Optional<OpaService> opaService,
                                    @Value("${capi.namespace}") String capiNamespace,
@@ -95,7 +95,7 @@ public class ConsulAutoConfiguration {
 
         opaService.ifPresent(consulNodeDiscovery::setOpaService);
         consulNodeDiscovery.setWebsocketUtils(websocketUtils.orElse(null));
-        consulNodeDiscovery.setSSEUtils(sseUtils);
+        consulNodeDiscovery.setSSEUtils(sseUtils.orElse(null));
         consulNodeDiscovery.setCapiContext(httpUtils.getCapiContext(capiContext));
         consulNodeDiscovery.setConsulHostList(capiConsulHosts);
         if(capiNamespace != null && !capiNamespace.isEmpty()) {
