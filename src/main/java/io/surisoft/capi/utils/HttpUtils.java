@@ -225,7 +225,7 @@ public class HttpUtils {
                 }
             }
         } catch (AuthorizationException | ParseException | IOException e) {
-            log.error(e.getMessage());
+            log.debug(e.getMessage());
             //General Exception
             return false;
         }

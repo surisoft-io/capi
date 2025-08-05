@@ -23,11 +23,11 @@ public class ContentTypeValidator implements Processor {
         }
 
         if (contentType != null && contentType.equalsIgnoreCase("text/event-stream")) {
-            log.warn("Content type is not supported");
+            log.debug("Content type is not supported");
             sendException(exchange);
         }
         if (accptType != null && accptType.equalsIgnoreCase("text/event-stream")) {
-            log.warn("Content type is not supported");
+            log.debug("Content type is not supported");
             sendException(exchange);
         }
     }

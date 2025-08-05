@@ -7,7 +7,7 @@
   <groupId>io.surisoft.capi</groupId>
   <artifactId>capi</artifactId>
   <packaging>jar</packaging>
-  <version>4.12.0</version>
+  <version>4.12.1</version>
   <description>${spring.boot-version}</description>
   <name>CAPI Gateway</name>
 

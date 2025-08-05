@@ -93,20 +93,11 @@ public class ServiceUtils {
                                       Service incomingService,
                                       Cache<String, Service> serviceCache) {
 
-        if(!Objects.equals(existingService.getModifyIndex(), incomingService.getModifyIndex())) {
+        if(didServiceChange(existingService, incomingService)) {
             redeployService(incomingService, existingService, serviceCache);
             serviceCache.remove(existingService.getId());
             return true;
-        }
-        /*if(!Objects.equals(existingService.getServiceIdConsul(), incomingService.getServiceIdConsul())) {
-            redeployService(incomingService, existingService, serviceCache);
-            serviceCache.remove(existingService.getId());
-            return true;
-        } else if(isMappingChanged(existingService.getMappingList().stream().toList(), incomingService.getMappingList().stream().toList())) {
-            redeployService(incomingService, existingService, serviceCache);
-            serviceCache.remove(existingService.getId());
-            return true;
-        }*/ else {
+        } else {
             log.trace("No changes detected for Service: {}.", existingService.getId());
             return false;
         }
@@ -149,6 +140,37 @@ public class ServiceUtils {
             }
         }
         return false;
+    }
+
+    public boolean didServiceChange(Service existingService, Service incomingService) {
+        if(existingService.getMappingList().size() != incomingService.getMappingList().size()) {
+            return true;
+        }
+        for(Mapping incomingMapping : incomingService.getMappingList()) {
+            if(!existingService.getMappingList().contains(incomingMapping)) {
+                return true;
+            }
+        }
+        if(didOpenApiEndpointChange(existingService.getServiceMeta().getOpenApiEndpoint(), incomingService.getServiceMeta().getOpenApiEndpoint())) {
+            return true;
+        }
+        if(existingService.getServiceMeta().isSecured() != incomingService.getServiceMeta().isSecured()) {
+            return true;
+        }
+        if(existingService.getServiceMeta().isRouteGroupFirst() != incomingService.getServiceMeta().isRouteGroupFirst()) {
+            return true;
+        }
+        return false;
+    }
+
+    private boolean didOpenApiEndpointChange(String existingEndpoint, String incomingEndpoint) {
+        if(existingEndpoint == null && incomingEndpoint != null) {
+            return true;
+        }
+        if(existingEndpoint != null && incomingEndpoint == null) {
+            return true;
+        }
+        return existingEndpoint != null && !existingEndpoint.equals(incomingEndpoint);
     }
 
 

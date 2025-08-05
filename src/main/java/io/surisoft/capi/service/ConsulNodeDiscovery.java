@@ -86,9 +86,18 @@ public class ConsulNodeDiscovery {
     }
 
     public void processInfo() {
-        Map<String, List<ConsulObject>> serviceListObjects = getAllServices();
-        lookForRemovedServices(serviceListObjects);
-        processServices(serviceListObjects);
+        try {
+            Map<String, List<ConsulObject>> serviceListObjects = getAllServices();
+            lookForRemovedServices(serviceListObjects);
+            processServices(serviceListObjects);
+        }
+        catch (IOException e) {
+            log.error(ErrorMessage.ERROR_CONNECTING_TO_CONSUL);
+        } catch (InterruptedException e) {
+            log.error(ErrorMessage.ERROR_CONNECTING_TO_CONSUL);
+            Thread.currentThread().interrupt();
+
+        }
     }
 
     private void lookForRemovedServices(Map<String, List<ConsulObject>> serviceListObjects) {
@@ -118,35 +127,27 @@ public class ConsulNodeDiscovery {
         }
     }
 
-    private Map<String, List<ConsulObject>> getAllServices() {
+    private Map<String, List<ConsulObject>> getAllServices() throws InterruptedException, IOException {
         ObjectMapper objectMapper = new ObjectMapper();
         Map<String, List<ConsulObject>> serviceListObjects = new HashMap<>();
         HttpResponse<String> response;
-        try {
-            for(String consulHost : consulHostList) {
-                log.trace("Querying Consul {} for new services", consulHost);
-                response = client.send(buildServicesHttpRequest(consulHost), HttpResponse.BodyHandlers.ofString());
-                JsonObject responseObject = objectMapper.readValue(response.body(), JsonObject.class);
-                //We want to ignore the consul array
-                responseObject.remove("consul");
-                Set<String> services = responseObject.keySet();
-                for(String serviceName : services) {
-                    List<ConsulObject> consulInstanceObjectList = getServiceByName(consulHost, serviceName);
-                    if(consulInstanceObjectList != null) {
-                        if(serviceListObjects.containsKey(serviceName)) {
-                            serviceListObjects.get(serviceName).addAll(consulInstanceObjectList);
-                        } else {
-                            serviceListObjects.put(serviceName, consulInstanceObjectList);
-                        }
+        for(String consulHost : consulHostList) {
+            log.trace("Querying Consul {} for new services", consulHost);
+            response = client.send(buildServicesHttpRequest(consulHost), HttpResponse.BodyHandlers.ofString());
+            JsonObject responseObject = objectMapper.readValue(response.body(), JsonObject.class);
+            //We want to ignore the consul array
+            responseObject.remove("consul");
+            Set<String> services = responseObject.keySet();
+            for(String serviceName : services) {
+                List<ConsulObject> consulInstanceObjectList = getServiceByName(consulHost, serviceName);
+                if(consulInstanceObjectList != null) {
+                    if(serviceListObjects.containsKey(serviceName)) {
+                        serviceListObjects.get(serviceName).addAll(consulInstanceObjectList);
+                    } else {
+                        serviceListObjects.put(serviceName, consulInstanceObjectList);
                     }
                 }
             }
-        } catch (IOException e) {
-            log.error(ErrorMessage.ERROR_CONNECTING_TO_CONSUL);
-        } catch (InterruptedException e) {
-            log.error(ErrorMessage.ERROR_CONNECTING_TO_CONSUL);
-            Thread.currentThread().interrupt();
-
         }
         return serviceListObjects;
     }
