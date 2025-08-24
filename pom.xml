@@ -12,7 +12,7 @@
   <name>CAPI Gateway</name>
 
   <properties>
-    <org.apache.camel.springboot-version>4.12.0</org.apache.camel.springboot-version>
+    <org.apache.camel.springboot-version>4.14.0</org.apache.camel.springboot-version>
     <spring.boot-version>3.5.0</spring.boot-version>
 
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -24,7 +24,7 @@
     <io.swagger.parser.v3.version>2.1.27</io.swagger.parser.v3.version>
 
     <jackson-dataformat-xml.version>2.19.0</jackson-dataformat-xml.version>
-    <spring.kafka.version>3.3.6</spring.kafka.version>
+    <spring.kafka.version>3.3.9</spring.kafka.version>
     <camel-zipkin-starter.version>3.22.1</camel-zipkin-starter.version>
 
     <wiremock.version>3.0.1</wiremock.version>
