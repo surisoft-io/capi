@@ -1,6 +1,5 @@
 package io.surisoft.capi.configuration;
 
-import io.surisoft.capi.cache.StickySessionCacheManager;
 import io.surisoft.capi.processor.ContentTypeValidator;
 import io.surisoft.capi.processor.ThrottleProcessor;
 import io.surisoft.capi.processor.MetricsProcessor;
@@ -36,7 +35,6 @@ public class ConsulAutoConfiguration {
     private final Map<String, SSEClient> sseClientMap;
     private final Optional<WebsocketUtils> websocketUtils;
     private final Optional<SSEUtils> sseUtils;
-    private final Optional<StickySessionCacheManager> stickySessionCacheManager;
     private final Optional<OpaService> opaService;
     private final String capiNamespace;
     private final boolean strictNamespace;
@@ -54,7 +52,6 @@ public class ConsulAutoConfiguration {
                                    Map<String, SSEClient> sseClientMap,
                                    Optional<WebsocketUtils> websocketUtils,
                                    Optional<SSEUtils> sseUtils,
-                                   Optional<StickySessionCacheManager> stickySessionCacheManager,
                                    Optional<OpaService> opaService,
                                    @Value("${capi.namespace}") String capiNamespace,
                                    @Value("${capi.strict}") boolean strictNamespace,
@@ -71,7 +68,6 @@ public class ConsulAutoConfiguration {
         this.sseClientMap = sseClientMap;
         this.websocketUtils = websocketUtils;
         this.sseUtils = sseUtils;
-        this.stickySessionCacheManager = stickySessionCacheManager;
         this.opaService = opaService;
         this.capiNamespace = capiNamespace;
         this.strictNamespace = strictNamespace;
@@ -112,8 +108,6 @@ public class ConsulAutoConfiguration {
         }
 
         consulNodeDiscovery.setCapiRunningMode(capiRunningMode);
-
-        stickySessionCacheManager.ifPresent(consulNodeDiscovery::setStickySessionCacheManager);
         return consulNodeDiscovery;
     }
 }

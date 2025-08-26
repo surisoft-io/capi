@@ -21,13 +21,11 @@ public class CapiApplicationListener implements ApplicationListener<ApplicationE
 
     private static final Logger log = LoggerFactory.getLogger(CapiApplicationListener.class);
     private final Cache<String, Service> serviceCache;
-    private final Cache<String, StickySession> stickySessionCache;
     private final Optional<WebsocketGateway> websocketGateway;
     private final Optional<SSEGateway> sseGateway;
 
-    public CapiApplicationListener(Cache<String, Service> serviceCache, Cache<String, StickySession> stickySessionCache, Optional<WebsocketGateway> websocketGateway, Optional<SSEGateway> sseGateway) {
+    public CapiApplicationListener(Cache<String, Service> serviceCache, Optional<WebsocketGateway> websocketGateway, Optional<SSEGateway> sseGateway) {
         this.serviceCache = serviceCache;
-        this.stickySessionCache = stickySessionCache;
         this.websocketGateway = websocketGateway;
         this.sseGateway = sseGateway;
     }
@@ -47,7 +45,6 @@ public class CapiApplicationListener implements ApplicationListener<ApplicationE
         if(applicationEvent instanceof ContextClosedEvent) {
             log.info("Capi is shutting down, time to clear all cache info.");
             serviceCache.clear();
-            stickySessionCache.clear();
         }
     }
 }

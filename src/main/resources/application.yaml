@@ -121,7 +121,7 @@ capi:
     discovery:
       enabled: true
       timer:
-        interval: 40000
+        interval: 30000
   # Certificate Management (Editable property)
   # If you want to enable certificate management, please provide a trust store (JKS).
   trust:
@@ -171,7 +171,7 @@ capi:
           Vary
   # oauth2 support to protect the routes. (Editable properties)
   oauth2:
-    cookieName: x-apigateway-authorization-cookie-name
+    cookieName:
     provider:
       enabled: false
       keys: http://localhost:8080/realms/capi/protocol/openid-connect/certs

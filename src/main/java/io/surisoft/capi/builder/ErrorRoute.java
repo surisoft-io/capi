@@ -12,6 +12,7 @@ import org.springframework.stereotype.Component;
 public class ErrorRoute extends RouteBuilder {
 
     private final HttpUtils httpUtils;
+    private final static String SERVICE_RESPONSE_CODE = "serviceResponseCode";
 
     public ErrorRoute(HttpUtils httpUtils) {
         this.httpUtils = httpUtils;
@@ -35,18 +36,18 @@ public class ErrorRoute extends RouteBuilder {
                             capiRestError.setTraceID(exchange.getIn().getHeader(Constants.TRACE_ID_HEADER, String.class));
                         }
                         if(exchange.getIn().getHeader(Constants.REASON_MESSAGE_HEADER) != null && exchange.getIn().getHeader(Constants.REASON_CODE_HEADER) != null) {
-                            exchange.setProperty("serviceResponseCode", exchange.getIn().getHeader(Constants.REASON_CODE_HEADER));
+                            exchange.setProperty(SERVICE_RESPONSE_CODE, exchange.getIn().getHeader(Constants.REASON_CODE_HEADER));
                             capiRestError.setErrorMessage(exchange.getIn().getHeader(Constants.REASON_MESSAGE_HEADER, String.class));
                             capiRestError.setErrorCode(exchange.getIn().getHeader(Constants.REASON_CODE_HEADER, Integer.class));
                         } else {
-                            exchange.setProperty("serviceResponseCode", 400);
+                            exchange.setProperty(SERVICE_RESPONSE_CODE, 400);
                             capiRestError.setErrorMessage("Unknown error");
                             capiRestError.setErrorCode(400);
                         }
                         exchange.getIn().setBody(httpUtils.proxyErrorMapper(capiRestError));
                     }
                 })
-                .setHeader(Exchange.HTTP_RESPONSE_CODE, exchangeProperty("serviceResponseCode"))
+                .setHeader(Exchange.HTTP_RESPONSE_CODE, exchangeProperty(SERVICE_RESPONSE_CODE))
                 .removeHeader(Constants.REASON_MESSAGE_HEADER)
                 .removeHeader(Constants.REASON_CODE_HEADER)
                 .routeId("error-route")

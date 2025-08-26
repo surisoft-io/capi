@@ -3,7 +3,6 @@ package io.surisoft.capi.service;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.surisoft.capi.builder.DirectRouteProcessor;
-import io.surisoft.capi.cache.StickySessionCacheManager;
 import io.surisoft.capi.configuration.CapiSslContextHolder;
 import io.surisoft.capi.processor.ContentTypeValidator;
 import io.surisoft.capi.processor.ThrottleProcessor;
@@ -34,7 +33,6 @@ public class ConsulNodeDiscovery {
     private final ServiceUtils serviceUtils;
     private final RouteUtils routeUtils;
     private final MetricsProcessor metricsProcessor;
-    private StickySessionCacheManager stickySessionCacheManager;
     private HttpClient client;
     private static final String GET_ALL_SERVICES = "/v1/catalog/services";
     private static final String GET_SERVICE_BY_NAME = "/v1/catalog/service/";
@@ -309,7 +307,7 @@ public class ConsulNodeDiscovery {
                             DirectRouteProcessor directRouteProcessor = new DirectRouteProcessor(camelContext, incomingService, routeUtils, metricsProcessor, routeId, capiContext, reverseProxyHost, contentTypeValidator, throttleProcessor);
                             directRouteProcessor.setHttpUtils(httpUtils);
                             directRouteProcessor.setOpaService(opaService);
-                            directRouteProcessor.setStickySessionCacheManager(stickySessionCacheManager);
+                            //directRouteProcessor.setStickySessionCacheManager(stickySessionCacheManager);
                             directRouteProcessor.setServiceCache(serviceCache);
                             camelContext.addRoutes(directRouteProcessor);
                         } catch (Exception e) {
@@ -373,10 +371,6 @@ public class ConsulNodeDiscovery {
 
     public void setSSEUtils(SSEUtils sseUtils) {
         this.sseUtils = sseUtils;
-    }
-
-    public void setStickySessionCacheManager(StickySessionCacheManager stickySessionCacheManager) {
-        this.stickySessionCacheManager = stickySessionCacheManager;
     }
 
     public void setOpaService(OpaService opaService) {

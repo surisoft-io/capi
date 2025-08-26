@@ -43,17 +43,6 @@ public class CacheConfiguration {
     }
 
     @Bean
-    public Cache<String, StickySession> stickySessionCache() {
-        log.debug("Creating Service Cache");
-        return new Cache2kBuilder<String, StickySession>(){}
-                .name("stickySessionCache-" + hashCode())
-                .eternal(true)
-                .entryCapacity(10000)
-                .storeByReference(true)
-                .build();
-    }
-
-    @Bean
     @ConditionalOnProperty(prefix = "capi.consul.kv", name = "enabled", havingValue = "true")
     public Cache<String, List<String>> consulKvStoreCache(RestTemplate restTemplate) {
         String consulHost = capiConsulHosts.get(0);

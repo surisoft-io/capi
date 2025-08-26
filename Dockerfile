@@ -1,12 +1,19 @@
-FROM eclipse-temurin:21-jdk-alpine
+FROM maven:3.9-eclipse-temurin-21-alpine AS builder
 
-ARG CAPI_VERSION=4.8.20
+WORKDIR /app
 
-RUN mkdir /capi
-RUN mkdir /capi/logs
+COPY pom.xml .
+RUN mvn dependency:go-offline
 
-ARG JAR_FILE=target/capi-${CAPI_VERSION}.jar
-COPY ${JAR_FILE} /capi/app.jar
+COPY src ./src
+RUN mvn clean package -DskipTests
+
+FROM eclipse-temurin:21-jre-alpine
+
+WORKDIR /app
+
+COPY --from=builder /app/target/*.jar app.jar
+
 
 ENTRYPOINT exec java -XX:InitialHeapSize=512m \
                      -XX:+UseG1GC \
@@ -14,4 +21,4 @@ ENTRYPOINT exec java -XX:InitialHeapSize=512m \
                      -XX:+ParallelRefProcEnabled \
                      -XX:+HeapDumpOnOutOfMemoryError \
                      -XX:HeapDumpPath=/capi/logs/heap-dump.hprof \
-                     -jar /capi/app.jar
+                     -jar app.jar

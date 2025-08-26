@@ -7,13 +7,13 @@
   <groupId>io.surisoft.capi</groupId>
   <artifactId>capi</artifactId>
   <packaging>jar</packaging>
-  <version>4.12.1</version>
+  <version>4.14.0</version>
   <description>${spring.boot-version}</description>
   <name>CAPI Gateway</name>
 
   <properties>
-    <org.apache.camel.springboot-version>4.12.0</org.apache.camel.springboot-version>
-    <spring.boot-version>3.5.0</spring.boot-version>
+    <org.apache.camel.springboot-version>4.14.0</org.apache.camel.springboot-version>
+    <spring.boot-version>3.5.5</spring.boot-version>
 
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
@@ -25,12 +25,13 @@
 
     <jackson-dataformat-xml.version>2.19.0</jackson-dataformat-xml.version>
     <spring.kafka.version>3.3.6</spring.kafka.version>
-    <camel-zipkin-starter.version>3.22.1</camel-zipkin-starter.version>
+    <camel-zipkin-starter.version>3.22.4</camel-zipkin-starter.version>
 
     <wiremock.version>3.0.1</wiremock.version>
-    <org.bouncycastle.version>1.70</org.bouncycastle.version>
-    <org.junit.jupiter.version>5.11.3</org.junit.jupiter.version>
-    <jacoco.version>0.8.11</jacoco.version>
+    <org.bouncycastle.version>1.81</org.bouncycastle.version>
+    <org.junit.jupiter.version>5.13.4</org.junit.jupiter.version>
+    <org.junit.platform.version>1.13.4</org.junit.platform.version>
+    <jacoco.version>0.8.13</jacoco.version>
     <sonar.organization>surisoft-io</sonar.organization>
     <sonar.host.url>https://sonarcloud.io</sonar.host.url>
     <sonar.java.coveragePlugin>jacoco</sonar.java.coveragePlugin>
@@ -41,7 +42,7 @@
   <parent>
     <groupId>org.springframework.boot</groupId>
     <artifactId>spring-boot-starter-parent</artifactId>
-    <version>3.5.0</version>
+    <version>3.5.5</version>
     <relativePath/>
   </parent>
 
@@ -173,6 +174,13 @@
       <artifactId>spring-boot-starter-test</artifactId>
       <scope>test</scope>
     </dependency>
+
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-api</artifactId>
+      <version>${org.junit.jupiter.version}</version>
+      <scope>test</scope>
+    </dependency>
     <dependency>
       <groupId>org.junit.jupiter</groupId>
       <artifactId>junit-jupiter-engine</artifactId>
@@ -180,13 +188,32 @@
       <scope>test</scope>
     </dependency>
     <dependency>
+      <groupId>org.junit.platform</groupId>
+      <artifactId>junit-platform-commons</artifactId>
+      <version>${org.junit.platform.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.platform</groupId>
+      <artifactId>junit-platform-engine</artifactId>
+      <version>${org.junit.platform.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.platform</groupId>
+      <artifactId>junit-platform-launcher</artifactId>
+      <version>${org.junit.platform.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
       <scope>test</scope>
     </dependency>
+
     <dependency>
       <groupId>org.bouncycastle</groupId>
-      <artifactId>bcpkix-jdk15on</artifactId>
+      <artifactId>bcpkix-jdk18on</artifactId>
       <version>${org.bouncycastle.version}</version>
       <scope>test</scope>
     </dependency>
@@ -230,11 +257,6 @@
       <artifactId>swagger-parser-v3</artifactId>
       <version>${io.swagger.parser.v3.version}</version>
     </dependency>
-    <dependency>
-      <groupId>org.apache.camel.springboot</groupId>
-      <artifactId>camel-stream-starter</artifactId>
-      <version>${org.apache.camel.springboot-version}</version>
-    </dependency>
   </dependencies>
 <build>
   <resources>
@@ -246,8 +268,8 @@
 <plugins>
     <plugin>
       <groupId>org.cyclonedx</groupId>
-      <artifactId>cyclonedx-maven-plugin</artifactId>
-      <version>2.7.11</version>
+        <artifactId>cyclonedx-maven-plugin</artifactId>
+      <version>2.9.1</version>
       <executions>
         <execution>
           <phase>package</phase>

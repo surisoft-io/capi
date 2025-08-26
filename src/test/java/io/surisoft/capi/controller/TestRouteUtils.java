@@ -27,14 +27,6 @@ class TestRouteUtils {
     RouteUtils routeUtils;
 
     @Test
-    void testBuildException() {
-        RouteDefinition routeDefinition = new RouteDefinition();
-        String routeId = "unit-test:unit-test-context";
-        routeUtils.buildOnExceptionDefinition(routeDefinition, false, routeId);
-        Assertions.assertNotNull(routeDefinition);
-    }
-
-    @Test
     void testBuildEndpoints() {
 
         List<String> expectedEndpointList = new ArrayList<>();

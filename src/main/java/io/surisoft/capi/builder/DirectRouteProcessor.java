@@ -1,6 +1,6 @@
 package io.surisoft.capi.builder;
 
-import io.surisoft.capi.cache.StickySessionCacheManager;
+import io.surisoft.capi.exception.AuthorizationException;
 import io.surisoft.capi.processor.*;
 import io.surisoft.capi.schema.Service;
 import io.surisoft.capi.service.OpaService;
@@ -8,15 +8,20 @@ import io.surisoft.capi.utils.Constants;
 import io.surisoft.capi.utils.HttpUtils;
 import io.surisoft.capi.utils.RouteUtils;
 import org.apache.camel.CamelContext;
+import org.apache.camel.Exchange;
+import org.apache.camel.Processor;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.model.RouteDefinition;
 import org.apache.camel.model.rest.RestDefinition;
 import org.cache2k.Cache;
 
+import javax.net.ssl.SSLHandshakeException;
+import java.net.SocketException;
+import java.net.UnknownHostException;
+
 public class DirectRouteProcessor extends RouteBuilder {
     private final RouteUtils routeUtils;
     private final Service service;
-    private StickySessionCacheManager stickySessionCacheManager;
     private final String routeId;
     private final String capiContext;
     private final MetricsProcessor metricsProcessor;
@@ -49,6 +54,8 @@ public class DirectRouteProcessor extends RouteBuilder {
 
     @Override
     public void configure() {
+        log.trace("Trying to build and deploy route {}", routeId);
+
         RouteDefinition routeDefinition = from(Constants.CAMEL_DIRECT + routeId);
         if(reverseProxyHost != null) {
             routeDefinition
@@ -57,58 +64,51 @@ public class DirectRouteProcessor extends RouteBuilder {
                     .setHeader(Constants.X_FORWARDED_PREFIX, constant(capiContext + service.getContext()));
         }
 
-        if(service.getServiceMeta().getOpenApiEndpoint() != null && service.getOpenAPI() != null) {
-            routeDefinition.process(new OpenApiProcessor(service.getOpenAPI(), httpUtils, serviceCache, opaService));
-        }
-
-        log.trace("Trying to build and deploy route {}", routeId);
-        routeUtils.buildOnExceptionDefinition(routeDefinition, service.getServiceMeta().isB3TraceId(), routeId);
-        if(service.getServiceMeta().isSecured()) {
-            routeUtils.enableAuthorization(service.getId(), routeDefinition);
-        }
-
         if(service.getServiceMeta().isKeepGroup()) {
             routeDefinition.setHeader(Constants.CAPI_GROUP_HEADER, constant(service.getContext()));
         }
 
+        //For failing over enabled routes we want to build the route with try catch
         if(service.isFailOverEnabled()) {
+            log.debug("Fail over enabled for route {}", routeId);
+
             routeDefinition
-                    .process(contentTypeValidator)
+                .doTry()
                     .process(metricsProcessor)
+                    .process(contentTypeValidator)
+                    .process(exchange -> {
+                        AuthorizationProcessor authorizationProcessor = routeUtils.authorizationProcessor(service.getId(), routeDefinition, service.getServiceMeta().isSecured());
+                        if (authorizationProcessor != null) {
+                            authorizationProcessor.process(exchange);
+                        }
+                    })
+                    .process(exchange -> {
+                        OpenApiProcessor openApiProcessor = routeUtils.openApiProcessor(service, opaService, serviceCache);
+                        if (openApiProcessor != null) {
+                            openApiProcessor.process(exchange);
+                        }
+                    })
+                    .process(exchange -> {
+                        if(service.getServiceMeta().isThrottle() && throttleProcessor != null) {
+                            throttleProcessor.process(exchange);
+                        }
+                    })
                     .loadBalance()
                     .failover(1, false, service.isRoundRobinEnabled(), false)
                     .to(routeUtils.buildEndpoints(service))
-                    .end()
-                    .removeHeader(Constants.X_FORWARDED_HOST)
-                    .removeHeader(Constants.X_FORWARDED_PREFIX)
-                    .removeHeader(Constants.AUTHORIZATION_HEADER)
-                    .removeHeader(Constants.CAPI_GROUP_HEADER)
-                    .routeId(routeId);
-        } else if(routeUtils.isStickySessionEnabled(service, stickySessionCacheManager)) {
-            routeDefinition
-                    .process(contentTypeValidator)
-                    .process(metricsProcessor)
-                    .loadBalance(new StickyLoadBalancer(stickySessionCacheManager, service.getServiceMeta().getStickySessionKey(), routeUtils.isStickySessionOnCookie(service)))
-                    .to(routeUtils.buildEndpoints(service))
-                    .end()
-                    .removeHeader(Constants.X_FORWARDED_HOST)
-                    .removeHeader(Constants.X_FORWARDED_PREFIX)
-                    .removeHeader(Constants.AUTHORIZATION_HEADER)
-                    .removeHeader(Constants.CAPI_GROUP_HEADER)
-                    .routeId(routeId);
-        } else if(service.getServiceMeta().isThrottle() && throttleProcessor != null) {
-            //global throttling
-            //if(service.getServiceMeta().isThrottleGlobal()
-            //        && service.getServiceMeta().getThrottleDuration() > -1
-            //        && service.getServiceMeta().getThrottleTotalCalls() > -1) {
-                routeDefinition
-                    .process(contentTypeValidator)
-                    .process(metricsProcessor)
-                    //.setHeader(Constants.CAPI_META_THROTTLE_DURATION, constant(service.getServiceMeta().getThrottleDuration()))
-                    //.setHeader(Constants.CAPI_META_THROTTLE_TOTAL_CALLS_ALLOWED, constant(service.getServiceMeta().getThrottleTotalCalls()))
-                    .process(throttleProcessor)
-                    .to(routeUtils.buildEndpoints(service))
-                    .end()
+                .endDoTry()
+                .doCatch(SSLHandshakeException.class, SocketException.class, UnknownHostException.class, AuthorizationException.class)
+                    .setHeader(Constants.ERROR_API_SHOW_TRACE_ID, constant(service.getServiceMeta().isB3TraceId()))
+                    .process(routeUtils.getHttpErrorProcessor())
+                    .setHeader(Constants.ROUTE_ID_HEADER, constant(routeId))
+                    .to(Constants.CAPI_ERROR_ROUTE)
+                    .removeHeader(Constants.ERROR_API_SHOW_TRACE_ID)
+                    .removeHeader(Constants.ERROR_API_SHOW_INTERNAL_ERROR_MESSAGE)
+                    .removeHeader(Constants.ERROR_API_SHOW_INTERNAL_ERROR_CLASS)
+                    .removeHeader(Constants.CAPI_URL_IN_ERROR)
+                    .removeHeader(Constants.CAPI_URI_IN_ERROR)
+                    .removeHeader(Constants.ROUTE_ID_HEADER)
+                .end()
                     .removeHeader(Constants.X_FORWARDED_HOST)
                     .removeHeader(Constants.X_FORWARDED_PREFIX)
                     .removeHeader(Constants.AUTHORIZATION_HEADER)
@@ -118,32 +118,43 @@ public class DirectRouteProcessor extends RouteBuilder {
                     .removeHeader(Constants.CAPI_META_THROTTLE_DURATION)
                     .removeHeader(Constants.CAPI_META_THROTTLE_TOTAL_CALLS_ALLOWED)
                     .removeHeader(Constants.CAPI_META_THROTTLE_CONSUMER_KEY)
-                    .routeId(routeId);
-            //}
-        } else if(service.getServiceMeta().isTenantAware()) {
-            routeDefinition
-                    .process(contentTypeValidator)
-                    .process(metricsProcessor)
-                    .loadBalance(new TenantAwareLoadBalancer())
-                    .to(routeUtils.buildEndpoints(service))
-                    .end()
-                    .removeHeader(Constants.X_FORWARDED_HOST)
-                    .removeHeader(Constants.X_FORWARDED_PREFIX)
-                    .removeHeader(Constants.AUTHORIZATION_HEADER)
-                    .removeHeader(Constants.CAPI_GROUP_HEADER)
-                    .routeId(routeId);
+                .routeId(routeId);
         } else {
             routeDefinition
-                    .process(contentTypeValidator)
-                    .process(metricsProcessor)
-                    .to(routeUtils.buildEndpoints(service))
-                    .end()
-                    .removeHeader(Constants.X_FORWARDED_HOST)
-                    .removeHeader(Constants.X_FORWARDED_PREFIX)
-                    .removeHeader(Constants.AUTHORIZATION_HEADER)
-                    .removeHeader(Constants.CAPI_GROUP_HEADER)
-                    .routeId(routeId);
+                .onException(Exception.class)
+                .handled(true)
+                .setHeader(Constants.ERROR_API_SHOW_TRACE_ID, constant(service.getServiceMeta().isB3TraceId()))
+                .process(routeUtils.getHttpErrorProcessor())
+                .setHeader(Constants.ROUTE_ID_HEADER, constant(routeId))
+                .to(Constants.CAPI_ERROR_ROUTE)
+                .removeHeader(Constants.ERROR_API_SHOW_TRACE_ID)
+                .removeHeader(Constants.ERROR_API_SHOW_INTERNAL_ERROR_MESSAGE)
+                .removeHeader(Constants.ERROR_API_SHOW_INTERNAL_ERROR_CLASS)
+                .removeHeader(Constants.CAPI_URL_IN_ERROR)
+                .removeHeader(Constants.CAPI_URI_IN_ERROR)
+                .removeHeader(Constants.ROUTE_ID_HEADER)
+                .end();
+
+            if(service.getServiceMeta().isSecured()) {
+                routeUtils.enableAuthorization(service.getId(), routeDefinition);
+            }
+            if(service.getServiceMeta().getOpenApiEndpoint() != null && service.getOpenAPI() != null) {
+                routeDefinition.process(new OpenApiProcessor(service.getOpenAPI(), httpUtils, serviceCache, opaService));
+            }
+
+            routeDefinition
+                .process(contentTypeValidator)
+                .process(metricsProcessor)
+                .to(routeUtils.buildEndpoints(service))
+                .end()
+                .removeHeader(Constants.X_FORWARDED_HOST)
+                .removeHeader(Constants.X_FORWARDED_PREFIX)
+                .removeHeader(Constants.AUTHORIZATION_HEADER)
+                .removeHeader(Constants.CAPI_GROUP_HEADER)
+                .routeId(routeId);
+
         }
+
         routeUtils.registerMetric(routeId);
         routeUtils.registerTracer(service);
 
@@ -171,10 +182,6 @@ public class DirectRouteProcessor extends RouteBuilder {
 
     public void setServiceCache(Cache<String, Service> serviceCache) {
         this.serviceCache = serviceCache;
-    }
-
-    public void setStickySessionCacheManager(StickySessionCacheManager stickySessionCacheManager) {
-        this.stickySessionCacheManager = stickySessionCacheManager;
     }
 
     private RestDefinition getRestDefinition(Service service) {

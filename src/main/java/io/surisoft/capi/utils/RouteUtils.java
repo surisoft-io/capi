@@ -1,39 +1,29 @@
 package io.surisoft.capi.utils;
 
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
-import io.surisoft.capi.cache.StickySessionCacheManager;
 import io.surisoft.capi.configuration.CapiSslContextHolder;
-import io.surisoft.capi.processor.AuthorizationProcessor;
-import io.surisoft.capi.processor.HttpErrorProcessor;
+import io.surisoft.capi.processor.*;
 import io.surisoft.capi.schema.HttpMethod;
 import io.surisoft.capi.schema.HttpProtocol;
 import io.surisoft.capi.schema.Mapping;
 import io.surisoft.capi.schema.Service;
 import io.surisoft.capi.service.CapiTrustManager;
-import io.surisoft.capi.service.ConsulNodeDiscovery;
+import io.surisoft.capi.service.OpaService;
 import io.surisoft.capi.tracer.CapiTracer;
-import okhttp3.OkHttpClient;
 import org.apache.camel.CamelContext;
 import org.apache.camel.Route;
 import org.apache.camel.component.http.HttpComponent;
 import org.apache.camel.model.RouteDefinition;
-import org.apache.hc.core5.ssl.SSLContextBuilder;
-import org.apache.hc.core5.ssl.TrustStrategy;
+import org.cache2k.Cache;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.beans.factory.support.DefaultSingletonBeanRegistry;
-import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Component;
 
-import javax.net.ssl.SSLContext;
 import java.io.InputStream;
-import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-
-import static org.apache.camel.language.constant.ConstantLanguage.constant;
 
 @Component
 public class RouteUtils {
@@ -86,12 +76,52 @@ public class RouteUtils {
         }
     }
 
-    public void buildOnExceptionDefinition(RouteDefinition routeDefinition,
+    /*public void buildOnExceptionDefinition(RouteDefinition routeDefinition,
                                            boolean isTraceIdVisible,
-                                           String routeID) {
+                                           String routeID,
+                                           boolean isLoadBalancingEnabled) {
+        if(!isLoadBalancingEnabled) {
+            routeDefinition
+                    .onException(Exception.class)
+                    .handled(true)
+                    .setHeader(Constants.ERROR_API_SHOW_TRACE_ID, constant(isTraceIdVisible))
+                    .process(httpErrorProcessor)
+                    .setHeader(Constants.ROUTE_ID_HEADER, constant(routeID))
+                    .to("direct:error")
+                    .removeHeader(Constants.ERROR_API_SHOW_TRACE_ID)
+                    .removeHeader(Constants.ERROR_API_SHOW_INTERNAL_ERROR_MESSAGE)
+                    .removeHeader(Constants.ERROR_API_SHOW_INTERNAL_ERROR_CLASS)
+                    .removeHeader(Constants.CAPI_URL_IN_ERROR)
+                    .removeHeader(Constants.CAPI_URI_IN_ERROR)
+                    .removeHeader(Constants.ROUTE_ID_HEADER)
+                    .end();
+        }
+    }
+
+    public void buildLoadBalancedRoute(RouteDefinition routeDefinition,
+                                       boolean isTraceIdVisible,
+                                       String routeID,
+                                       Service service, ContentTypeValidator contentTypeValidator, OpaService opaService, Cache<String, Service> serviceCache) {
         routeDefinition
-                .onException(Exception.class)
-                .handled(true)
+                .doTry()
+                .process(contentTypeValidator)
+                .process(exchange -> {
+                    AuthorizationProcessor authorizationProcessor = authorizationProcessor(service.getId(), routeDefinition, service.getServiceMeta().isSecured());
+                    if (authorizationProcessor != null) {
+                        authorizationProcessor.process(exchange);
+                    }
+                })
+                .process(exchange -> {
+                    OpenApiProcessor openApiProcessor = openApiProcessor(service, opaService, serviceCache);
+                    if (openApiProcessor != null) {
+                        openApiProcessor.process(exchange);
+                    }
+                })
+                .loadBalance()
+                .failover(1, false, service.isRoundRobinEnabled(), false)
+                .to(buildEndpoints(service))
+                .endDoTry()
+                .doCatch(SSLHandshakeException.class, SocketException.class, UnknownHostException.class, AuthorizationException.class)
                 .setHeader(Constants.ERROR_API_SHOW_TRACE_ID, constant(isTraceIdVisible))
                 .process(httpErrorProcessor)
                 .setHeader(Constants.ROUTE_ID_HEADER, constant(routeID))
@@ -102,8 +132,9 @@ public class RouteUtils {
                 .removeHeader(Constants.CAPI_URL_IN_ERROR)
                 .removeHeader(Constants.CAPI_URI_IN_ERROR)
                 .removeHeader(Constants.ROUTE_ID_HEADER)
-                .end();
-    }
+                .end()
+                .routeId(routeID);
+    }*/
 
     private String buildTimeouts() {
         return "&" +
@@ -175,17 +206,6 @@ public class RouteUtils {
         return routeIdList;
     }
 
-    public boolean isStickySessionEnabled(Service service, StickySessionCacheManager stickySessionCacheManager) {
-        return service.getServiceMeta().isStickySession() &&
-                service.getServiceMeta().getStickySessionKey() != null &&
-                service.getServiceMeta().getStickySessionType() != null &&
-                stickySessionCacheManager != null;
-    }
-
-    public boolean isStickySessionOnCookie(Service service) {
-        return service.getServiceMeta().getStickySessionType().equals("cookie");
-    }
-
     public void reloadTrustStoreManager(InputStream inputStream, String capiTrustStorePassword) {
         try {
             log.trace("Reloading Trust Store Manager after changes detected");
@@ -204,5 +224,23 @@ public class RouteUtils {
         } else {
             log.warn("The api with id {} is marked to protect but there is no OIDC provider enabled.", apiId);
         }
+    }
+
+    public AuthorizationProcessor authorizationProcessor(String apiId, RouteDefinition routeDefinition, boolean isSecured) {
+        if(authorizationProcessor.isPresent() && isSecured) {
+            return this.authorizationProcessor.get();
+        }
+        return null;
+    }
+
+    public OpenApiProcessor openApiProcessor(Service service, OpaService opaService, Cache<String, Service> serviceCache) {
+        if(service.getServiceMeta().getOpenApiEndpoint() != null && service.getOpenAPI() != null) {
+            return new OpenApiProcessor(service.getOpenAPI(), httpUtils, serviceCache, opaService);
+        }
+        return null;
+    }
+
+    public HttpErrorProcessor getHttpErrorProcessor() {
+        return httpErrorProcessor;
     }
 }

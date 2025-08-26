@@ -34,6 +34,7 @@ public class Constants {
     public static final String X_FORWARDED_PREFIX = "X-Forwarded-Prefix";
     public static final String X_FORWARDED_HOST = "X-Forwarded-Host";
     public static final String CAMEL_DIRECT = "direct:";
+    public static final String CAPI_ERROR_ROUTE = "direct:error";
     public static final String CAMEL_REST_PREFIX = "rd_";
     public static final String ERROR_MESSAGE = "errorMessage";
     public static final String ERROR_CODE = "errorCode";

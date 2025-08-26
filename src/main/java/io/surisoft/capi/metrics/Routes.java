@@ -24,20 +24,17 @@ public class Routes {
 
     private final ServiceUtils serviceUtils;
     private final Cache<String, Service> serviceCache;
-    private final Cache<String, StickySession> stickySessionCache;
     private final CamelContext camelContext;
     private final RouteUtils routeUtils;
     private final MetricsProcessor metricsProcessor;
 
     public Routes(ServiceUtils serviceUtils,
                   Cache<String, Service> serviceCache,
-                  Cache<String, StickySession> stickySessionCache,
                   CamelContext camelContext,
                   RouteUtils routeUtils,
                   MetricsProcessor metricsProcessor) {
         this.serviceUtils = serviceUtils;
         this.serviceCache = serviceCache;
-        this.stickySessionCache = stickySessionCache;
         this.camelContext = camelContext;
         this.routeUtils = routeUtils;
         this.metricsProcessor = metricsProcessor;

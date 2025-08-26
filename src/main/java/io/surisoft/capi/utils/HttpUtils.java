@@ -25,6 +25,7 @@ import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.net.HttpCookie;
+import java.net.URI;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.List;
@@ -334,6 +335,37 @@ public class HttpUtils {
     public void propagateAuthorization(Exchange exchange, String accessToken) {
         if(accessToken != null) {
             exchange.getIn().setHeader(Constants.AUTHORIZATION_HEADER, Constants.BEARER + accessToken.replaceAll("(\r\n|\n)", ""));
+        }
+    }
+
+    public boolean isSafeUri(URI uri, boolean allowLocalTraffic) {
+        String scheme = uri.getScheme();
+
+        if(!"http".equalsIgnoreCase(scheme) && !"https".equalsIgnoreCase(scheme)) {
+            return false;
+        }
+
+        String host = uri.getHost();
+        if(host == null)  {
+            return false;
+        }
+        try {
+            java.net.InetAddress addr = java.net.InetAddress.getByName(host);
+            if(!allowLocalTraffic) {
+                if(addr.isAnyLocalAddress() || addr.isLoopbackAddress()) return false;
+                if(addr instanceof java.net.Inet4Address ipv4) {
+                    byte[] b = ipv4.getAddress();
+                    int a = b[0] & 0xFF, c = b[1] & 0xFF;
+                    if(a == 10) return false;
+                    if(a == 172 && c >= 16 && c <= 31) return false;
+                    if(a == 192 && c == 168) return false;
+                    return a != 169 || c != 254;
+                }
+                return true;
+            }
+            return true;
+        } catch (java.net.UnknownHostException e) {
+            return false;
         }
     }
 }

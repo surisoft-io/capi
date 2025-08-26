@@ -17,6 +17,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
+import java.util.Optional;
 
 import static java.time.temporal.ChronoUnit.SECONDS;
 
@@ -28,15 +29,13 @@ public class OpaService {
     private final String opaEndpoint;
     private HttpClient httpClient;
     private final ObjectMapper objectMapper = new ObjectMapper();
-    private final CapiSslContextHolder capiSslContextHolder;
+    private final Optional<CapiSslContextHolder> capiSslContextHolder;
 
-    public OpaService(@Value("${capi.opa.endpoint}") String opaEndpoint, CapiSslContextHolder capiSslContextHolder) {
+    public OpaService(@Value("${capi.opa.endpoint}") String opaEndpoint, Optional<CapiSslContextHolder> capiSslContextHolder) {
         this.opaEndpoint = opaEndpoint;
         this.capiSslContextHolder = capiSslContextHolder;
         HttpClient.Builder httpClientBuilder = HttpClient.newBuilder();
-        if(capiSslContextHolder != null) {
-            httpClientBuilder.sslContext(capiSslContextHolder.getSslContext());
-        }
+        capiSslContextHolder.ifPresent(sslContextHolder -> httpClientBuilder.sslContext(sslContextHolder.getSslContext()));
         httpClientBuilder.connectTimeout(Duration.ofSeconds(10));
         httpClient = httpClientBuilder.build();
     }
@@ -78,9 +77,7 @@ public class OpaService {
 
     public void reloadHttpClient() {
         HttpClient.Builder httpClientBuilder = HttpClient.newBuilder();
-        if(capiSslContextHolder != null) {
-            httpClientBuilder.sslContext(capiSslContextHolder.getSslContext());
-        }
+        capiSslContextHolder.ifPresent(sslContextHolder -> httpClientBuilder.sslContext(sslContextHolder.getSslContext()));
         httpClientBuilder.connectTimeout(Duration.ofSeconds(10));
         httpClient = httpClientBuilder.build();
     }
