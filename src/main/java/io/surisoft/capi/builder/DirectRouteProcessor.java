@@ -145,6 +145,11 @@ public class DirectRouteProcessor extends RouteBuilder {
             routeDefinition
                 .process(contentTypeValidator)
                 .process(metricsProcessor)
+                .process(exchange -> {
+                    if(service.getServiceMeta().isThrottle() && throttleProcessor != null) {
+                        throttleProcessor.process(exchange);
+                    }
+                })
                 .to(routeUtils.buildEndpoints(service))
                 .end()
                 .removeHeader(Constants.X_FORWARDED_HOST)
