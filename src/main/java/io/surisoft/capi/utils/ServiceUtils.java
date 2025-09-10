@@ -17,7 +17,6 @@ import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 
 @Component
@@ -189,36 +188,45 @@ public class ServiceUtils {
     }
 
     public boolean checkIfOpenApiIsEnabled(Service service, HttpClient httpClient) {
-        if(capiRunningMode.equalsIgnoreCase(Constants.FULL_TYPE) && service.getServiceMeta() != null && service.getServiceMeta().getOpenApiEndpoint() != null && !service.getServiceMeta().getOpenApiEndpoint().isEmpty()) {
-            try {
-                HttpRequest.Builder builder = HttpRequest.newBuilder();
-                URI uri = URI.create(service.getServiceMeta().getOpenApiEndpoint());
-                if (uri.getPath() != null && uri.getPath().contains("..")) {
-                    throw new IllegalArgumentException("Path traversal detected in URI path: " + uri.getPath());
-                }
-                HttpRequest request =  builder
-                        .uri(uri)
-                        .timeout(Duration.ofMinutes(2))
-                        .build();
-
-                HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-                log.trace("Calling Remote Open API Spec: {}", service.getServiceMeta().getOpenApiEndpoint());
-                if(response.statusCode() == 200) {
-                    assert response.body() != null;
-                    OpenAPI openAPI = new OpenAPIV3Parser().readContents(response.body()).getOpenAPI();
-                    service.setOpenAPI(openAPI);
-                    return true;
-                } else {
-                    log.warn("Open API specification is invalid for service {}, response code: {}", service.getId(), response.statusCode());
-                    return false;
-                }
-            } catch(Exception e) {
-                log.warn(e.getMessage(), e);
-                log.warn("Open API specification is invalid for service {}", service.getId());
-                return false;
-            }
-        } else {
+        if (!capiRunningMode.equalsIgnoreCase(Constants.FULL_TYPE) || !serviceHasOpenApiEndpoint(service)) {
             return true;
         }
+
+        String openApiEndpoint = service.getServiceMeta().getOpenApiEndpoint();
+
+        try {
+            URI uri = URI.create(openApiEndpoint);
+            if (uri.getPath() != null && uri.getPath().contains("..")) {
+                throw new IllegalArgumentException("Path traversal detected in URI path: " + uri.getPath());
+            }
+
+            HttpRequest request =  HttpRequest.newBuilder()
+                    .uri(uri)
+                    .timeout(Duration.ofMinutes(2))
+                    .build();
+
+            log.trace("Calling Remote Open API Spec: {}", openApiEndpoint);
+            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+
+            if (response.statusCode() != 200) {
+                log.warn("Open API specification is invalid for service {}, response code: {}", service.getId(), response.statusCode());
+                return false;
+            }
+
+            assert response.body() != null;
+            OpenAPI openAPI = new OpenAPIV3Parser().readContents(response.body()).getOpenAPI();
+            service.setOpenAPI(openAPI);
+            return true;
+        } catch(Exception e) {
+            log.warn(e.getMessage(), e);
+            log.warn("Open API specification is invalid for service {}", service.getId());
+            return false;
+        }
+    }
+
+    private boolean serviceHasOpenApiEndpoint(Service service) {
+        return service.getServiceMeta() != null &&
+                service.getServiceMeta().getOpenApiEndpoint() != null &&
+                !service.getServiceMeta().getOpenApiEndpoint().isEmpty();
     }
 }
