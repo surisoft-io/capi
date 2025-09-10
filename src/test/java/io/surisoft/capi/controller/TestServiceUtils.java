@@ -18,6 +18,7 @@ import java.util.List;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
+import static org.assertj.core.api.Assertions.assertThat;
 
 @ExtendWith(SpringExtension.class)
 @SpringBootTest
@@ -38,7 +39,8 @@ class TestServiceUtils {
 
         service.setName("unit-test");
         service.setContext("test-context");
-        Assertions.assertEquals(serviceUtils.getServiceId(service), "unit-test:test");
+
+        assertThat(serviceUtils.getServiceId(service)).isEqualTo("unit-test:test");
     }
 
     @Test
@@ -52,9 +54,10 @@ class TestServiceUtils {
         consulObject1.setServiceMeta(serviceMeta);
 
         Mapping mapping1 = serviceUtils.consulObjectToMapping(consulObject1);
-        Assertions.assertEquals(mapping1.getHostname(), "localhost");
-        Assertions.assertEquals(mapping1.getRootContext(), "/");
-        Assertions.assertEquals(mapping1.getPort(), 9999);
+
+        assertThat(mapping1.getHostname()).isEqualTo("localhost");
+        assertThat(mapping1.getRootContext()).isEqualTo("/");
+        assertThat(mapping1.getPort()).isEqualTo(9999);
 
         ConsulObject consulObject2= new ConsulObject();
         consulObject2.setServiceAddress("localhost");
@@ -65,9 +68,10 @@ class TestServiceUtils {
         consulObject2.setServiceMeta(serviceMeta2);
 
         Mapping mapping2 = serviceUtils.consulObjectToMapping(consulObject2);
-        Assertions.assertEquals(mapping2.getHostname(), "localhost");
-        Assertions.assertEquals(mapping2.getRootContext(), "/unit-test");
-        Assertions.assertEquals(mapping2.getPort(), 8888);
+
+        assertThat(mapping2.getHostname()).isEqualTo("localhost");
+        assertThat(mapping2.getRootContext()).isEqualTo("/unit-test");
+        assertThat(mapping2.getPort()).isEqualTo(8888);
     }
 
     @Test
@@ -75,8 +79,10 @@ class TestServiceUtils {
         final Service service = new Service();
         final ServiceMeta serviceMeta = new ServiceMeta();
         service.setServiceMeta(serviceMeta);
+
         serviceUtils.validateServiceType(service);
-        Assertions.assertEquals("rest", service.getServiceMeta().getType());
+
+        assertThat(service.getServiceMeta().getType()).isEqualTo("rest");
     }
 
     @Test
@@ -92,7 +98,7 @@ class TestServiceUtils {
         list1.add(mapping1);
         list2.add(mapping1);
 
-        Assertions.assertFalse(serviceUtils.isMappingChanged(list1, list2));
+        assertThat(serviceUtils.isMappingChanged(list1, list2)).isFalse();
 
         Mapping mapping2 = new Mapping();
         mapping2.setHostname("localhost");
@@ -101,11 +107,11 @@ class TestServiceUtils {
 
         list1.add(mapping2);
 
-        Assertions.assertTrue(serviceUtils.isMappingChanged(list1, list2));
+        assertThat(serviceUtils.isMappingChanged(list1, list2)).isTrue();
 
         list1.remove(mapping1);
 
-        Assertions.assertTrue(serviceUtils.isMappingChanged(list1, list2));
+        assertThat(serviceUtils.isMappingChanged(list1, list2)).isTrue();
     }
 
     @Test
@@ -943,8 +949,8 @@ class TestServiceUtils {
         boolean result = serviceUtils.checkIfOpenApiIsEnabled(service, HttpClient.newHttpClient());
         wireMockServer.stop();
 
-        Assertions.assertTrue(result);
-        Assertions.assertNotNull(service.getOpenAPI());
+        assertThat(result).isTrue();
+        assertThat(service.getOpenAPI()).isNotNull();
     }
 
     @Test
@@ -961,8 +967,8 @@ class TestServiceUtils {
         boolean result = serviceUtils.checkIfOpenApiIsEnabled(service, HttpClient.newHttpClient());
         wireMockServer.stop();
 
-        Assertions.assertFalse(result);
-        Assertions.assertNull(service.getOpenAPI());
+        assertThat(result).isFalse();
+        assertThat(service.getOpenAPI()).isNull();
     }
 
     @Test
@@ -995,7 +1001,7 @@ class TestServiceUtils {
         boolean result = serviceUtils.checkIfOpenApiIsEnabled(service, HttpClient.newHttpClient());
         wireMockServer.stop();
 
-        Assertions.assertFalse(result);
-        Assertions.assertNull(service.getOpenAPI());
+        assertThat(result).isFalse();
+        assertThat(service.getOpenAPI()).isNull();
     }
 }
