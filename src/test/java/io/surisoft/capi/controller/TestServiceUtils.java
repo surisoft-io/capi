@@ -940,9 +940,11 @@ class TestServiceUtils {
         serviceMeta.setOpenApiEndpoint("http://localhost:" + wireMockServer.port() + "/api" );
         service.setServiceMeta(serviceMeta);
 
-        serviceUtils.checkIfOpenApiIsEnabled(service, HttpClient.newHttpClient());
-        Assertions.assertNotNull(service.getOpenAPI());
+        boolean result = serviceUtils.checkIfOpenApiIsEnabled(service, HttpClient.newHttpClient());
         wireMockServer.stop();
+
+        Assertions.assertTrue(result);
+        Assertions.assertNotNull(service.getOpenAPI());
     }
 
     @Test
@@ -956,8 +958,44 @@ class TestServiceUtils {
         serviceMeta.setOpenApiEndpoint("http://localhost:" + wireMockServer.port() + "/api" );
         service.setServiceMeta(serviceMeta);
 
-        serviceUtils.checkIfOpenApiIsEnabled(service, HttpClient.newHttpClient());
-        Assertions.assertNull(service.getOpenAPI());
+        boolean result = serviceUtils.checkIfOpenApiIsEnabled(service, HttpClient.newHttpClient());
         wireMockServer.stop();
+
+        Assertions.assertFalse(result);
+        Assertions.assertNull(service.getOpenAPI());
+    }
+
+    @Test
+    void testCheckIfOpenApiIsEnabled_whenOpenApiDefinitionHasParsingErrors() {
+        WireMockRule wireMockServer = new WireMockRule(wireMockConfig().dynamicPort());
+        wireMockServer.start();
+        String openApiDefinitionWithNullField = """
+                                                 {
+                                                   "openapi": "3.1.0",
+                                                   "info": {
+                                                     "title": "OpenAPI Petstore"
+                                                   },
+                                                   "tags": [
+                                                           {
+                                                               "name": "pet",
+                                                               "description": "Everything about your Pets",
+                                                               "externalDocs": null,
+                                                               "extensions": null
+                                                           }
+                                                   ]
+                                                 }
+                """;
+        wireMockServer.stubFor(get(urlEqualTo("/api")).willReturn(aResponse().withBody(openApiDefinitionWithNullField)));
+
+        Service service = new Service();
+        ServiceMeta serviceMeta = new ServiceMeta();
+        serviceMeta.setOpenApiEndpoint("http://localhost:" + wireMockServer.port() + "/api" );
+        service.setServiceMeta(serviceMeta);
+
+        boolean result = serviceUtils.checkIfOpenApiIsEnabled(service, HttpClient.newHttpClient());
+        wireMockServer.stop();
+
+        Assertions.assertFalse(result);
+        Assertions.assertNull(service.getOpenAPI());
     }
 }

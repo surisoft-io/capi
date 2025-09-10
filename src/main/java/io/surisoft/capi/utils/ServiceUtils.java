@@ -3,6 +3,7 @@ package io.surisoft.capi.utils;
 import io.surisoft.capi.schema.*;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.parser.OpenAPIV3Parser;
+import io.swagger.v3.parser.core.models.SwaggerParseResult;
 import org.apache.camel.CamelContext;
 import org.cache2k.Cache;
 import org.slf4j.Logger;
@@ -214,7 +215,18 @@ public class ServiceUtils {
             }
 
             assert response.body() != null;
-            OpenAPI openAPI = new OpenAPIV3Parser().readContents(response.body()).getOpenAPI();
+            SwaggerParseResult swaggerParseResult = new OpenAPIV3Parser().readContents(response.body());
+            if (swaggerParseResult.getMessages() != null) {
+                swaggerParseResult.getMessages().forEach(log::warn);
+            }
+
+            OpenAPI openAPI = swaggerParseResult.getOpenAPI();
+
+            if(openAPI == null) {
+                log.warn("Open API specification is null for service {}", service.getId());
+                return false;
+            }
+
             service.setOpenAPI(openAPI);
             return true;
         } catch(Exception e) {
