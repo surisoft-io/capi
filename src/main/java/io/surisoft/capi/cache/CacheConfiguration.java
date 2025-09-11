@@ -2,7 +2,6 @@ package io.surisoft.capi.cache;
 
 import io.surisoft.capi.schema.ConsulKeyStoreEntry;
 import io.surisoft.capi.schema.Service;
-import io.surisoft.capi.schema.StickySession;
 import io.surisoft.capi.schema.ThrottleServiceObject;
 import io.surisoft.capi.utils.Constants;
 import org.cache2k.Cache;

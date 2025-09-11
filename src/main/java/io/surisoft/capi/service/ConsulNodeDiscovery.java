@@ -271,9 +271,8 @@ public class ConsulNodeDiscovery {
 
         incomingService.setMappingList(mappingList);
         incomingService.setServiceMeta(getServiceMeta(key, consulResponse));
-        //incomingService.setServiceIdConsul(getServiceIdConsul(key, consulResponse));
-        incomingService.setRoundRobinEnabled(incomingService.getMappingList().size() != 1 && !incomingService.getServiceMeta().isTenantAware() && !incomingService.getServiceMeta().isStickySession());
-        incomingService.setFailOverEnabled(incomingService.getMappingList().size() != 1 && !incomingService.getServiceMeta().isTenantAware() && !incomingService.getServiceMeta().isStickySession());
+        incomingService.setRoundRobinEnabled(incomingService.getMappingList().size() != 1);
+        incomingService.setFailOverEnabled(incomingService.getMappingList().size() != 1);
 
         incomingService.setModifyIndex(getModifyIndex(key, consulResponse));
 
@@ -307,7 +306,6 @@ public class ConsulNodeDiscovery {
                             DirectRouteProcessor directRouteProcessor = new DirectRouteProcessor(camelContext, incomingService, routeUtils, metricsProcessor, routeId, capiContext, reverseProxyHost, contentTypeValidator, throttleProcessor);
                             directRouteProcessor.setHttpUtils(httpUtils);
                             directRouteProcessor.setOpaService(opaService);
-                            //directRouteProcessor.setStickySessionCacheManager(stickySessionCacheManager);
                             directRouteProcessor.setServiceCache(serviceCache);
                             camelContext.addRoutes(directRouteProcessor);
                         } catch (Exception e) {

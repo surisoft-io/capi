@@ -41,7 +41,7 @@ public class HttpErrorProcessor implements Processor {
         } else if(cause instanceof AuthorizationException) {
             exchange.setProperty(Constants.REASON_MESSAGE_HEADER, cause.getMessage());
             exchange.getIn().setHeader(Constants.REASON_MESSAGE_HEADER, cause.getMessage());
-            exchange.getIn().setHeader(Constants.REASON_CODE_HEADER, 400);
+            exchange.getIn().setHeader(Constants.REASON_CODE_HEADER, 401);
         }
         exchange.getIn().setHeader(Constants.CAPI_URI_IN_ERROR, exchange.getIn().getHeader(Exchange.HTTP_URI).toString());
         exchange.getIn().setHeader(Constants.CAPI_URL_IN_ERROR, exchange.getIn().getHeader(Exchange.HTTP_URL).toString());

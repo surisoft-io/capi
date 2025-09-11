@@ -32,18 +32,6 @@ class ServiceMetaTest {
     }
 
     @Test
-    void testTenantAware() {
-        serviceMeta.setTenantAware(true);
-        assertTrue(serviceMeta.isTenantAware());
-    }
-
-    @Test
-    void testTenantId() {
-        serviceMeta.setTenantId("ID");
-        assertEquals("ID", serviceMeta.getTenantId());
-    }
-
-    @Test
     void testGroup() {
         serviceMeta.setGroup("dev");
         assertEquals("dev", serviceMeta.getGroup());
@@ -65,24 +53,6 @@ class ServiceMetaTest {
     void testOpenApiEndpoint() {
         serviceMeta.setOpenApiEndpoint("http://openapi.com");
         assertEquals("http://openapi.com", serviceMeta.getOpenApiEndpoint());
-    }
-
-    @Test
-    void testStickySessionEnabled() {
-        serviceMeta.setStickySession(true);
-        assertTrue(serviceMeta.isStickySession());
-    }
-
-    @Test
-    void testStickySessionType() {
-        serviceMeta.setStickySessionType("cookie");
-        assertEquals("cookie", serviceMeta.getStickySessionType());
-    }
-
-    @Test
-    void testStickySessionKey() {
-        serviceMeta.setStickySessionKey("SESSION");
-        assertEquals("SESSION", serviceMeta.getStickySessionKey());
     }
 
     @Test

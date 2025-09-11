@@ -1,7 +1,6 @@
 package io.surisoft.capi.configuration;
 
 import io.surisoft.capi.schema.Service;
-import io.surisoft.capi.schema.StickySession;
 import io.surisoft.capi.undertow.SSEGateway;
 import io.surisoft.capi.undertow.WebsocketGateway;
 import org.cache2k.Cache;

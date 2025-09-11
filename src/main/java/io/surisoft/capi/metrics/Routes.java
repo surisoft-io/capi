@@ -4,7 +4,6 @@ import io.surisoft.capi.processor.MetricsProcessor;
 import io.surisoft.capi.schema.RouteDetailsEndpointInfo;
 import io.surisoft.capi.schema.RouteEndpointInfo;
 import io.surisoft.capi.schema.Service;
-import io.surisoft.capi.schema.StickySession;
 import io.surisoft.capi.utils.Constants;
 import io.surisoft.capi.utils.RouteUtils;
 import io.surisoft.capi.utils.ServiceUtils;

@@ -14,12 +14,6 @@ public class ServiceMeta {
     @JsonProperty("secured")
     private boolean secured;
 
-    @JsonProperty("tenant_aware")
-    private boolean tenantAware;
-
-    @JsonProperty("tenant_id")
-    private String tenantId;
-
     @JsonProperty("group")
     private String group;
 
@@ -28,15 +22,6 @@ public class ServiceMeta {
 
     @JsonProperty("ingress")
     private String ingress;
-
-    @JsonProperty("sticky_session_enabled")
-    private boolean stickySession;
-
-    @JsonProperty("sticky_session_type")
-    private String stickySessionType;
-
-    @JsonProperty("sticky_session_key")
-    private String stickySessionKey;
 
     @JsonProperty("type")
     private String type;
@@ -100,22 +85,6 @@ public class ServiceMeta {
         this.schema = schema;
     }
 
-    public boolean isTenantAware() {
-        return tenantAware;
-    }
-
-    public void setTenantAware(boolean tenantAware) {
-        this.tenantAware = tenantAware;
-    }
-
-    public String getTenantId() {
-        return tenantId;
-    }
-
-    public void setTenantId(String tenantId) {
-        this.tenantId = tenantId;
-    }
-
     public String getGroup() {
         return group;
     }
@@ -138,30 +107,6 @@ public class ServiceMeta {
 
     public void setIngress(String ingress) {
         this.ingress = ingress;
-    }
-
-    public boolean isStickySession() {
-        return stickySession;
-    }
-
-    public void setStickySession(boolean stickySession) {
-        this.stickySession = stickySession;
-    }
-
-    public String getStickySessionType() {
-        return stickySessionType;
-    }
-
-    public void setStickySessionType(String stickySessionType) {
-        this.stickySessionType = stickySessionType;
-    }
-
-    public String getStickySessionKey() {
-        return stickySessionKey;
-    }
-
-    public void setStickySessionKey(String stickySessionKey) {
-        this.stickySessionKey = stickySessionKey;
     }
 
     public String getType() {

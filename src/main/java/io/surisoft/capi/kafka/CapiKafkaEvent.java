@@ -13,7 +13,6 @@ import org.springframework.context.annotation.Configuration;
 @ConditionalOnProperty(prefix = "capi.kafka", name = "enabled", havingValue = "true")
 public class CapiKafkaEvent {
 
-    public static final String STICKY_SESSION_EVENT_TYPE = "sticky-session";
     public static final String THROTTLING_EVENT_TYPE = "throttling";
 
     private final CapiInstance capiInstance;

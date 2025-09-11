@@ -20,7 +20,7 @@ public class ErrorRoute extends RouteBuilder {
 
     @Override
     public void configure() {
-        from("direct:error")
+        from(Constants.CAPI_ERROR_ROUTE)
                 .setHeader("Content-Type", constant("application/json"))
                 .process(new Processor() {
                     @Override

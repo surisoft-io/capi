@@ -76,66 +76,6 @@ public class RouteUtils {
         }
     }
 
-    /*public void buildOnExceptionDefinition(RouteDefinition routeDefinition,
-                                           boolean isTraceIdVisible,
-                                           String routeID,
-                                           boolean isLoadBalancingEnabled) {
-        if(!isLoadBalancingEnabled) {
-            routeDefinition
-                    .onException(Exception.class)
-                    .handled(true)
-                    .setHeader(Constants.ERROR_API_SHOW_TRACE_ID, constant(isTraceIdVisible))
-                    .process(httpErrorProcessor)
-                    .setHeader(Constants.ROUTE_ID_HEADER, constant(routeID))
-                    .to("direct:error")
-                    .removeHeader(Constants.ERROR_API_SHOW_TRACE_ID)
-                    .removeHeader(Constants.ERROR_API_SHOW_INTERNAL_ERROR_MESSAGE)
-                    .removeHeader(Constants.ERROR_API_SHOW_INTERNAL_ERROR_CLASS)
-                    .removeHeader(Constants.CAPI_URL_IN_ERROR)
-                    .removeHeader(Constants.CAPI_URI_IN_ERROR)
-                    .removeHeader(Constants.ROUTE_ID_HEADER)
-                    .end();
-        }
-    }
-
-    public void buildLoadBalancedRoute(RouteDefinition routeDefinition,
-                                       boolean isTraceIdVisible,
-                                       String routeID,
-                                       Service service, ContentTypeValidator contentTypeValidator, OpaService opaService, Cache<String, Service> serviceCache) {
-        routeDefinition
-                .doTry()
-                .process(contentTypeValidator)
-                .process(exchange -> {
-                    AuthorizationProcessor authorizationProcessor = authorizationProcessor(service.getId(), routeDefinition, service.getServiceMeta().isSecured());
-                    if (authorizationProcessor != null) {
-                        authorizationProcessor.process(exchange);
-                    }
-                })
-                .process(exchange -> {
-                    OpenApiProcessor openApiProcessor = openApiProcessor(service, opaService, serviceCache);
-                    if (openApiProcessor != null) {
-                        openApiProcessor.process(exchange);
-                    }
-                })
-                .loadBalance()
-                .failover(1, false, service.isRoundRobinEnabled(), false)
-                .to(buildEndpoints(service))
-                .endDoTry()
-                .doCatch(SSLHandshakeException.class, SocketException.class, UnknownHostException.class, AuthorizationException.class)
-                .setHeader(Constants.ERROR_API_SHOW_TRACE_ID, constant(isTraceIdVisible))
-                .process(httpErrorProcessor)
-                .setHeader(Constants.ROUTE_ID_HEADER, constant(routeID))
-                .to("direct:error")
-                .removeHeader(Constants.ERROR_API_SHOW_TRACE_ID)
-                .removeHeader(Constants.ERROR_API_SHOW_INTERNAL_ERROR_MESSAGE)
-                .removeHeader(Constants.ERROR_API_SHOW_INTERNAL_ERROR_CLASS)
-                .removeHeader(Constants.CAPI_URL_IN_ERROR)
-                .removeHeader(Constants.CAPI_URI_IN_ERROR)
-                .removeHeader(Constants.ROUTE_ID_HEADER)
-                .end()
-                .routeId(routeID);
-    }*/
-
     private String buildTimeouts() {
         return "&" +
                 "soTimeout=" + socketTimeout + "&" +
@@ -161,10 +101,6 @@ public class RouteUtils {
             }
             if(mapping.isIngress()) {
                 endpoint = httpUtils.setIngressEndpoint(endpoint, mapping.getHostname());
-            }
-
-            if(service.getServiceMeta().isTenantAware()) {
-                endpoint = endpoint + "&" + Constants.TENANT_HEADER + "="  + mapping.getTenandId();
             }
 
             if(gatewayCorsManagementEnabled) {
