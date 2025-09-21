@@ -21,10 +21,10 @@
     <nimbus-jose-jwt-version>10.3</nimbus-jose-jwt-version>
     <io.micrometer-version>1.15.0</io.micrometer-version>
     <cache2k-version>2.6.1.Final</cache2k-version>
-    <io.swagger.parser.v3.version>2.1.27</io.swagger.parser.v3.version>
+    <io.swagger.parser.v3.version>2.1.34</io.swagger.parser.v3.version>
 
     <jackson-dataformat-xml.version>2.19.0</jackson-dataformat-xml.version>
-    <spring.kafka.version>3.3.6</spring.kafka.version>
+    <spring.kafka.version>3.3.10</spring.kafka.version>
     <camel-zipkin-starter.version>3.22.4</camel-zipkin-starter.version>
 
     <wiremock.version>3.0.1</wiremock.version>
