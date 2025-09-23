@@ -34,7 +34,6 @@ public class AuthorizationProcessor implements Processor {
 
     @Override
     public void process(Exchange exchange) {
-
         String contextPath = (String) exchange.getIn().getHeader(Oauth2Constants.CAMEL_SERVLET_CONTEXT_PATH);
         String accessToken;
         try {

@@ -99,8 +99,11 @@ public class WebsocketUtils {
     }
 
     public String normalizePathForForwarding(WebsocketClient websocketClient, String path) {
-        //String newPath = path.replaceFirst(capiContextPath, "/");
-        String pathWithoutCapiContext = path.replaceFirst(capiContextPath, "/"); //path.replaceAll(normalizeCapiContextPath(), "");
+        String pathWithoutCapiContext = path.replaceFirst(capiContextPath, "/");
+        pathWithoutCapiContext = pathWithoutCapiContext.replaceAll(websocketClient.getServiceId(), "");
+        if(websocketClient.getRootContext() != null && !websocketClient.getRootContext().isEmpty()) {
+            return  websocketClient.getRootContext() + pathWithoutCapiContext;
+        }
         return pathWithoutCapiContext.replaceAll(websocketClient.getServiceId(), "");
     }
 
@@ -120,11 +123,15 @@ public class WebsocketUtils {
     }
 
     public WebsocketClient createWebsocketClient(Service service) {
+        WebsocketClient websocketClient = new WebsocketClient();
 
         //The path should be the same for all the nodes, so we take the first just to set the path.
+        String rootContext = service.getMappingList().stream().toList().get(0).getRootContext();
+        if(rootContext != null && !rootContext.isEmpty()) {
+            websocketClient.setRootContext(rootContext);
+        }
+        //String websocketContext = normalizeCapiContextPath() + service.getContext() + rootContext;
         String websocketContext = normalizeCapiContextPath() + service.getContext() + service.getMappingList().stream().toList().get(0).getRootContext();
-
-        WebsocketClient websocketClient = new WebsocketClient();
 
         websocketClient.setServiceId(service.getContext());
         websocketClient.setMappingList(service.getMappingList());

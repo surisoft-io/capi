@@ -14,6 +14,7 @@ public class WebsocketClient {
     private HttpHandler httpHandler;
     private boolean requiresSubscription;
     private String subscriptionRole;
+    private String rootContext;
 
     public String getPath() {
         return path;
@@ -65,5 +66,12 @@ public class WebsocketClient {
 
     public void setMappingList(Set<Mapping> mappingList) {
         this.mappingList = mappingList;
+    }
+
+    public String getRootContext() {
+        return rootContext;
+    }
+    public void setRootContext(String rootContext) {
+        this.rootContext = rootContext;
     }
 }

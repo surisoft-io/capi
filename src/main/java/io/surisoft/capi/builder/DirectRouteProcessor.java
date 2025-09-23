@@ -143,6 +143,7 @@ public class DirectRouteProcessor extends RouteBuilder {
             routeDefinition
                 .process(contentTypeValidator)
                 .process(metricsProcessor)
+                .removeHeader("X-BlueCoat-Via")
                 .process(exchange -> {
                     if(service.getServiceMeta().isThrottle() && throttleProcessor != null) {
                         throttleProcessor.process(exchange);
