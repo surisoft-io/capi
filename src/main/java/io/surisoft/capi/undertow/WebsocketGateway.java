@@ -81,6 +81,12 @@ public class WebsocketGateway {
                 .setHandler(httpServerExchange -> {
                     String requestPath = httpServerExchange.getRequestPath();
                     String webClientId = websocketUtils.getWebclientId(requestPath);
+
+                    if(httpServerExchange.getRequestHeaders().contains("X-BlueCoat-Via")) {
+                        log.debug("X-BlueCoat-Via header found. Removing it from the request headers.");
+                        httpServerExchange.getRequestHeaders().remove("X-BlueCoat-Via");
+                    }
+
                     capiUndertowTracer.ifPresent(undertowTracer -> undertowTracer.serverRequest(httpServerExchange, webClientId));
                     WebsocketClient websocketClient = webSocketClients.get(webClientId);
                     if (webSocketClients.containsKey(webClientId)) {
