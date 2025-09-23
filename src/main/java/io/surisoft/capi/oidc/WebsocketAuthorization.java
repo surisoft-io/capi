@@ -51,15 +51,18 @@ public class WebsocketAuthorization {
         }
         try {
             JWTClaimsSet jwtClaimsSet = tryToValidateToken(bearerToken);
-            Map<String, Object> claimSetMap = Objects.requireNonNull(jwtClaimsSet).getJSONObjectClaim(Oauth2Constants.REALMS_CLAIM);
-            if(claimSetMap != null && claimSetMap.containsKey(Oauth2Constants.ROLES_CLAIM)) {
-                List<String> roleList = (List<String>) claimSetMap.get(Oauth2Constants.ROLES_CLAIM);
-                for(String claimRole : roleList) {
-                    if(claimRole.equals(role)) {
-                        return true;
+            if(jwtClaimsSet != null) {
+                Map<String, Object> claimSetMap = jwtClaimsSet.getJSONObjectClaim(Oauth2Constants.REALMS_CLAIM);
+                if(claimSetMap != null && claimSetMap.containsKey(Oauth2Constants.ROLES_CLAIM)) {
+                    List<String> roleList = (List<String>) claimSetMap.get(Oauth2Constants.ROLES_CLAIM);
+                    for(String claimRole : roleList) {
+                        if(claimRole.equals(role)) {
+                            return true;
+                        }
                     }
                 }
             }
+
             if(isTokenInGroup(jwtClaimsSet, "capi")) {
                 return true;
             }
