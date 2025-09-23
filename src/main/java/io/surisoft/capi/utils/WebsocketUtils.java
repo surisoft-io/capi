@@ -127,10 +127,9 @@ public class WebsocketUtils {
 
         //The path should be the same for all the nodes, so we take the first just to set the path.
         String rootContext = service.getMappingList().stream().toList().get(0).getRootContext();
-        if(rootContext != null && !rootContext.isEmpty()) {
+        if(rootContext != null && !rootContext.isEmpty() && !rootContext.equals("/") && !rootContext.equals("*")) {
             websocketClient.setRootContext(rootContext);
         }
-        //String websocketContext = normalizeCapiContextPath() + service.getContext() + rootContext;
         String websocketContext = normalizeCapiContextPath() + service.getContext() + service.getMappingList().stream().toList().get(0).getRootContext();
 
         websocketClient.setServiceId(service.getContext());
