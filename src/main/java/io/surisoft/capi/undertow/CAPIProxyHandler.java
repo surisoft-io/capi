@@ -19,6 +19,7 @@ import io.undertow.server.handlers.proxy.ProxyConnection;
 import io.undertow.server.protocol.http.HttpAttachments;
 import io.undertow.server.protocol.http.HttpContinue;
 import io.undertow.util.*;
+import okhttp3.Protocol;
 import org.jboss.logging.Logger;
 import org.xnio.*;
 import org.xnio.channels.StreamSinkChannel;
@@ -84,6 +85,7 @@ public final class CAPIProxyHandler implements HttpHandler {
         if(target instanceof ProxyClient.MaxRetriesProxyTarget) {
             maxRetries = Math.max(maxRetries, ((ProxyClient.MaxRetriesProxyTarget) target).getMaxRetries());
         }
+
         final CAPIProxyHandler.ProxyClientHandler clientHandler = new CAPIProxyHandler.ProxyClientHandler(exchange, target, timeout, maxRetries, idempotentRequestPredicate);
         if (timeout > 0) {
             final XnioExecutor.Key key = WorkerUtils.executeAfter(exchange.getIoThread(), () -> clientHandler.cancel(exchange), maxRequestTime, TimeUnit.MILLISECONDS);
@@ -142,6 +144,8 @@ public final class CAPIProxyHandler implements HttpHandler {
         private final HttpServerExchange exchange;
         private final Predicate idempotentPredicate;
         private ProxyClient.ProxyTarget target;
+        private String selectedHost;
+
 
         ProxyClientHandler(HttpServerExchange exchange, ProxyClient.ProxyTarget target, long timeout, int maxRetryAttempts, Predicate idempotentPredicate) {
             this.exchange = exchange;
@@ -154,12 +158,13 @@ public final class CAPIProxyHandler implements HttpHandler {
         @Override
         public void run() {
             proxyClient.getConnection(target, exchange, this, -1, TimeUnit.MILLISECONDS);
+            selectedHost = proxyClient.getSelectedHost();
         }
 
         @Override
         public void completed(final HttpServerExchange exchange, final ProxyConnection connection) {
             exchange.putAttachment(CONNECTION, connection);
-            exchange.dispatch(SameThreadExecutor.INSTANCE, new CAPIProxyHandler.ProxyAction(connection, exchange, requestHeaders, exchange.isRequestComplete() ? this : null, idempotentPredicate));
+            exchange.dispatch(SameThreadExecutor.INSTANCE, new CAPIProxyHandler.ProxyAction(connection, exchange, requestHeaders, exchange.isRequestComplete() ? this : null, idempotentPredicate, selectedHost));
         }
 
         @Override
@@ -219,11 +224,15 @@ public final class CAPIProxyHandler implements HttpHandler {
 
     private record ProxyAction(ProxyConnection clientConnection, HttpServerExchange exchange,
                                Map<HttpString, ExchangeAttribute> requestHeaders, ProxyClientHandler proxyClientHandler,
-                               Predicate idempotentPredicate) implements Runnable {
+                               Predicate idempotentPredicate, String selectedHostname) implements Runnable {
 
         @Override
             public void run() {
                 final ClientRequest request = new ClientRequest();
+
+                if(selectedHostname != null) {
+                    request.getRequestHeaders().put(Headers.HOST, selectedHostname);
+                }
 
                 String targetURI = exchange.getRequestURI();
                 if (exchange.isHostIncludedInRequestURI()) {
@@ -318,7 +327,8 @@ public final class CAPIProxyHandler implements HttpHandler {
                     request.putAttachment(ProxiedRequestAttachments.IS_SSL, proto.equals("https"));
                 } else {
                     final String proto = exchange.getRequestScheme().equals("https") ? "https" : "http";
-                    request.getRequestHeaders().put(Headers.X_FORWARDED_PROTO, proto);
+                    //request.getRequestHeaders().put(Headers.X_FORWARDED_PROTO, proto);
+                    request.getRequestHeaders().put(Headers.X_FORWARDED_PROTO, "https");
                     request.putAttachment(ProxiedRequestAttachments.IS_SSL, proto.equals("https"));
                 }
 
@@ -371,6 +381,12 @@ public final class CAPIProxyHandler implements HttpHandler {
                 }
 
                 if (log.isDebugEnabled()) {
+                    request.getRequestHeaders().getHeaderNames().forEach(k -> {
+                        log.debug("Request Header: " + k + " = " + exchange.getRequestHeaders().getFirst(k));
+                    });
+                    exchange.getRequestHeaders().getHeaderNames().forEach(k -> {
+                        log.debug("EXCHANGE Header: " + k + " = " + exchange.getRequestHeaders().getFirst(k));
+                    });
                     log.debugf("Sending request %s to target %s for exchange %s", request, clientConnection.getConnection().getPeerAddress(), exchange);
                 }
                 //handle content
@@ -407,6 +423,9 @@ public final class CAPIProxyHandler implements HttpHandler {
                                         @Override
                                         public void onComplete(final HttpServerExchange exchange, final Sender sender) {
                                             //don't care
+                                            clientExchange.getResponse().getResponseHeaders().getHeaderNames().forEach(k -> {
+                                                log.debugf("Response Header: %s = %s", k, exchange.getResponseHeaders().getFirst(k));
+                                            });
                                         }
 
                                         @Override
@@ -439,7 +458,7 @@ public final class CAPIProxyHandler implements HttpHandler {
                                                 path = path.substring(0, i);
                                             }
 
-                                            exchange.dispatch(SameThreadExecutor.INSTANCE, new CAPIProxyHandler.ProxyAction(new ProxyConnection(pushedRequest.getConnection(), path), exchange, requestHeaders, null, idempotentPredicate));
+                                            exchange.dispatch(SameThreadExecutor.INSTANCE, new CAPIProxyHandler.ProxyAction(new ProxyConnection(pushedRequest.getConnection(), path), exchange, requestHeaders, null, idempotentPredicate, selectedHostname));
                                         }
                                     });
                                     return true;

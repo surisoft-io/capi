@@ -28,6 +28,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import static io.surisoft.capi.utils.Constants.X_FORWARDED_HOST;
+import static io.surisoft.capi.utils.Constants.X_FORWARDED_PREFIX;
+
 @Component
 @ConditionalOnProperty(prefix = "capi.websocket", name = "enabled", havingValue = "true")
 public class WebsocketGateway {
