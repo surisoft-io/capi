@@ -232,7 +232,11 @@ public final class CAPIProxyHandler implements HttpHandler {
 
                 if(selectedHostname != null) {
                     request.getRequestHeaders().put(Headers.HOST, selectedHostname);
+                } else {
+                    String selectedHost = exchange.getRequestHeaders().getFirst("CapiSelectedHost");
+                    request.getRequestHeaders().put(Headers.HOST, selectedHost);
                 }
+                exchange.getRequestHeaders().remove("CapiSelectedHost");
 
                 String targetURI = exchange.getRequestURI();
                 if (exchange.isHostIncludedInRequestURI()) {
