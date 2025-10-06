@@ -19,7 +19,6 @@ import io.undertow.server.handlers.proxy.ProxyConnection;
 import io.undertow.server.protocol.http.HttpAttachments;
 import io.undertow.server.protocol.http.HttpContinue;
 import io.undertow.util.*;
-import okhttp3.Protocol;
 import org.jboss.logging.Logger;
 import org.xnio.*;
 import org.xnio.channels.StreamSinkChannel;

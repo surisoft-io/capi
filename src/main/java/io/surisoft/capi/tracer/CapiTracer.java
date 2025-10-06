@@ -55,8 +55,9 @@ public class CapiTracer extends ServiceSupport implements RoutePolicyFactory, St
     private final List<String> exclusions = new ArrayList<>();
 
     private final CapiEventNotifier eventNotifier = new CapiEventNotifier();
+    private final String capiNamespace;
 
-    public CapiTracer(HttpUtils httpUtils) {
+    public CapiTracer(HttpUtils httpUtils, String capiNamespace) {
         exclusions.add("bean://consulNodeDiscovery");
         exclusions.add("timer://consul-inspect");
         exclusions.add("bean://consistencyChecker");
@@ -64,6 +65,7 @@ public class CapiTracer extends ServiceSupport implements RoutePolicyFactory, St
         exclusions.add("timer://consul-KV-Store");
         exclusions.add("kafka://capi");
         this.httpUtils = httpUtils;
+        this.capiNamespace = capiNamespace;
     }
 
     @Override
@@ -116,6 +118,10 @@ public class CapiTracer extends ServiceSupport implements RoutePolicyFactory, St
 
     public void addServerServiceMapping(String pattern, String serviceName) {
         serverServiceMappings.put(pattern, serviceName);
+    }
+
+    public String getCapiNamespace() {
+        return capiNamespace;
     }
 
     @ManagedAttribute(description = "Whether to include the Camel message body in the traces")

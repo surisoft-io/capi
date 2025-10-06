@@ -28,11 +28,14 @@ public class CapiTracerConfiguration {
     private static final Logger log = LoggerFactory.getLogger(CapiTracerConfiguration.class);
     private final String tracesEndpoint;
     private final HttpUtils httpUtils;
+    private final String capiNamespace;
 
     public CapiTracerConfiguration(@Value("${capi.traces.endpoint}") String tracesEndpoint,
+                                   @Value("${capi.namespace}") String capiNamespace,
                                    HttpUtils httpUtils) {
         this.tracesEndpoint = tracesEndpoint;
         this.httpUtils = httpUtils;
+        this.capiNamespace = capiNamespace;
     }
 
     @Bean
@@ -46,7 +49,7 @@ public class CapiTracerConfiguration {
         excludePatterns.add("bean://consulNodeDiscovery");
         excludePatterns.add("bean://consistencyChecker");
 
-        CapiTracer capiTracer = new CapiTracer(httpUtils);
+        CapiTracer capiTracer = new CapiTracer(httpUtils, capiNamespace);
 
         URLConnectionSender sender = URLConnectionSender
                 .newBuilder()

@@ -67,6 +67,7 @@ public class CapiTracerServerRequestAdapter {
             span.tag("capi.incoming.request.content.type", exchange.getIn().getHeader("Content-Type", String.class));
         }
 
+        span.tag("capi-instance", capiTracer.getCapiNamespace());
         span.name(spanName);
         span.tag(Constants.CAMEL_SERVER_ENDPOINT_URL, url);
         span.tag(Constants.CAMEL_SERVER_EXCHANGE_ID, exchange.getExchangeId());
