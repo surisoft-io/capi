@@ -1,6 +1,7 @@
 package io.surisoft.capi.configuration;
 
 import io.surisoft.capi.schema.Service;
+import io.surisoft.capi.undertow.GrpcGateway;
 import io.surisoft.capi.undertow.SSEGateway;
 import io.surisoft.capi.undertow.WebsocketGateway;
 import org.cache2k.Cache;
@@ -22,11 +23,13 @@ public class CapiApplicationListener implements ApplicationListener<ApplicationE
     private final Cache<String, Service> serviceCache;
     private final Optional<WebsocketGateway> websocketGateway;
     private final Optional<SSEGateway> sseGateway;
+    private final Optional<GrpcGateway> grpcGateway;
 
-    public CapiApplicationListener(Cache<String, Service> serviceCache, Optional<WebsocketGateway> websocketGateway, Optional<SSEGateway> sseGateway) {
+    public CapiApplicationListener(Cache<String, Service> serviceCache, Optional<WebsocketGateway> websocketGateway, Optional<SSEGateway> sseGateway, Optional<GrpcGateway> grpcGateway) {
         this.serviceCache = serviceCache;
         this.websocketGateway = websocketGateway;
         this.sseGateway = sseGateway;
+        this.grpcGateway = grpcGateway;
     }
 
     @Override
@@ -39,6 +42,10 @@ public class CapiApplicationListener implements ApplicationListener<ApplicationE
             if(sseGateway.isPresent()) {
                 log.info("Capi SSE Gateway starting.");
                 sseGateway.get().runProxy();
+            }
+            if(grpcGateway.isPresent()) {
+                log.info("Capi gRPC Gateway starting.");
+                grpcGateway.get().runProxy();
             }
         }
         if(applicationEvent instanceof ContextClosedEvent) {

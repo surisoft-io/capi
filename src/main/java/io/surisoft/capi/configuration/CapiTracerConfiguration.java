@@ -1,9 +1,11 @@
 package io.surisoft.capi.configuration;
 
+import io.surisoft.capi.schema.Service;
 import io.surisoft.capi.tracer.CapiTracer;
 import io.surisoft.capi.tracer.CapiUndertowTracer;
 import io.surisoft.capi.utils.HttpUtils;
 import org.apache.camel.CamelContext;
+import org.cache2k.Cache;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -39,7 +41,7 @@ public class CapiTracerConfiguration {
     }
 
     @Bean
-    public CapiTracer capiTracer(CamelContext camelContext) throws CertificateException, IOException, NoSuchAlgorithmException, KeyStoreException, KeyManagementException {
+    public CapiTracer capiTracer(CamelContext camelContext, Cache<String, Service> serviceCache) throws CertificateException, IOException, NoSuchAlgorithmException, KeyStoreException, KeyManagementException {
         camelContext.setUseMDCLogging(true);
 
         log.debug("Traces Enabled!");
@@ -49,7 +51,7 @@ public class CapiTracerConfiguration {
         excludePatterns.add("bean://consulNodeDiscovery");
         excludePatterns.add("bean://consistencyChecker");
 
-        CapiTracer capiTracer = new CapiTracer(httpUtils, capiNamespace);
+        CapiTracer capiTracer = new CapiTracer(httpUtils, capiNamespace, serviceCache);
 
         URLConnectionSender sender = URLConnectionSender
                 .newBuilder()

@@ -45,7 +45,7 @@ management:
     web:
       base-path: /metrics/
       exposure:
-        include: 'health,prometheus,routes,capi,openapi,truststore,kv,ws-routes,sseroutes'
+        include: 'health,prometheus,routes,capi,openapi,truststore,kv,wsroutes,sseroutes,inflight'
 #######################
 ### Camel Specifics ###
 #######################
@@ -103,10 +103,17 @@ capi:
     enabled: false
     server:
       port: 8383
+  grpc:
+    enabled: false
+    server:
+      port: 8384
   # Enable Traces (Editable Property)
   traces:
     enabled: false
     endpoint: http://localhost:9411
+    extra:
+      metadata:
+        prefix:
   # Consul Integration (Editable Property)
   consul:
     kv:
@@ -132,7 +139,7 @@ capi:
       encoded:
   route:
     socket:
-      timeout: 180000
+      timeout: 30000
     connection:
       request:
         #How long does CAPI waits to get a connection from the Connection Pool.
@@ -174,7 +181,7 @@ capi:
     cookieName:
     provider:
       enabled: false
-      keys: http://localhost:8080/realms/capi/protocol/openid-connect/certs
+      keys: http://local/realms/capi/protocol/openid-connect/certs
   opa:
     enabled: false
     endpoint: http://localhost:8181

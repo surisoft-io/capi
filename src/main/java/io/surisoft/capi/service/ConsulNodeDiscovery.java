@@ -53,6 +53,7 @@ public class ConsulNodeDiscovery {
     private final ContentTypeValidator contentTypeValidator;
     private final ThrottleProcessor throttleProcessor;
     private final CapiSslContextHolder capiSslContextHolder;
+    private String serviceMetaExtrasPrefix;
 
     public ConsulNodeDiscovery(CamelContext camelContext,
                                ServiceUtils serviceUtils,
@@ -258,6 +259,14 @@ public class ConsulNodeDiscovery {
         Service incomingService = new Service();
         ServiceMeta serviceMeta = getServiceMeta(key, consulResponse);
 
+        if(serviceMetaExtrasPrefix != null) {
+            serviceMeta.getUnknownProperties().forEach((unknownKey, unknownValue) -> {
+                if(unknownKey.startsWith(serviceMetaExtrasPrefix)) {
+                    serviceMeta.addExtraServiceMeta(unknownKey.replace(serviceMetaExtrasPrefix, ""), unknownValue);
+                }
+            });
+        }
+
         if(serviceMeta.isRouteGroupFirst()) {
             incomingService.setId(key + ":" + serviceName);
             incomingService.setContext("/" + key + "/" + serviceName);
@@ -401,5 +410,9 @@ public class ConsulNodeDiscovery {
         }
         httpClientBuilder.connectTimeout(Duration.ofSeconds(10));
         client = httpClientBuilder.build();
+    }
+
+    public void setServiceMetaExtrasPrefix(String serviceMetaExtrasPrefix) {
+        this.serviceMetaExtrasPrefix = serviceMetaExtrasPrefix;
     }
 }

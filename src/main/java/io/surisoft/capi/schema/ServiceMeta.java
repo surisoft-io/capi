@@ -2,6 +2,9 @@ package io.surisoft.capi.schema;
 
 import com.fasterxml.jackson.annotation.*;
 
+import java.util.HashMap;
+import java.util.Map;
+
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class ServiceMeta {
 
@@ -60,6 +63,11 @@ public class ServiceMeta {
     private boolean secureOpenApiDefinition;
     @JsonProperty("state")
     private State state;
+
+    private Map<String, String> extraServiceMeta = new HashMap<>();
+
+    @JsonIgnore
+    private Map<String, String> unknownProperties = new HashMap<>();
 
     public boolean isSecured() {
         return secured;
@@ -264,5 +272,26 @@ public class ServiceMeta {
 
     public void setState(State state) {
         this.state = state;
+    }
+
+    @JsonAnySetter
+    public void handleUnknown(String key, String value) {
+        unknownProperties.put(key, value);
+    }
+
+    @JsonAnyGetter
+    public Map<String, String> getUnknownProperties() {
+        return unknownProperties;
+    }
+
+    public Map<String, String> getExtraServiceMeta() {
+        return extraServiceMeta;
+    }
+
+    public void addExtraServiceMeta(String key, String value) {
+        if(extraServiceMeta == null) {
+            extraServiceMeta = new HashMap<>();
+        }
+        extraServiceMeta.put(key, value);
     }
 }

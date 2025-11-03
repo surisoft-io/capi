@@ -86,7 +86,7 @@ public class WebsocketUtils {
         return CAPIProxyHandler
                 .builder()
                 .setProxyClient(loadBalancingProxyClient)
-                .setMaxRequestTime(30000)
+                //.setMaxRequestTime(30000)
                 .setNext(ResponseCodeHandler.HANDLE_404)
                 .build();
     }
@@ -174,5 +174,9 @@ public class WebsocketUtils {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
         }
+    }
+
+    public XnioSsl getXnioSsl() {
+        return this.xnioSsl;
     }
 }

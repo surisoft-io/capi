@@ -17,7 +17,6 @@ public class Constants {
     public static final String AUTHORIZATION_HEADER = "Authorization";
     public static final String AUTHORIZATION_REQUEST_PARAMETER = "access_token";
     public static final String COOKIE_HEADER = "Cookie";
-    public static final String SET_COOKIE_HEADER = "Set-Cookie";
     public static final String AUTHORIZED_PARTY = "azp";
     public static final String CAPI_INTERNAL_ERROR = "capi-internal-error";
     public static final String HTTP_CONNECT_TIMEOUT = "connectTimeout=";
@@ -39,10 +38,11 @@ public class Constants {
     public static final String ERROR_MESSAGE = "errorMessage";
     public static final String ERROR_CODE = "errorCode";
     public static final String NO_CUSTOM_TRUST_STORE_PROVIDED = "No custom trust store was provided, to enable this feature, add a custom trust store.";
-    public static final String STICKY_SESSION_IMAP_NAME = "stickySession";
     public static final String TENANT_HEADER = "tenant";
     public static final HttpString PROTOCOL_HTTP = new HttpString("HTTP/1.1");
     public static final String MAP_HTTP_MESSAGE_FORM_URL_ENCODED_BODY = "&mapHttpMessageFormUrlEncodedBody=false";
+    public static final String BLUECOAT_HEADER = "X-BlueCoat-Via";
+    public static final String UNDERSTOW_HEALTH_PATH = "/health";
     public static final String[] CAPI_WHITELISTED_PATHS = {
             //Swagger UI v2
             "/v2/api-docs",
@@ -63,13 +63,9 @@ public class Constants {
     public static final List<String> CAPI_INTERNAL_ROUTES_PREFIX = List.of("consul-discovery-service",
                                                                            "consistency-checker-service");
     public static final String CAMEL_HTTP_SERVLET_REQUEST = "CamelHttpServletRequest";
-    public static final String CACHE_ROUTE_STOPPED_EVENT = "RouteStoppedEvent";
-    public static final String CACHE_ROUTE_REMOVED_EVENT = "RouteRemovedEvent";
-    public static final String CACHE_EXCHANGE_FAILED_EVENT = "ExchangeFailedEvent";
     public static final String CAMEL_CLIENT_ENDPOINT_URL = "capi.client.endpoint.url";
     public static final String CAMEL_SERVER_ENDPOINT_URL = "capi.server.endpoint.url";
     public static final String CAMEL_SERVER_EXCHANGE_ID = "capi.server.exchange.id";
-    public static final String CAMEL_CLIENT_EXCHANGE_ID = "capi.client.exchange.id";
     public static final String CAPI_REQUESTER_TOKEN_ISSUER = "capi.requester.token.issuer";
     public static final String CAMEL_SERVER_EXCHANGE_FAILURE = "camel.server.exchange.failure";
     public static final String CAPI_EXCHANGE_REQUESTER_ID = "capi.token.requester.id";

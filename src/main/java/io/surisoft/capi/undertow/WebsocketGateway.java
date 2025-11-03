@@ -8,6 +8,7 @@ import io.surisoft.capi.utils.Constants;
 import io.surisoft.capi.utils.ErrorMessage;
 import io.surisoft.capi.utils.WebsocketUtils;
 import io.undertow.Undertow;
+import io.undertow.UndertowOptions;
 import io.undertow.server.HttpServerExchange;
 import io.undertow.util.HeaderValues;
 import io.undertow.util.HttpString;
@@ -20,6 +21,8 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 import javax.net.ssl.SSLContext;
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -27,9 +30,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-
-import static io.surisoft.capi.utils.Constants.X_FORWARDED_HOST;
-import static io.surisoft.capi.utils.Constants.X_FORWARDED_PREFIX;
 
 @Component
 @ConditionalOnProperty(prefix = "capi.websocket", name = "enabled", havingValue = "true")
@@ -85,61 +85,65 @@ public class WebsocketGateway {
                     String requestPath = httpServerExchange.getRequestPath();
                     String webClientId = websocketUtils.getWebclientId(requestPath);
 
-                    if(httpServerExchange.getRequestHeaders().contains("X-BlueCoat-Via")) {
-                        log.debug("X-BlueCoat-Via header found. Removing it from the request headers.");
-                        httpServerExchange.getRequestHeaders().remove("X-BlueCoat-Via");
+                    if(httpServerExchange.getRequestHeaders().contains(Constants.BLUECOAT_HEADER)) {
+                        httpServerExchange.getRequestHeaders().remove(Constants.BLUECOAT_HEADER);
                     }
 
-                    capiUndertowTracer.ifPresent(undertowTracer -> undertowTracer.serverRequest(httpServerExchange, webClientId));
-                    WebsocketClient websocketClient = webSocketClients.get(webClientId);
-                    if (webSocketClients.containsKey(webClientId)) {
-                        if(httpServerExchange.getRequestMethod().equals(HttpString.tryFromString(Constants.OPTIONS_METHODS_VALUE))) {
-                            List<String> localAccessControlAllowHeaders = new ArrayList<>(accessControlAllowHeaders);
-                            if(oauth2CookieName != null && !oauth2CookieName.isEmpty()) {
-                                localAccessControlAllowHeaders.add(oauth2CookieName);
-                            }
-                            httpServerExchange.getResponseHeaders().put(HttpString.tryFromString("Access-Control-Max-Age"), Constants.ACCESS_CONTROL_MAX_AGE_VALUE);
-                            HeaderValues originHeader = httpServerExchange.getRequestHeaders().get("Origin");
-                            processOrigin(httpServerExchange, originHeader.get(0));
-                            managedHeaders.forEach((k, v) -> {
-                                if(k.equals(Constants.ACCESS_CONTROL_ALLOW_HEADERS)) {
-                                    v = StringUtils.join(localAccessControlAllowHeaders, ",");
-                                }
-                                httpServerExchange.getResponseHeaders().put(HttpString.tryFromString(k), v);
-                            });
-                            httpServerExchange.setStatusCode(HttpServletResponse.SC_ACCEPTED);
-                            httpServerExchange.endExchange();
-                        } else {
-                            if (httpServerExchange.getProtocol().equals(Constants.PROTOCOL_HTTP)) {
-                                if (websocketAuthorization != null) {
-                                    if (websocketAuthorization.isAuthorized(websocketClient, httpServerExchange)) {
-                                        log.debug(ErrorMessage.IS_AUTHORIZED, httpServerExchange.getRequestPath());
-                                        httpServerExchange.setRequestURI(websocketUtils.normalizePathForForwarding(websocketClient, requestPath));
-                                        httpServerExchange.setRelativePath(websocketUtils.normalizePathForForwarding(websocketClient, requestPath));
-                                        websocketClient.getHttpHandler().handleRequest(httpServerExchange);
-                                    } else {
-                                        log.debug(ErrorMessage.IS_NOT_AUTHORIZED, httpServerExchange.getRequestPath());
-                                        httpServerExchange.setStatusCode(Constants.FORBIDDEN_CODE);
-                                        httpServerExchange.endExchange();
-                                    }
-                                } else {
-                                    if (!websocketClient.requiresSubscription()) {
-                                        log.debug(ErrorMessage.IS_AUTHORIZED, httpServerExchange.getRequestPath());
-                                        httpServerExchange.setRequestURI(websocketUtils.normalizePathForForwarding(websocketClient, requestPath));
-                                        httpServerExchange.setRelativePath(websocketUtils.normalizePathForForwarding(websocketClient, requestPath));
-                                        websocketClient.getHttpHandler().handleRequest(httpServerExchange);
-                                    } else {
-                                        log.debug(ErrorMessage.IS_NOT_AUTHORIZED, httpServerExchange.getRequestPath());
-                                        httpServerExchange.setStatusCode(Constants.FORBIDDEN_CODE);
-                                        httpServerExchange.endExchange();
-                                    }
-                                }
-                            }
-                        }
-                    } else {
-                        log.debug(ErrorMessage.IS_NOT_PRESENT, httpServerExchange.getRequestPath());
-                        httpServerExchange.setStatusCode(Constants.NOT_FOUND_CODE);
+                    if(requestPath.equals(Constants.UNDERSTOW_HEALTH_PATH)) {
+                        httpServerExchange.setStatusCode(HttpServletResponse.SC_OK);
                         httpServerExchange.endExchange();
+                    } else {
+                        capiUndertowTracer.ifPresent(undertowTracer -> undertowTracer.serverRequest(httpServerExchange, webClientId));
+                        WebsocketClient websocketClient = webSocketClients.get(webClientId);
+                        if(webSocketClients.containsKey(webClientId)) {
+                            if(httpServerExchange.getRequestMethod().equals(HttpString.tryFromString(Constants.OPTIONS_METHODS_VALUE))) {
+                                List<String> localAccessControlAllowHeaders = new ArrayList<>(accessControlAllowHeaders);
+                                if(oauth2CookieName != null && !oauth2CookieName.isEmpty()) {
+                                    localAccessControlAllowHeaders.add(oauth2CookieName);
+                                }
+                                httpServerExchange.getResponseHeaders().put(HttpString.tryFromString("Access-Control-Max-Age"), Constants.ACCESS_CONTROL_MAX_AGE_VALUE);
+                                HeaderValues originHeader = httpServerExchange.getRequestHeaders().get("Origin");
+                                processOrigin(httpServerExchange, originHeader.get(0));
+                                managedHeaders.forEach((k, v) -> {
+                                    if(k.equals(Constants.ACCESS_CONTROL_ALLOW_HEADERS)) {
+                                        v = StringUtils.join(localAccessControlAllowHeaders, ",");
+                                    }
+                                    httpServerExchange.getResponseHeaders().put(HttpString.tryFromString(k), v);
+                                });
+                                httpServerExchange.setStatusCode(HttpServletResponse.SC_ACCEPTED);
+                                httpServerExchange.endExchange();
+                            } else {
+                                if (httpServerExchange.getProtocol().equals(Constants.PROTOCOL_HTTP)) {
+                                    if (websocketAuthorization != null) {
+                                        if (websocketAuthorization.isAuthorized(websocketClient, httpServerExchange)) {
+                                            log.debug(ErrorMessage.IS_AUTHORIZED, httpServerExchange.getRequestPath());
+                                            httpServerExchange.setRequestURI(websocketUtils.normalizePathForForwarding(websocketClient, requestPath));
+                                            httpServerExchange.setRelativePath(websocketUtils.normalizePathForForwarding(websocketClient, requestPath));
+                                            websocketClient.getHttpHandler().handleRequest(httpServerExchange);
+                                        } else {
+                                            log.debug(ErrorMessage.IS_NOT_AUTHORIZED, httpServerExchange.getRequestPath());
+                                            httpServerExchange.setStatusCode(Constants.FORBIDDEN_CODE);
+                                            httpServerExchange.endExchange();
+                                        }
+                                    } else {
+                                        if (!websocketClient.requiresSubscription()) {
+                                            log.debug(ErrorMessage.IS_AUTHORIZED, httpServerExchange.getRequestPath());
+                                            httpServerExchange.setRequestURI(websocketUtils.normalizePathForForwarding(websocketClient, requestPath));
+                                            httpServerExchange.setRelativePath(websocketUtils.normalizePathForForwarding(websocketClient, requestPath));
+                                            websocketClient.getHttpHandler().handleRequest(httpServerExchange);
+                                        } else {
+                                            log.debug(ErrorMessage.IS_NOT_AUTHORIZED, httpServerExchange.getRequestPath());
+                                            httpServerExchange.setStatusCode(Constants.FORBIDDEN_CODE);
+                                            httpServerExchange.endExchange();
+                                        }
+                                    }
+                                }
+                            }
+                        } else {
+                            log.debug(ErrorMessage.IS_NOT_PRESENT, httpServerExchange.getRequestPath());
+                            httpServerExchange.setStatusCode(Constants.NOT_FOUND_CODE);
+                            httpServerExchange.endExchange();
+                        }
                     }
                 });
         builder.build().start();

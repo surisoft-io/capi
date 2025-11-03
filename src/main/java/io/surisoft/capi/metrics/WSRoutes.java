@@ -9,7 +9,7 @@ import java.util.Map;
 import java.util.Optional;
 
 @Component
-@Endpoint(id = "ws-routes")
+@Endpoint(id = "wsroutes")
 public class WSRoutes {
 
     private final Optional<Map<String, WebsocketClient>> websocketClientMap;

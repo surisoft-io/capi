@@ -5,6 +5,7 @@ import brave.Tracing;
 import brave.context.slf4j.MDCScopeDecorator;
 import brave.propagation.*;
 import brave.sampler.Sampler;
+import io.surisoft.capi.schema.Service;
 import io.surisoft.capi.utils.Constants;
 import io.surisoft.capi.utils.HttpUtils;
 import org.apache.camel.*;
@@ -21,6 +22,7 @@ import org.apache.camel.util.IOHelper;
 import org.apache.camel.util.ObjectHelper;
 import org.apache.camel.zipkin.CamelRequest;
 import org.apache.camel.zipkin.ZipkinState;
+import org.cache2k.Cache;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
@@ -53,11 +55,12 @@ public class CapiTracer extends ServiceSupport implements RoutePolicyFactory, St
     private boolean includeMessageBody;
     private boolean includeMessageBodyStreams;
     private final List<String> exclusions = new ArrayList<>();
+    private final Cache<String, Service> serviceCache;
 
     private final CapiEventNotifier eventNotifier = new CapiEventNotifier();
     private final String capiNamespace;
 
-    public CapiTracer(HttpUtils httpUtils, String capiNamespace) {
+    public CapiTracer(HttpUtils httpUtils, String capiNamespace, Cache<String, Service> serviceCache) {
         exclusions.add("bean://consulNodeDiscovery");
         exclusions.add("timer://consul-inspect");
         exclusions.add("bean://consistencyChecker");
@@ -66,6 +69,7 @@ public class CapiTracer extends ServiceSupport implements RoutePolicyFactory, St
         exclusions.add("kafka://capi");
         this.httpUtils = httpUtils;
         this.capiNamespace = capiNamespace;
+        this.serviceCache = serviceCache;
     }
 
     @Override
@@ -226,7 +230,7 @@ public class CapiTracer extends ServiceSupport implements RoutePolicyFactory, St
             span = brave.tracer().nextSpan(sampleFlag);
         }
         span.kind(Span.Kind.SERVER).start();
-        CapiTracerServerRequestAdapter parser = new CapiTracerServerRequestAdapter(exchange, this);
+        CapiTracerServerRequestAdapter parser = new CapiTracerServerRequestAdapter(exchange, this, serviceCache);
         parser.onRequest(exchange, span.customizer());
         INJECTOR.inject(span.context(), camelRequest);
 

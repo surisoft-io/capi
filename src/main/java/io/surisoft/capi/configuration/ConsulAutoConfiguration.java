@@ -42,6 +42,7 @@ public class ConsulAutoConfiguration {
     private final ContentTypeValidator contentTypeValidator;
     private final Optional<ThrottleProcessor> globalThrottleProcessor;
     private final Optional<CapiSslContextHolder> capiSslContextHolder;
+    private final String serviceMetaExtrasPrefix;
 
     public ConsulAutoConfiguration(@Value("${capi.consul.hosts}") List<String> capiConsulHosts,
                                    @Value("${capi.consul.token}") String consulToken,
@@ -58,7 +59,8 @@ public class ConsulAutoConfiguration {
                                    @Value("${capi.mode}") String capiRunningMode,
                                    ContentTypeValidator contentTypeValidator,
                                    Optional<ThrottleProcessor> globalThrottleProcessor,
-                                   Optional<CapiSslContextHolder> capiSslContextHolder) {
+                                   Optional<CapiSslContextHolder> capiSslContextHolder,
+                                   @Value("${capi.traces.extra.metadata.prefix}") String serviceMetaExtrasPrefix) {
         this.capiConsulHosts = capiConsulHosts;
         this.consulToken = consulToken;
         this.capiContext = capiContext;
@@ -75,6 +77,7 @@ public class ConsulAutoConfiguration {
         this.contentTypeValidator = contentTypeValidator;
         this.globalThrottleProcessor = globalThrottleProcessor;
         this.capiSslContextHolder = capiSslContextHolder;
+        this.serviceMetaExtrasPrefix = serviceMetaExtrasPrefix;
     }
 
     @Bean(name = "consulNodeDiscovery")
@@ -108,6 +111,10 @@ public class ConsulAutoConfiguration {
         }
 
         consulNodeDiscovery.setCapiRunningMode(capiRunningMode);
+        if(serviceMetaExtrasPrefix != null && !serviceMetaExtrasPrefix.isEmpty()) {
+            consulNodeDiscovery.setServiceMetaExtrasPrefix(serviceMetaExtrasPrefix);
+        }
+
         return consulNodeDiscovery;
     }
 }
