@@ -14,14 +14,12 @@ import org.apache.camel.support.DefaultExchange;
 import org.cache2k.Cache;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
-import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
 
 @ExtendWith(SpringExtension.class)
@@ -158,6 +156,7 @@ class OpenApiProcessorTest {
             "                $ref: \"#/components/schemas/Error\"              \n" +
             "      security:\n" +
             "        - bearerToken:          \n" +
+            "        - apiKey: [ABCDE]\n" +
             "components:\n" +
             "  schemas:\n" +
             "    Pet:\n" +

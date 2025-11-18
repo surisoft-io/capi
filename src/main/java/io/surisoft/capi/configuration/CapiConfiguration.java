@@ -13,10 +13,7 @@ import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
 import io.micrometer.core.instrument.util.HierarchicalNameMapper;
 import io.micrometer.jmx.JmxMeterRegistry;
 import io.surisoft.capi.exception.RestTemplateErrorHandler;
-import io.surisoft.capi.schema.ConsulKeyStoreEntry;
-import io.surisoft.capi.schema.SSEClient;
-import io.surisoft.capi.schema.Service;
-import io.surisoft.capi.schema.WebsocketClient;
+import io.surisoft.capi.schema.*;
 import io.surisoft.capi.service.*;
 import io.surisoft.capi.utils.Constants;
 import io.surisoft.capi.utils.RouteUtils;
@@ -155,6 +152,11 @@ public class CapiConfiguration {
         return new HashMap<>();
     }
 
+    @Bean
+    @ConditionalOnProperty(prefix = "capi.grpc", name = "enabled", havingValue = "true")
+    public Map<String, GrpcClient> grpcClients() {
+        return new HashMap<>();
+    }
 
     @Bean
     public HttpComponent disableFollowRedirect(CamelContext camelContext) {

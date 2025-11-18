@@ -56,7 +56,7 @@ public class OpenApiProcessor implements Processor {
                         // The provided HTTP method is allowed for this path
                         // You can also perform additional validation for the request here
                         // (e.g., validate path parameters, request body, and response)
-                        if (operation.getSecurity() != null) {
+                        if (operation.getSecurity() != null && !operation.getSecurity().isEmpty()) {
                             String accessToken;
                             try {
                                 accessToken = httpUtils.processAuthorizationAccessToken(exchange);

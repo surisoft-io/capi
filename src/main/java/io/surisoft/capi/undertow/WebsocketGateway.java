@@ -8,7 +8,6 @@ import io.surisoft.capi.utils.Constants;
 import io.surisoft.capi.utils.ErrorMessage;
 import io.surisoft.capi.utils.WebsocketUtils;
 import io.undertow.Undertow;
-import io.undertow.UndertowOptions;
 import io.undertow.server.HttpServerExchange;
 import io.undertow.util.HeaderValues;
 import io.undertow.util.HttpString;
@@ -21,8 +20,6 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 import javax.net.ssl.SSLContext;
-import java.math.BigDecimal;
-import java.math.BigInteger;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
