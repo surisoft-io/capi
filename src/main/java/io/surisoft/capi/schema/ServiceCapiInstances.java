@@ -11,6 +11,7 @@ public class ServiceCapiInstances {
         private boolean secured;
         private String openApi;
         private boolean routeGroupFirst;
+        private String scheme;
 
         public boolean isSecured() {
             return secured;
@@ -34,6 +35,14 @@ public class ServiceCapiInstances {
 
         public void setRouteGroupFirst(boolean routeGroupFirst) {
             this.routeGroupFirst = routeGroupFirst;
+        }
+
+        public String getScheme() {
+            return scheme;
+        }
+
+        public void setScheme(String scheme) {
+            this.scheme = scheme;
         }
 
 

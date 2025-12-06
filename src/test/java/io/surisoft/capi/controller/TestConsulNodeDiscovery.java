@@ -114,7 +114,7 @@ class TestConsulNodeDiscovery {
         ConsulNodeDiscovery consulNodeDiscovery = new ConsulNodeDiscovery(camelContext, serviceUtils, routeUtils, metricsProcessor, serviceCache, websocketClientMap, sseClientMap, contentTypeValidator, null, null);
         consulNodeDiscovery.setOpaService(opaService);
         consulNodeDiscovery.setHttpUtils(httpUtils);
-        consulNodeDiscovery.setConsulHostList(List.of("http://localhost:" + wireMockServer.port()));
+        //consulNodeDiscovery.setConsulHostList(List.of("http://localhost:" + wireMockServer.port()));
         consulNodeDiscovery.setCapiContext("/capi/test");
         consulNodeDiscovery.setCapiRunningMode("full");
         consulNodeDiscovery.processInfo();

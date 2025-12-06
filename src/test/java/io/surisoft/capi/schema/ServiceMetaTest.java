@@ -28,7 +28,7 @@ class ServiceMetaTest {
     @Test
     void testSchema() {
         serviceMeta.setSchema("http");
-        assertEquals("http", serviceMeta.getSchema());
+        assertEquals("http", serviceMeta.getScheme());
     }
 
     @Test

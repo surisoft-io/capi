@@ -11,8 +11,12 @@ public class ServiceMeta {
     @JsonProperty("root-context")
     private String rootContext;
 
-    @JsonProperty("schema")
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
+    @Deprecated
     private String schema;
+
+    @JsonProperty("scheme")
+    private String scheme;
 
     @JsonProperty("secured")
     private boolean secured;
@@ -188,6 +192,21 @@ public class ServiceMeta {
             return namespace;
         }
         return null;
+    }
+
+    public String getScheme() {
+        if(scheme != null && !scheme.isEmpty()) {
+            return scheme;
+        } else if(schema != null && !schema.isEmpty()) {
+            scheme = schema;
+            schema = null;
+            return scheme;
+        }
+        return null;
+    }
+
+    public void setScheme(String scheme) {
+        this.scheme = scheme;
     }
 
     public void setNamespace(String namespace) {

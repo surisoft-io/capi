@@ -42,6 +42,9 @@ public class ServiceCapiInstanceMapper {
             case "route-group-first":
                 instance.setRouteGroupFirst(Boolean.parseBoolean(value));
                 break;
+            case "scheme":
+                instance.setScheme(value);
+                break;
         }
     }
 }

@@ -87,7 +87,7 @@ public class RouteUtils {
         List<String> transformedEndpointList = new ArrayList<>();
         for(Mapping mapping : service.getMappingList()) {
             HttpProtocol httpProtocol = null;
-            if(service.getServiceMeta().getSchema() == null || service.getServiceMeta().getSchema().equals("http")) {
+            if(service.getServiceMeta().getScheme() == null || service.getServiceMeta().getScheme().equals("http")) {
                 httpProtocol = HttpProtocol.HTTP;
             } else {
                 httpProtocol = HttpProtocol.HTTPS;

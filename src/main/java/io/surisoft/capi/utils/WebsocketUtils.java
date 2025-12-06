@@ -76,11 +76,11 @@ public class WebsocketUtils {
     public HttpHandler createClientHttpHandler(WebsocketClient webSocketClient, Service service) {
         CAPILoadBalancerProxyClient loadBalancingProxyClient = new CAPILoadBalancerProxyClient(capiUndertowTracer.orElse(null));
         webSocketClient.getMappingList().forEach((m) -> {
-            String schema = service.getServiceMeta().getSchema() == null ? HttpProtocol.HTTP.getProtocol() : service.getServiceMeta().getSchema();
+            String scheme = service.getServiceMeta().getScheme() == null ? HttpProtocol.HTTP.getProtocol() : service.getServiceMeta().getScheme();
             if(capiTrustStoreEnabled) {
-                loadBalancingProxyClient.addHost(URI.create(schema + "://" + m.getHostname() + ":" + m.getPort()), xnioSsl);
+                loadBalancingProxyClient.addHost(URI.create(scheme + "://" + m.getHostname() + ":" + m.getPort()), xnioSsl);
             } else {
-                loadBalancingProxyClient.addHost(URI.create(schema + "://" + m.getHostname() + ":" + m.getPort()));
+                loadBalancingProxyClient.addHost(URI.create(scheme + "://" + m.getHostname() + ":" + m.getPort()));
             }
         });
         return CAPIProxyHandler

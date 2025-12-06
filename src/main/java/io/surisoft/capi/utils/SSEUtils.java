@@ -38,7 +38,7 @@ public class SSEUtils {
             if(m.getHostname().contains("http://") || m.getHostname().contains("https://")) {
                 loadBalancingProxyClient.addHost(URI.create(m.getHostname() + ":" + m.getPort()));
             } else {
-                String schema = service.getServiceMeta().getSchema() == null ? HttpProtocol.HTTP.getProtocol() : service.getServiceMeta().getSchema();
+                String schema = service.getServiceMeta().getScheme() == null ? HttpProtocol.HTTP.getProtocol() : service.getServiceMeta().getScheme();
                 loadBalancingProxyClient.addHost(URI.create(schema + "://" + m.getHostname() + ":" + m.getPort()));
             }
         });

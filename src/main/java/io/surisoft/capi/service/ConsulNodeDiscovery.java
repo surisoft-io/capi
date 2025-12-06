@@ -481,6 +481,9 @@ public class ConsulNodeDiscovery {
             if(thisInstance.getOpenApi() != null) {
                 incomingService.getServiceMeta().setOpenApiEndpoint(thisInstance.getOpenApi());
             }
+            if(thisInstance.getScheme() != null && !thisInstance.getScheme().isEmpty()) {
+                incomingService.getServiceMeta().setScheme(thisInstance.getScheme());
+            }
         }
     }
 }
