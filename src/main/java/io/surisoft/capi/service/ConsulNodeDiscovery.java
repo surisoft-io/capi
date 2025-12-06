@@ -4,6 +4,8 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.surisoft.capi.builder.DirectRouteProcessor;
 import io.surisoft.capi.configuration.CapiSslContextHolder;
+import io.surisoft.capi.configuration.ConsulHosts;
+import io.surisoft.capi.processor.ServiceCapiInstanceMapper;
 import io.surisoft.capi.processor.ContentTypeValidator;
 import io.surisoft.capi.processor.ThrottleProcessor;
 import io.surisoft.capi.processor.MetricsProcessor;
@@ -29,7 +31,7 @@ public class ConsulNodeDiscovery {
 
     private static final Logger log = LoggerFactory.getLogger(ConsulNodeDiscovery.class);
     private static boolean connectedToConsul = false;
-    private List<String> consulHostList;
+    private ConsulHosts consulHosts;
     private final ServiceUtils serviceUtils;
     private final RouteUtils routeUtils;
     private final MetricsProcessor metricsProcessor;
@@ -48,7 +50,6 @@ public class ConsulNodeDiscovery {
     private HttpUtils httpUtils;
     private String capiNamespace;
     private boolean strictNamespace;
-    private String consulToken;
     private String capiRunningMode;
     private final ContentTypeValidator contentTypeValidator;
     private final ThrottleProcessor throttleProcessor;
@@ -105,10 +106,28 @@ public class ConsulNodeDiscovery {
             List<ConsulObject> serviceList = entry.getValue();
             for(ConsulObject consulObject : serviceList) {
                 String serviceId = null;
-                if(consulObject.getServiceMeta().isRouteGroupFirst()) {
-                    serviceId = consulObject.getServiceMeta().getGroup() + ":" + consulObject.getServiceName();
+
+                Map<String, String> multipleCapiInstances = new HashMap<>();
+                consulObject.getServiceMeta().getUnknownProperties().forEach((unknownKey, unknownValue) -> {
+                    if(unknownKey.startsWith(ServiceCapiInstanceMapper.SERVICE_CAPI_INSTANCE_PREFIX)) {
+                        multipleCapiInstances.put(unknownKey, unknownValue);
+                    }
+                });
+
+                ServiceCapiInstances.Instance thisInstance = serviceUtils.getServiceCapiInstance(consulObject, capiNamespace);
+
+                if(thisInstance != null) {
+                    if(thisInstance.isRouteGroupFirst()) {
+                        serviceId = consulObject.getServiceMeta().getGroup() + ":" + consulObject.getServiceName();
+                    } else {
+                        serviceId = consulObject.getServiceName() + ":" + consulObject.getServiceMeta().getGroup();
+                    }
                 } else {
-                    serviceId = consulObject.getServiceName() + ":" + consulObject.getServiceMeta().getGroup();
+                    if(consulObject.getServiceMeta().isRouteGroupFirst()) {
+                        serviceId = consulObject.getServiceMeta().getGroup() + ":" + consulObject.getServiceName();
+                    } else {
+                        serviceId = consulObject.getServiceName() + ":" + consulObject.getServiceMeta().getGroup();
+                    }
                 }
                 servicesOnConsul.put(serviceId, consulObject);
             }
@@ -130,7 +149,9 @@ public class ConsulNodeDiscovery {
         ObjectMapper objectMapper = new ObjectMapper();
         Map<String, List<ConsulObject>> serviceListObjects = new HashMap<>();
         HttpResponse<String> response;
-        for(String consulHost : consulHostList) {
+
+        List<ConsulHosts.HostConfig> hostConfigs = consulHosts.getHosts();
+        for(ConsulHosts.HostConfig consulHost : hostConfigs) {
             log.trace("Querying Consul {} for new services", consulHost);
             response = client.send(buildServicesHttpRequest(consulHost), HttpResponse.BodyHandlers.ofString());
             JsonObject responseObject = objectMapper.readValue(response.body(), JsonObject.class);
@@ -151,7 +172,7 @@ public class ConsulNodeDiscovery {
         return serviceListObjects;
     }
 
-    private List<ConsulObject> getServiceByName(String consulHost, String serviceName) {
+    private List<ConsulObject> getServiceByName(ConsulHosts.HostConfig consulHost, String serviceName) {
         log.trace("Getting service name: {} at consul host: {}", serviceName, consulHost);
         List<ConsulObject> servicesToDeploy = new ArrayList<>();
         try {
@@ -160,14 +181,17 @@ public class ConsulNodeDiscovery {
             TypeReference<List<ConsulObject>> typeRef = new TypeReference<>() {};
             List<ConsulObject> temporaryList = objectMapper.readValue(response.body(), typeRef);
             temporaryList.forEach(o -> {
+                ServiceCapiInstances.Instance thisInstance = serviceUtils.getServiceCapiInstance(o, capiNamespace);
                 if(capiNamespace == null) {
                     servicesToDeploy.add(o);
                 } else {
-                    if(o.getServiceMeta().getNamespace() == null) {
+                    if(o.getServiceMeta().getNamespace() == null && thisInstance == null) {
                         if(!strictNamespace) {
                             servicesToDeploy.add(o);
                         }
-                    } else if(o.getServiceMeta().getNamespace().equals(capiNamespace)) {
+                    } else if(o.getServiceMeta().getNamespace() != null && o.getServiceMeta().getNamespace().equals(capiNamespace)) {
+                        servicesToDeploy.add(o);
+                    } else if(thisInstance != null) {
                         servicesToDeploy.add(o);
                     }
                 }
@@ -190,13 +214,29 @@ public class ConsulNodeDiscovery {
                 Service incomingService = createServiceObject(serviceName, entry.getKey(), entry.getValue(), objectList);
                 Service existingService = serviceCache.peek(incomingService.getId());
                 if(existingService == null) {
-                    if(serviceUtils.checkIfOpenApiIsEnabled(incomingService, client)) {
-                        createRoute(incomingService);
+                    boolean createRoute = true;
+                    if(incomingService.getServiceCapiInstances() != null) {
+                        if(!incomingService.getServiceCapiInstances().getInstances().containsKey(capiNamespace)) {
+                            createRoute = false;
+                        }
+                    }
+                    if(createRoute) {
+                        if(serviceUtils.checkIfOpenApiIsEnabled(incomingService, client)) {
+                            createRoute(incomingService);
+                        }
                     }
                 } else {
                     if(serviceUtils.updateExistingService(existingService, incomingService, serviceCache)) {
-                        if(serviceUtils.checkIfOpenApiIsEnabled(incomingService, client)) {
-                            createRoute(incomingService);
+                        boolean createRoute = true;
+                        if(incomingService.getServiceCapiInstances() != null) {
+                            if(!incomingService.getServiceCapiInstances().getInstances().containsKey(capiNamespace)) {
+                                createRoute = false;
+                            }
+                        }
+                        if(createRoute) {
+                            if(serviceUtils.checkIfOpenApiIsEnabled(incomingService, client)) {
+                                createRoute(incomingService);
+                            }
                         }
                     }
                 }
@@ -267,6 +307,17 @@ public class ConsulNodeDiscovery {
             });
         }
 
+        Map<String, String> multipleCapiInstances = new HashMap<>();
+        serviceMeta.getUnknownProperties().forEach((unknownKey, unknownValue) -> {
+            if(unknownKey.startsWith(ServiceCapiInstanceMapper.SERVICE_CAPI_INSTANCE_PREFIX)) {
+                multipleCapiInstances.put(unknownKey, unknownValue);
+            }
+        });
+
+        if(multipleCapiInstances.size() > 1) {
+            incomingService.setServiceCapiInstances(new ServiceCapiInstanceMapper().convert(multipleCapiInstances));
+        }
+
         if(serviceMeta.isRouteGroupFirst()) {
             incomingService.setId(key + ":" + serviceName);
             incomingService.setContext("/" + key + "/" + serviceName);
@@ -286,6 +337,9 @@ public class ConsulNodeDiscovery {
         incomingService.setModifyIndex(getModifyIndex(key, consulResponse));
 
         serviceUtils.validateServiceType(incomingService);
+
+        updateServiceWithSpecificInstance(incomingService);
+
         return incomingService;
     }
 
@@ -326,22 +380,22 @@ public class ConsulNodeDiscovery {
         }
     }
 
-    public void setConsulHostList(List<String> consulHostList) {
-        this.consulHostList = consulHostList;
+    public void setConsulHosts(ConsulHosts consulHosts) {
+        this.consulHosts = consulHosts;
     }
 
     public void setCapiContext(String capiContext) {
         this.capiContext = capiContext;
     }
 
-    private HttpRequest buildServicesHttpRequest(String consulHost) {
+    private HttpRequest buildServicesHttpRequest(ConsulHosts.HostConfig hostConfig) {
         HttpRequest.Builder builder = HttpRequest.newBuilder();
-        URI uri = URI.create(consulHost + GET_ALL_SERVICES);
+        URI uri = URI.create(hostConfig.getEndpoint() + GET_ALL_SERVICES);
         if (uri.getPath() != null && uri.getPath().contains("..")) {
             throw new IllegalArgumentException("Path traversal detected in URI path: " + uri.getPath());
         }
-        if(consulToken != null) {
-            builder.header(Constants.AUTHORIZATION_HEADER, Constants.BEARER + consulToken);
+        if(hostConfig.getToken() != null && !hostConfig.getToken().isEmpty()) {
+            builder.header(Constants.AUTHORIZATION_HEADER, Constants.BEARER + hostConfig.getToken().replaceAll("(\r\n|\n)", ""));
         }
         return builder
                 .uri(uri)
@@ -349,14 +403,14 @@ public class ConsulNodeDiscovery {
                 .build();
     }
 
-    private HttpRequest buildServiceNameHttpRequest(String consulHost, String serviceName) {
+    private HttpRequest buildServiceNameHttpRequest(ConsulHosts.HostConfig hostConfig, String serviceName) {
         HttpRequest.Builder builder = HttpRequest.newBuilder();
-        URI uri = URI.create(consulHost + GET_SERVICE_BY_NAME + serviceName);
+        URI uri = URI.create(hostConfig.getEndpoint() + GET_SERVICE_BY_NAME + serviceName);
         if (uri.getPath() != null && uri.getPath().contains("..")) {
             throw new IllegalArgumentException("Path traversal detected in URI path: " + uri.getPath());
         }
-        if(consulToken != null) {
-            builder.header(Constants.AUTHORIZATION_HEADER, Constants.BEARER + consulToken.replaceAll("(\r\n|\n)", ""));
+        if(hostConfig.getToken() != null && !hostConfig.getToken().isEmpty()) {
+            builder.header(Constants.AUTHORIZATION_HEADER, Constants.BEARER + hostConfig.getToken().replaceAll("(\r\n|\n)", ""));
         }
         return builder
                 .uri(uri)
@@ -395,10 +449,6 @@ public class ConsulNodeDiscovery {
         this.strictNamespace = strictNamespace;
     }
 
-    public void setConsulToken(String consulToken) {
-        this.consulToken = consulToken;
-    }
-
     public void setCapiRunningMode(String capiRunningMode) {
         this.capiRunningMode = capiRunningMode;
     }
@@ -414,5 +464,23 @@ public class ConsulNodeDiscovery {
 
     public void setServiceMetaExtrasPrefix(String serviceMetaExtrasPrefix) {
         this.serviceMetaExtrasPrefix = serviceMetaExtrasPrefix;
+    }
+
+    private void updateServiceWithSpecificInstance(Service incomingService) {
+        ServiceCapiInstances.Instance thisInstance = incomingService.getServiceCapiInstances().getInstances().get(capiNamespace);
+        if(thisInstance != null) {
+            incomingService.getServiceMeta().setSecured(thisInstance.isSecured());
+            incomingService.getServiceMeta().setRouteGroupFirst(thisInstance.isRouteGroupFirst());
+            if(thisInstance.isRouteGroupFirst()) {
+                incomingService.setId(incomingService.getServiceMeta().getGroup() + ":" + incomingService.getName());
+                incomingService.setContext("/" + incomingService.getServiceMeta().getGroup() + "/" + incomingService.getName());
+            } else {
+                incomingService.setId(incomingService.getName() + ":" + incomingService.getServiceMeta().getGroup());
+                incomingService.setContext("/" + incomingService.getName() + "/" + incomingService.getServiceMeta().getGroup());
+            }
+            if(thisInstance.getOpenApi() != null) {
+                incomingService.getServiceMeta().setOpenApiEndpoint(thisInstance.getOpenApi());
+            }
+        }
     }
 }

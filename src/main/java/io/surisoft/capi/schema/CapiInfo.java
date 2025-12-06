@@ -1,8 +1,11 @@
 package io.surisoft.capi.schema;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import io.surisoft.capi.configuration.ConsulHosts;
 
 import java.util.Date;
+import java.util.List;
+
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class CapiInfo {
     private String javaVersion;
@@ -24,7 +27,7 @@ public class CapiInfo {
     private boolean opaEnabled;
     private String opaEndpoint;
     private boolean consulEnabled;
-    private String consulEndpoint;
+    private List<String> consulHosts;
     private int consulTimerInterval;
     private String routesContextPath;
     private String metricsContextPath;
@@ -179,12 +182,12 @@ public class CapiInfo {
         this.consulEnabled = consulEnabled;
     }
 
-    public String getConsulEndpoint() {
-        return consulEndpoint;
+    public List<String> getConsulHosts() {
+        return consulHosts;
     }
 
-    public void setConsulEndpoint(String consulEndpoint) {
-        this.consulEndpoint = consulEndpoint;
+    public void setConsulHosts(List<String> consulHosts) {
+        this.consulHosts = consulHosts;
     }
 
     public int getConsulTimerInterval() {

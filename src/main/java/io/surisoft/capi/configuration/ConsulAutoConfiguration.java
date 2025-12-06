@@ -17,8 +17,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -26,8 +24,8 @@ import java.util.Optional;
 public class ConsulAutoConfiguration {
 
     private static final Logger log = LoggerFactory.getLogger(ConsulAutoConfiguration.class);
-    private final List<String> capiConsulHosts;
-    private final String consulToken;
+    private final ConsulHosts capiConsulHosts;
+    private  String consulToken;
     private final String capiContext;
     private final boolean reverseProxyEnabled;
     private final String reverseProxyHost;
@@ -44,8 +42,7 @@ public class ConsulAutoConfiguration {
     private final Optional<CapiSslContextHolder> capiSslContextHolder;
     private final String serviceMetaExtrasPrefix;
 
-    public ConsulAutoConfiguration(@Value("${capi.consul.hosts}") List<String> capiConsulHosts,
-                                   @Value("${capi.consul.token}") String consulToken,
+    public ConsulAutoConfiguration(ConsulHosts capiConsulHosts,
                                    @Value("${camel.servlet.mapping.context-path}") String capiContext,
                                    @Value("${capi.reverse.proxy.enabled}") boolean reverseProxyEnabled,
                                    @Value("${capi.reverse.proxy.host}") String reverseProxyHost,
@@ -62,7 +59,6 @@ public class ConsulAutoConfiguration {
                                    Optional<CapiSslContextHolder> capiSslContextHolder,
                                    @Value("${capi.traces.extra.metadata.prefix}") String serviceMetaExtrasPrefix) {
         this.capiConsulHosts = capiConsulHosts;
-        this.consulToken = consulToken;
         this.capiContext = capiContext;
         this.reverseProxyEnabled = reverseProxyEnabled;
         this.reverseProxyHost = reverseProxyHost;
@@ -96,14 +92,11 @@ public class ConsulAutoConfiguration {
         consulNodeDiscovery.setWebsocketUtils(websocketUtils.orElse(null));
         consulNodeDiscovery.setSSEUtils(sseUtils.orElse(null));
         consulNodeDiscovery.setCapiContext(httpUtils.getCapiContext(capiContext));
-        consulNodeDiscovery.setConsulHostList(capiConsulHosts);
+
+        consulNodeDiscovery.setConsulHosts(capiConsulHosts);
         if(capiNamespace != null && !capiNamespace.isEmpty()) {
             consulNodeDiscovery.setCapiNamespace(capiNamespace);
             consulNodeDiscovery.setStrictNamespace(strictNamespace);
-        }
-
-        if(consulToken != null && !consulToken.isEmpty()) {
-            consulNodeDiscovery.setConsulToken(consulToken);
         }
 
         if(reverseProxyEnabled) {

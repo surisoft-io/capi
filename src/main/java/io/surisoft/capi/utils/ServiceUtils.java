@@ -1,5 +1,6 @@
 package io.surisoft.capi.utils;
 
+import io.surisoft.capi.processor.ServiceCapiInstanceMapper;
 import io.surisoft.capi.schema.*;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.parser.OpenAPIV3Parser;
@@ -16,6 +17,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -159,7 +161,8 @@ public class ServiceUtils {
         if(existingService.getServiceMeta().isRouteGroupFirst() != incomingService.getServiceMeta().isRouteGroupFirst()) {
             return true;
         }
-        return false;
+
+        return didSubscriptionGroupChange(existingService.getServiceMeta().getSubscriptionGroup(), incomingService.getServiceMeta().getSubscriptionGroup());
     }
 
     private boolean didOpenApiEndpointChange(String existingEndpoint, String incomingEndpoint) {
@@ -170,6 +173,16 @@ public class ServiceUtils {
             return true;
         }
         return existingEndpoint != null && !existingEndpoint.equals(incomingEndpoint);
+    }
+
+    private boolean didSubscriptionGroupChange(String existingSubscriptionGroup, String incomingSubscriptionGroup) {
+        if(existingSubscriptionGroup == null && incomingSubscriptionGroup != null) {
+            return true;
+        }
+        if(existingSubscriptionGroup != null && incomingSubscriptionGroup == null) {
+            return true;
+        }
+        return existingSubscriptionGroup != null && !existingSubscriptionGroup.equals(incomingSubscriptionGroup);
     }
 
 
@@ -239,5 +252,22 @@ public class ServiceUtils {
         return service.getServiceMeta() != null &&
                 service.getServiceMeta().getOpenApiEndpoint() != null &&
                 !service.getServiceMeta().getOpenApiEndpoint().isEmpty();
+    }
+
+    public ServiceCapiInstances.Instance getServiceCapiInstance(ConsulObject consulObject, String capiInstanceName) {
+        Map<String, String> multipleCapiInstances = new HashMap<>();
+        ServiceCapiInstances serviceCapiInstances = null;
+        consulObject.getServiceMeta().getUnknownProperties().forEach((unknownKey, unknownValue) -> {
+            if(unknownKey.startsWith(ServiceCapiInstanceMapper.SERVICE_CAPI_INSTANCE_PREFIX)) {
+                multipleCapiInstances.put(unknownKey, unknownValue);
+            }
+        });
+        if(multipleCapiInstances.size() > 1) {
+            serviceCapiInstances = new ServiceCapiInstanceMapper().convert(multipleCapiInstances);
+        }
+        if(serviceCapiInstances != null && serviceCapiInstances.getInstances().containsKey(capiInstanceName)) {
+            return serviceCapiInstances.getInstances().get(capiInstanceName);
+        }
+        return null;
     }
 }

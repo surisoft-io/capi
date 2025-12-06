@@ -21,6 +21,7 @@ public class Service implements Serializable {
     private String registeredBy;
     private transient OpenAPI openAPI;
     private int modifyIndex;
+    private ServiceCapiInstances serviceCapiInstances;
 
     public String getName() {
         return name;
@@ -116,5 +117,13 @@ public class Service implements Serializable {
 
     public void setModifyIndex(int modifyIndex) {
         this.modifyIndex = modifyIndex;
+    }
+
+    public ServiceCapiInstances getServiceCapiInstances() {
+        return serviceCapiInstances;
+    }
+
+    public void setServiceCapiInstances(ServiceCapiInstances serviceCapiInstances) {
+        this.serviceCapiInstances = serviceCapiInstances;
     }
 }

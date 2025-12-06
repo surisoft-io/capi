@@ -1,5 +1,6 @@
 package io.surisoft.capi.metrics;
 
+import io.surisoft.capi.configuration.ConsulHosts;
 import io.surisoft.capi.schema.CapiInfo;
 import org.apache.camel.CamelContext;
 import org.springframework.beans.factory.annotation.Value;
@@ -16,10 +17,12 @@ public class Info {
 
     private final List<String> oauth2Keys;
     private final CamelContext camelContext;
+    private final ConsulHosts consulHosts;
 
-    public Info(List<String> oauth2Keys, CamelContext camelContext) {
+    public Info(List<String> oauth2Keys, CamelContext camelContext, ConsulHosts consulHosts) {
         this.oauth2Keys = oauth2Keys;
         this.camelContext = camelContext;
+        this.consulHosts = consulHosts;
     }
 
     @Value("${capi.version}")
@@ -37,8 +40,6 @@ public class Info {
     private String opaEndpoint;
     @Value("${capi.consul.discovery.enabled}")
     private boolean consulEnabled;
-    @Value("${capi.consul.hosts}")
-    private String consulEndpoint;
     @Value("${capi.consul.discovery.timer.interval}")
     private int consulTimerInterval;
     @Value("${camel.servlet.mapping.context-path}")
@@ -65,7 +66,10 @@ public class Info {
         capiInfo.setOauth2Enabled(oauth2Enabled);
         capiInfo.setOauth2Endpoint(oauth2Keys.stream().map(String::valueOf).collect(Collectors.joining(",")));
         capiInfo.setConsulEnabled(consulEnabled);
-        capiInfo.setConsulEndpoint(consulEndpoint);
+
+        List<String> consulHostsList = consulHosts.getHosts().stream().map(ConsulHosts.HostConfig::getEndpoint).collect(Collectors.toList());
+        capiInfo.setConsulHosts(consulHostsList);
+
         capiInfo.setConsulTimerInterval(consulTimerInterval);
         capiInfo.setRoutesContextPath(routeContextPath);
         capiInfo.setMetricsContextPath(metricsContextPath);

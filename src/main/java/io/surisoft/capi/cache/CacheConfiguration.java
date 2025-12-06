@@ -22,12 +22,12 @@ public class CacheConfiguration {
 
     private static final Logger log = LoggerFactory.getLogger(CacheConfiguration.class);
     private final List<String> allowedHeaders;
-    private final List<String> capiConsulHosts;
+    private final String capiConsulKvHost;
 
     public CacheConfiguration(@Value("${capi.gateway.cors.management.allowed-headers}") List<String> allowedHeaders,
-                              @Value("${capi.consul.hosts}") List<String> capiConsulHosts) {
+                              @Value("${capi.consul.kv.host}") String capiConsulKvHost) {
         this.allowedHeaders = allowedHeaders;
-        this.capiConsulHosts = capiConsulHosts;
+        this.capiConsulKvHost = capiConsulKvHost;
     }
 
     @Bean
@@ -44,7 +44,6 @@ public class CacheConfiguration {
     @Bean
     @ConditionalOnProperty(prefix = "capi.consul.kv", name = "enabled", havingValue = "true")
     public Cache<String, List<String>> consulKvStoreCache(RestTemplate restTemplate) {
-        String consulHost = capiConsulHosts.get(0);
         log.debug("Creating Consul KV Cache");
         Cache<String, List<String>> consulKvStoreCache = new Cache2kBuilder<String, List<String>>(){}
                 .name("consulKvStoreCache-" + hashCode())
@@ -53,10 +52,9 @@ public class CacheConfiguration {
                 .storeByReference(true)
                 .build();
 
-        //Processing CORS Headers
         log.info("Checking Consul Key Store for CORS Headers key/values");
         try {
-            ResponseEntity<ConsulKeyStoreEntry[]> consulKeyValueStoreResponse = restTemplate.getForEntity(consulHost + Constants.CONSUL_KV_STORE_API + Constants.CAPI_CORS_HEADERS_CACHE_KEY, ConsulKeyStoreEntry[].class);
+            ResponseEntity<ConsulKeyStoreEntry[]> consulKeyValueStoreResponse = restTemplate.getForEntity(capiConsulKvHost + Constants.CONSUL_KV_STORE_API + Constants.CAPI_CORS_HEADERS_CACHE_KEY, ConsulKeyStoreEntry[].class);
             if(!consulKeyValueStoreResponse.getStatusCode().is2xxSuccessful()) {
                 consulKvStoreCache.put(Constants.CAPI_CORS_HEADERS_CACHE_KEY, allowedHeaders);
             } else {
