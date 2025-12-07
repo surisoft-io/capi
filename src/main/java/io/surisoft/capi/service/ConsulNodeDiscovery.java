@@ -467,23 +467,25 @@ public class ConsulNodeDiscovery {
     }
 
     private void updateServiceWithSpecificInstance(Service incomingService) {
-        ServiceCapiInstances.Instance thisInstance = incomingService.getServiceCapiInstances().getInstances().get(capiNamespace);
-        if(thisInstance != null) {
-            incomingService.getServiceMeta().setSecured(thisInstance.isSecured());
-            incomingService.getServiceMeta().setRouteGroupFirst(thisInstance.isRouteGroupFirst());
-            if(thisInstance.isRouteGroupFirst()) {
-                incomingService.setId(incomingService.getServiceMeta().getGroup() + ":" + incomingService.getName());
-                incomingService.setContext("/" + incomingService.getServiceMeta().getGroup() + "/" + incomingService.getName());
-            } else {
-                incomingService.setId(incomingService.getName() + ":" + incomingService.getServiceMeta().getGroup());
-                incomingService.setContext("/" + incomingService.getName() + "/" + incomingService.getServiceMeta().getGroup());
-            }
-            if(thisInstance.getOpenApi() != null) {
-                incomingService.getServiceMeta().setOpenApiEndpoint(thisInstance.getOpenApi());
-            }
-            if(thisInstance.getScheme() != null && !thisInstance.getScheme().isEmpty()) {
-                incomingService.getServiceMeta().setScheme(thisInstance.getScheme());
-            }
+        if(incomingService.getServiceCapiInstances() != null && incomingService.getServiceCapiInstances().getInstances() != null) {
+            ServiceCapiInstances.Instance thisInstance = incomingService.getServiceCapiInstances().getInstances().get(capiNamespace);
+            if(thisInstance != null) {
+                incomingService.getServiceMeta().setSecured(thisInstance.isSecured());
+                incomingService.getServiceMeta().setRouteGroupFirst(thisInstance.isRouteGroupFirst());
+                if(thisInstance.isRouteGroupFirst()) {
+                    incomingService.setId(incomingService.getServiceMeta().getGroup() + ":" + incomingService.getName());
+                    incomingService.setContext("/" + incomingService.getServiceMeta().getGroup() + "/" + incomingService.getName());
+                } else {
+                    incomingService.setId(incomingService.getName() + ":" + incomingService.getServiceMeta().getGroup());
+                    incomingService.setContext("/" + incomingService.getName() + "/" + incomingService.getServiceMeta().getGroup());
+                }
+                if(thisInstance.getOpenApi() != null) {
+                    incomingService.getServiceMeta().setOpenApiEndpoint(thisInstance.getOpenApi());
+                }
+                if(thisInstance.getScheme() != null && !thisInstance.getScheme().isEmpty()) {
+                    incomingService.getServiceMeta().setScheme(thisInstance.getScheme());
+                }
+             }
         }
     }
 }

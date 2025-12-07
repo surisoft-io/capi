@@ -152,13 +152,20 @@ public class ServiceUtils {
                 return true;
             }
         }
+
         if(didOpenApiEndpointChange(existingService.getServiceMeta().getOpenApiEndpoint(), incomingService.getServiceMeta().getOpenApiEndpoint())) {
             return true;
         }
+
         if(existingService.getServiceMeta().isSecured() != incomingService.getServiceMeta().isSecured()) {
             return true;
         }
+
         if(existingService.getServiceMeta().isRouteGroupFirst() != incomingService.getServiceMeta().isRouteGroupFirst()) {
+            return true;
+        }
+
+        if(didVersionChange(existingService.getServiceMeta().getVersion(), incomingService.getServiceMeta().getVersion())) {
             return true;
         }
 
@@ -173,6 +180,16 @@ public class ServiceUtils {
             return true;
         }
         return existingEndpoint != null && !existingEndpoint.equals(incomingEndpoint);
+    }
+
+    private boolean didVersionChange(String existingVersion, String incomingVersion) {
+        if(existingVersion == null && incomingVersion != null) {
+            return true;
+        }
+        if(existingVersion != null && incomingVersion == null) {
+            return true;
+        }
+        return existingVersion != null && !existingVersion.equals(incomingVersion);
     }
 
     private boolean didSubscriptionGroupChange(String existingSubscriptionGroup, String incomingSubscriptionGroup) {

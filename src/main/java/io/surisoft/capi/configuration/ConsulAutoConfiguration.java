@@ -25,7 +25,6 @@ public class ConsulAutoConfiguration {
 
     private static final Logger log = LoggerFactory.getLogger(ConsulAutoConfiguration.class);
     private final ConsulHosts capiConsulHosts;
-    private  String consulToken;
     private final String capiContext;
     private final boolean reverseProxyEnabled;
     private final String reverseProxyHost;

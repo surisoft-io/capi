@@ -121,9 +121,9 @@ capi:
       token:
       timer:
         interval: 10000
-    token:
     hosts:
-      http://localhost:8500
+      - endpoint: http://localhost:8500
+        token:
     discovery:
       enabled: false
       timer:

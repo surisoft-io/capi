@@ -67,6 +67,8 @@ public class ServiceMeta {
     private boolean secureOpenApiDefinition;
     @JsonProperty("state")
     private State state;
+    @JsonProperty("version")
+    private String version;
 
     private Map<String, String> extraServiceMeta = new HashMap<>();
 
@@ -312,5 +314,13 @@ public class ServiceMeta {
             extraServiceMeta = new HashMap<>();
         }
         extraServiceMeta.put(key, value);
+    }
+
+    public String getVersion() {
+        return version;
+    }
+
+    public void setVersion(String version) {
+        this.version = version;
     }
 }
