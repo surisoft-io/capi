@@ -314,7 +314,7 @@ public class ConsulNodeDiscovery {
             }
         });
 
-        if(multipleCapiInstances.size() > 1) {
+        if(!multipleCapiInstances.isEmpty()) {
             incomingService.setServiceCapiInstances(new ServiceCapiInstanceMapper().convert(multipleCapiInstances));
         }
 
@@ -470,8 +470,14 @@ public class ConsulNodeDiscovery {
         if(incomingService.getServiceCapiInstances() != null && incomingService.getServiceCapiInstances().getInstances() != null) {
             ServiceCapiInstances.Instance thisInstance = incomingService.getServiceCapiInstances().getInstances().get(capiNamespace);
             if(thisInstance != null) {
-                incomingService.getServiceMeta().setSecured(thisInstance.isSecured());
-                incomingService.getServiceMeta().setRouteGroupFirst(thisInstance.isRouteGroupFirst());
+                if(!thisInstance.isAssumeParentSecured()) {
+                    incomingService.getServiceMeta().setSecured(thisInstance.isSecured());
+                }
+
+                if(!thisInstance.isAssumeParentRouteGroupFirst()) {
+                    incomingService.getServiceMeta().setRouteGroupFirst(thisInstance.isRouteGroupFirst());
+                }
+
                 if(thisInstance.isRouteGroupFirst()) {
                     incomingService.setId(incomingService.getServiceMeta().getGroup() + ":" + incomingService.getName());
                     incomingService.setContext("/" + incomingService.getServiceMeta().getGroup() + "/" + incomingService.getName());
@@ -481,6 +487,8 @@ public class ConsulNodeDiscovery {
                 }
                 if(thisInstance.getOpenApi() != null) {
                     incomingService.getServiceMeta().setOpenApiEndpoint(thisInstance.getOpenApi());
+                } else if(thisInstance.isIgnoreOpenApi()) {
+                    incomingService.setOpenAPI(null);
                 }
                 if(thisInstance.getScheme() != null && !thisInstance.getScheme().isEmpty()) {
                     incomingService.getServiceMeta().setScheme(thisInstance.getScheme());

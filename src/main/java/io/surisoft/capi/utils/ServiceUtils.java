@@ -279,7 +279,7 @@ public class ServiceUtils {
                 multipleCapiInstances.put(unknownKey, unknownValue);
             }
         });
-        if(multipleCapiInstances.size() > 1) {
+        if(!multipleCapiInstances.isEmpty()) {
             serviceCapiInstances = new ServiceCapiInstanceMapper().convert(multipleCapiInstances);
         }
         if(serviceCapiInstances != null && serviceCapiInstances.getInstances().containsKey(capiInstanceName)) {

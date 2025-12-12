@@ -12,6 +12,10 @@ public class ServiceCapiInstances {
         private String openApi;
         private boolean routeGroupFirst;
         private String scheme;
+        private boolean ignoreOpenApi;
+
+        private boolean assumeParentSecured = true;
+        private boolean assumeParentRouteGroupFirst = true;
 
         public boolean isSecured() {
             return secured;
@@ -43,6 +47,30 @@ public class ServiceCapiInstances {
 
         public void setScheme(String scheme) {
             this.scheme = scheme;
+        }
+
+        public boolean isIgnoreOpenApi() {
+            return ignoreOpenApi;
+        }
+
+        public void setIgnoreOpenApi(boolean ignoreOpenApi) {
+            this.ignoreOpenApi = ignoreOpenApi;
+        }
+
+        public boolean isAssumeParentSecured() {
+            return assumeParentSecured;
+        }
+
+        public void setAssumeParentSecured(boolean assumeParentSecured) {
+            this.assumeParentSecured = assumeParentSecured;
+        }
+
+        public boolean isAssumeParentRouteGroupFirst() {
+            return assumeParentRouteGroupFirst;
+        }
+
+        public void setAssumeParentRouteGroupFirst(boolean assumeParentRouteGroupFirst) {
+            this.assumeParentRouteGroupFirst = assumeParentRouteGroupFirst;
         }
 
 

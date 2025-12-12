@@ -15,15 +15,13 @@ public class ServiceCapiInstanceMapper {
             if (!key.startsWith(SERVICE_CAPI_INSTANCE_PREFIX)) return;
 
             String remainder = key.substring(SERVICE_CAPI_INSTANCE_PREFIX.length());
+            int idx = remainder.indexOf("-");
 
-            String[] parts = remainder.split("-");
-            if (parts.length < 2) return;
-
-            String sectionName = parts[0];
-            String propertyName = parts[1];
+            String instanceName = remainder.substring(0, idx);
+            String propertyName = remainder.substring(idx + 1);
 
             ServiceCapiInstances.Instance instance =
-                    result.getInstances().computeIfAbsent(sectionName, s -> new ServiceCapiInstances.Instance());
+                    result.getInstances().computeIfAbsent(instanceName, s -> new ServiceCapiInstances.Instance());
 
             applyProperty(instance, propertyName, value);
         });
@@ -35,15 +33,20 @@ public class ServiceCapiInstanceMapper {
         switch (prop) {
             case "secured":
                 instance.setSecured(Boolean.parseBoolean(value));
+                instance.setAssumeParentSecured(false);
                 break;
             case "open-api":
                 instance.setOpenApi(value);
                 break;
             case "route-group-first":
                 instance.setRouteGroupFirst(Boolean.parseBoolean(value));
+                instance.setAssumeParentRouteGroupFirst(false);
                 break;
             case "scheme":
                 instance.setScheme(value);
+                break;
+            case "ignore-open-api":
+                instance.setIgnoreOpenApi(Boolean.parseBoolean(value));
                 break;
         }
     }

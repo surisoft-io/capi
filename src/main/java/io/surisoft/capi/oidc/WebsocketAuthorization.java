@@ -44,8 +44,6 @@ public class WebsocketAuthorization {
         String bearerToken;
         if(httpServerExchange.getRequestHeaders().contains(Oauth2Constants.AUTHORIZATION_HEADER)) {
             bearerToken = getBearerTokenFromHeader(httpServerExchange.getRequestHeaders().get(Oauth2Constants.AUTHORIZATION_HEADER, 0));
-            //----------------
-            //httpServerExchange.getRequestHeaders().remove(new HttpString(Oauth2Constants.AUTHORIZATION_HEADER));
         } else {
             bearerToken = httpServerExchange.getQueryParameters().get(Oauth2Constants.AUTHORIZATION_QUERY).getFirst();
             removeAuthorizationFromQuery(httpServerExchange);
