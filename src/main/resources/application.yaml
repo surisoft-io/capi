@@ -14,6 +14,7 @@ server:
     key-store-type: PKCS12
     key-store:
     key-store-password:
+
 ########################
 ### Spring specifics ###
 ########################
@@ -191,9 +192,14 @@ capi:
       time:
         to:
           live: 2
+
+logstash-enabled: false
+logstash-destination: local:5444
+
 logging:
-  level:
-    com:
-      hazelcast:
-        system:
-          logo: OFF
+  logback:
+    logstash:
+      tenant: capi
+      appName: capi
+      appEnvironment: dev
+      hostName: capi-local

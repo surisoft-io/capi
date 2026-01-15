@@ -7,7 +7,7 @@
   <groupId>io.surisoft.capi</groupId>
   <artifactId>capi</artifactId>
   <packaging>jar</packaging>
-  <version>4.15.2</version>
+  <version>4.15.3</version>
   <description>${spring.boot-version}</description>
   <name>CAPI Gateway</name>
 
@@ -37,6 +37,8 @@
     <sonar.java.coveragePlugin>jacoco</sonar.java.coveragePlugin>
     <sonar.dynamicAnalysis>reuseReports</sonar.dynamicAnalysis>
     <sonar.jacoco.reportPath>${project.basedir}/../target/jacoco.exec</sonar.jacoco.reportPath>
+    <logstash-logback-encoder.version>9.0</logstash-logback-encoder.version>
+    <janino.version>3.1.12</janino.version>
   </properties>
 
   <parent>
@@ -255,6 +257,17 @@
       <groupId>io.swagger.parser.v3</groupId>
       <artifactId>swagger-parser-v3</artifactId>
       <version>${io.swagger.parser.v3.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>net.logstash.logback</groupId>
+      <artifactId>logstash-logback-encoder</artifactId>
+      <version>${logstash-logback-encoder.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.codehaus.janino</groupId>
+      <artifactId>janino</artifactId>
+      <version>${janino.version}</version>
     </dependency>
   </dependencies>
 <build>

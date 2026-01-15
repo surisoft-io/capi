@@ -4,6 +4,18 @@
     <logger name="org.springframework.kafka" level="error"/>
     <logger name="org.apache.kafka" level="error"/>
     <logger name="io.swagger.v3" level="error"/>
+
+    <!-- Context properties sent as log attributes -->
+    <springProperty name="tenant" source="logging.logback.logstash.tenant"/>
+    <springProperty name="appName" source="logging.logback.logstash.appName"/>
+    <springProperty name="appEnvironment" source="logging.logback.logstash.appEnvironment"/>
+    <springProperty name="hostName" source="logging.logback.logstash.hostName"/>
+
+    <springProperty name="logstashEnabled"
+                    source="logstash-enabled"
+                    defaultValue="false"/>
+    <springProperty name="logstashDestination" source="logstash-destination"/>
+
     <appender name="FILE-ROLLING" class="ch.qos.logback.core.rolling.RollingFileAppender">
         <file>${log-dir}/capi.log</file>
         <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
@@ -18,41 +30,70 @@
             <pattern>%-4relative [%thread] %-5level %logger{35} -%kvp- %msg%n</pattern>
         </encoder>
     </appender>
+    <if condition='Boolean.parseBoolean(property("logstashEnabled"))'>
+        <then>
+            <appender name="LOGSTASH"
+                      class="net.logstash.logback.appender.LogstashTcpSocketAppender">
+                <destination>${logstashDestination}</destination>
+
+                <!-- Fail fast but don’t block the app -->
+                <keepAliveDuration>5 minutes</keepAliveDuration>
+                <connectionTimeout>5s</connectionTimeout>
+                <writeTimeout>5s</writeTimeout>
+                <reconnectionDelay>10s</reconnectionDelay>
+                <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+                    <customFields>
+                        {
+                        "tenant":"${tenant}",
+                        "appName":"${appName}",
+                        "appEnvironment":"${appEnvironment}",
+                        "host":"${hostName}"
+                        }
+                    </customFields>
+                    <!-- Standard fields -->
+                    <includeMdc>true</includeMdc>
+                    <includeContext>true</includeContext>
+                    <includeStructuredArguments>true</includeStructuredArguments>
+                </encoder>
+            </appender>
+        </then>
+    </if>
     <springProfile name="default">
         <include resource="org/springframework/boot/logging/logback/console-appender.xml"/>
-        <logger name="org.springframework" level="INFO"/>
-        <!--logger name="com.hazelcast" level="ERROR"/-->
+
         <root level="info">
             <appender-ref ref="CONSOLE"/>
+            <appender-ref ref="LOGSTASH"/>
         </root>
         <logger name="io.surisoft.capi" additivity="false" level="TRACE">
             <appender-ref ref="CONSOLE"/>
+            <appender-ref ref="LOGSTASH"/>
         </logger>
+
     </springProfile>
     <springProfile name="dev">
         <include resource="org/springframework/boot/logging/logback/console-appender.xml"/>
-        <logger name="org.springframework" level="INFO"/>
-        <logger name="com.hazelcast" level="ERROR"/>
+
         <root level="info">
             <appender-ref ref="FILE-ROLLING" />
             <appender-ref ref="CONSOLE"/>
+            <appender-ref ref="LOGSTASH"/>
         </root>
         <logger name="io.surisoft.capi" additivity="false" level="TRACE">
             <appender-ref ref="FILE-ROLLING" />
             <appender-ref ref="CONSOLE"/>
+            <appender-ref ref="LOGSTASH"/>
         </logger>
     </springProfile>
     <springProfile name="prod">
-        <logger name="org.springframework" level="INFO"/>
-        <logger name="com.hazelcast" level="ERROR"/>
-         <logger name="org.apache.hc.client5.http.protocol.ResponseProcessCookies" level="ERROR">
-            <appender-ref ref="FILE-ROLLING" />
-        </logger>
+        <include resource="org/springframework/boot/logging/logback/console-appender.xml"/>
         <root level="info">
-            <appender-ref ref="FILE-ROLLING" />
+            <appender-ref ref="FILE-ROLLING"/>
+            <appender-ref ref="LOGSTASH"/>
         </root>
         <logger name="io.surisoft.capi" additivity="false" level="INFO">
-            <appender-ref ref="FILE-ROLLING" />
+            <appender-ref ref="FILE-ROLLING"/>
+            <appender-ref ref="LOGSTASH"/>
         </logger>
     </springProfile>
 </configuration>
