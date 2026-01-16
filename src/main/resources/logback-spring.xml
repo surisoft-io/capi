@@ -5,17 +5,19 @@
     <logger name="org.apache.kafka" level="error"/>
     <logger name="io.swagger.v3" level="error"/>
 
-    <!-- Context properties sent as log attributes -->
-    <springProperty name="tenant" source="logging.logback.logstash.tenant"/>
-    <springProperty name="appName" source="logging.logback.logstash.appName"/>
-    <springProperty name="appEnvironment" source="logging.logback.logstash.appEnvironment"/>
-    <springProperty name="hostName" source="logging.logback.logstash.hostName"/>
-
+    <springProperty name="tenant"
+                    source="logging.logback.logstash.tenant"/>
+    <springProperty name="appName"
+                    source="logging.logback.logstash.appName"/>
+    <springProperty name="appEnvironment"
+                    source="logging.logback.logstash.appEnvironment"/>
+    <springProperty name="hostName"
+                    source="logging.logback.logstash.hostName"/>
     <springProperty name="logstashEnabled"
                     source="logstash-enabled"
                     defaultValue="false"/>
-    <springProperty name="logstashDestination" source="logstash-destination"/>
 
+    <springProperty name="logstashDestination" source="logstash-destination"/>
     <appender name="FILE-ROLLING" class="ch.qos.logback.core.rolling.RollingFileAppender">
         <file>${log-dir}/capi.log</file>
         <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
@@ -32,11 +34,8 @@
     </appender>
     <if condition='Boolean.parseBoolean(property("logstashEnabled"))'>
         <then>
-            <appender name="LOGSTASH"
-                      class="net.logstash.logback.appender.LogstashTcpSocketAppender">
+            <appender name="LOGSTASH" class="net.logstash.logback.appender.LogstashTcpSocketAppender">
                 <destination>${logstashDestination}</destination>
-
-                <!-- Fail fast but don’t block the app -->
                 <keepAliveDuration>5 minutes</keepAliveDuration>
                 <connectionTimeout>5s</connectionTimeout>
                 <writeTimeout>5s</writeTimeout>
@@ -50,7 +49,6 @@
                         "host":"${hostName}"
                         }
                     </customFields>
-                    <!-- Standard fields -->
                     <includeMdc>true</includeMdc>
                     <includeContext>true</includeContext>
                     <includeStructuredArguments>true</includeStructuredArguments>
@@ -60,7 +58,6 @@
     </if>
     <springProfile name="default">
         <include resource="org/springframework/boot/logging/logback/console-appender.xml"/>
-
         <root level="info">
             <appender-ref ref="CONSOLE"/>
             <appender-ref ref="LOGSTASH"/>
@@ -69,11 +66,9 @@
             <appender-ref ref="CONSOLE"/>
             <appender-ref ref="LOGSTASH"/>
         </logger>
-
     </springProfile>
     <springProfile name="dev">
         <include resource="org/springframework/boot/logging/logback/console-appender.xml"/>
-
         <root level="info">
             <appender-ref ref="FILE-ROLLING" />
             <appender-ref ref="CONSOLE"/>
