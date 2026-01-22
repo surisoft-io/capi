@@ -1,6 +1,6 @@
 package io.surisoft.capi.oidc;
 
-import okhttp3.MediaType;
+//import okhttp3.MediaType;
 
 public class Oauth2Constants {
     public static final String CLIENT_ID = "client_id";
@@ -9,7 +9,7 @@ public class Oauth2Constants {
     public static final String GRANT_TYPE = "grant_type";
     public static final String CLIENT_CREDENTIALS_GRANT_TYPE = "client_credentials";
     public static final String ACCESS_TOKEN_ATTRIBUTE = "access_token";
-    public static final MediaType JSON_TYPE = MediaType.parse("application/json; charset=utf-8");
+    //public static final MediaType JSON_TYPE = MediaType.parse("application/json; charset=utf-8");
     public static final String AUTHORIZATION_HEADER = "Authorization";
     public static final String BEARER_AUTHORIZATION_ATTRIBUTE = "Bearer ";
     public static final String SERVICE_ACCOUNT_ENABLE = "serviceAccountsEnabled";

@@ -3,18 +3,12 @@
 ####################################
 server:
   max-http-request-header-size: 65536
-  undertow:
-    accesslog:
-      enabled: false
-      dir:
-      rotate: false
   port: 8380
   ssl:
     enabled: false
     key-store-type: PKCS12
     key-store:
     key-store-password:
-
 ########################
 ### Spring specifics ###
 ########################
@@ -24,7 +18,8 @@ spring:
       max-file-size: 200MB
       max-request-size: 200MB
   autoconfigure:
-    exclude: org.springframework.boot.autoconfigure.security.servlet.UserDetailsServiceAutoConfiguration
+    exclude:
+      - org.springframework.boot.autoconfigure.security.servlet.UserDetailsServiceAutoConfiguration
   profiles:
     active: default
   # CAPI Banner, keep it, it is beautiful!
@@ -193,12 +188,16 @@ capi:
         to:
           live: 2
 
-logstash-enabled: false
-logstash-destination: local:5444
-
 logging:
   logback:
-    logstash:
+    access:
+      enabled: false
+      tenant: capi-access-logs
+      service: capi-local
+      destination:
+    logs:
+      enabled: false
+      destination:
       tenant: capi
       appName: capi
       appEnvironment: dev

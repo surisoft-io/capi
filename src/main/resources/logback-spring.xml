@@ -5,17 +5,29 @@
     <logger name="org.apache.kafka" level="error"/>
     <logger name="io.swagger.v3" level="error"/>
 
-    <springProperty name="tenant"
-                    source="logging.logback.logstash.tenant"/>
-    <springProperty name="appName"
-                    source="logging.logback.logstash.appName"/>
-    <springProperty name="appEnvironment"
-                    source="logging.logback.logstash.appEnvironment"/>
-    <springProperty name="hostName"
-                    source="logging.logback.logstash.hostName"/>
-    <springProperty name="logstashEnabled"
-                    source="logstash-enabled"
+    <!-- CAPI Logs properties -->
+    <springProperty name="logsEnabled"
+                    source="logging.logback.logs.enabled"
                     defaultValue="false"/>
+    <springProperty name="logsTenant"
+                    source="logging.logback.logs.tenant"/>
+    <springProperty name="logsAppName"
+                    source="logging.logback.logs.appName"/>
+    <springProperty name="logsAppEnvironment"
+                    source="logging.logback.logs.appEnvironment"/>
+    <springProperty name="logsDestination"
+                    source="logging.logback.logs.destination"/>
+
+    <!-- Access Logs properties -->
+    <springProperty name="accessLogsEnabled"
+                    source="logging.logback.access.enabled"
+                    defaultValue="false"/>
+    <springProperty name="accessLogsTenant"
+                    source="logging.logback.access.tenant"/>
+    <springProperty name="accessLogsService"
+                    source="logging.logback.access.service"/>
+    <springProperty name="accessLogsDestination"
+                    source="logging.logback.access.destination"/>
 
     <springProperty name="logstashDestination" source="logstash-destination"/>
     <appender name="FILE-ROLLING" class="ch.qos.logback.core.rolling.RollingFileAppender">
@@ -32,10 +44,10 @@
             <pattern>%-4relative [%thread] %-5level %logger{35} -%kvp- %msg%n</pattern>
         </encoder>
     </appender>
-    <if condition='Boolean.parseBoolean(property("logstashEnabled"))'>
+    <if condition='Boolean.parseBoolean(property("logsEnabled"))'>
         <then>
             <appender name="LOGSTASH" class="net.logstash.logback.appender.LogstashTcpSocketAppender">
-                <destination>${logstashDestination}</destination>
+                <destination>${logsDestination}</destination>
                 <keepAliveDuration>5 minutes</keepAliveDuration>
                 <connectionTimeout>5s</connectionTimeout>
                 <writeTimeout>5s</writeTimeout>
@@ -43,10 +55,10 @@
                 <encoder class="net.logstash.logback.encoder.LogstashEncoder">
                     <customFields>
                         {
-                        "tenant":"${tenant}",
-                        "appName":"${appName}",
-                        "appEnvironment":"${appEnvironment}",
-                        "host":"${hostName}"
+                        "tenant":"${logsTenant}",
+                        "appName":"${logsAppName}",
+                        "appEnvironment":"${logsAppEnvironment}",
+                        "host":"${accessLogsDestination}"
                         }
                     </customFields>
                     <includeMdc>true</includeMdc>
@@ -56,16 +68,41 @@
             </appender>
         </then>
     </if>
+    <if condition='Boolean.parseBoolean(property("accessLogsEnabled"))'>
+        <appender name="ACCESS-LOGSTASH"
+                  class="net.logstash.logback.appender.LogstashTcpSocketAppender">
+            <destination>${accessLogsDestination}</destination>
+            <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+                <customFields>
+                    {
+                    "log_type":"access",
+                    "service":"${accessLogsService}",
+                    "tenant": "${accessLogsTenant}"
+                    }
+                </customFields>
+            </encoder>
+        </appender>
+        <appender name="ASYNC-ACCESS" class="ch.qos.logback.classic.AsyncAppender">
+            <queueSize>16384</queueSize>
+            <neverBlock>true</neverBlock>
+            <appender-ref ref="ACCESS-LOGSTASH"/>
+        </appender>
+    </if>
     <springProfile name="default">
         <include resource="org/springframework/boot/logging/logback/console-appender.xml"/>
         <root level="info">
             <appender-ref ref="CONSOLE"/>
-            <appender-ref ref="LOGSTASH"/>
         </root>
         <logger name="io.surisoft.capi" additivity="false" level="TRACE">
             <appender-ref ref="CONSOLE"/>
-            <appender-ref ref="LOGSTASH"/>
         </logger>
+        <if condition='Boolean.parseBoolean(property("accessLogsEnabled"))'>
+            <then>
+                <logger name="capi.access" level="INFO" additivity="false">
+                    <appender-ref ref="ASYNC-ACCESS"/>
+                </logger>
+            </then>
+        </if>
     </springProfile>
     <springProfile name="dev">
         <include resource="org/springframework/boot/logging/logback/console-appender.xml"/>
@@ -79,6 +116,13 @@
             <appender-ref ref="CONSOLE"/>
             <appender-ref ref="LOGSTASH"/>
         </logger>
+        <if condition='Boolean.parseBoolean(property("accessLogsEnabled"))'>
+            <then>
+                <logger name="capi.access" level="INFO" additivity="false">
+                    <appender-ref ref="ASYNC-ACCESS"/>
+                </logger>
+            </then>
+        </if>
     </springProfile>
     <springProfile name="prod">
         <include resource="org/springframework/boot/logging/logback/console-appender.xml"/>
@@ -90,5 +134,12 @@
             <appender-ref ref="FILE-ROLLING"/>
             <appender-ref ref="LOGSTASH"/>
         </logger>
+        <if condition='Boolean.parseBoolean(property("accessLogsEnabled"))'>
+            <then>
+                <logger name="capi.access" level="INFO" additivity="false">
+                    <appender-ref ref="ASYNC-ACCESS"/>
+                </logger>
+            </then>
+        </if>
     </springProfile>
 </configuration>

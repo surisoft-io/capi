@@ -32,6 +32,7 @@ import java.util.Optional;
 @ConditionalOnProperty(prefix = "capi.websocket", name = "enabled", havingValue = "true")
 public class WebsocketGateway {
     private static final Logger log = LoggerFactory.getLogger(WebsocketGateway.class);
+    private static final Logger ACCESS_LOG = LoggerFactory.getLogger("capi.access");
     private final int port;
     private final Map<String, WebsocketClient> webSocketClients;
     private WebsocketAuthorization websocketAuthorization;
@@ -79,69 +80,98 @@ public class WebsocketGateway {
 
         builder
                 .setHandler(httpServerExchange -> {
-                    String requestPath = httpServerExchange.getRequestPath();
-                    String webClientId = websocketUtils.getWebclientId(requestPath);
+                    long startNanos = System.nanoTime();
+                    try {
+                        String requestPath = httpServerExchange.getRequestPath();
+                        String webClientId = websocketUtils.getWebclientId(requestPath);
 
-                    if(httpServerExchange.getRequestHeaders().contains(Constants.BLUECOAT_HEADER)) {
-                        httpServerExchange.getRequestHeaders().remove(Constants.BLUECOAT_HEADER);
-                    }
-
-                    if(requestPath.equals(Constants.UNDERSTOW_HEALTH_PATH)) {
-                        httpServerExchange.setStatusCode(HttpServletResponse.SC_OK);
-                        httpServerExchange.endExchange();
-                    } else {
-                        capiUndertowTracer.ifPresent(undertowTracer -> undertowTracer.serverRequest(httpServerExchange, webClientId));
-                        WebsocketClient websocketClient = webSocketClients.get(webClientId);
-                        if(webSocketClients.containsKey(webClientId)) {
-                            if(httpServerExchange.getRequestMethod().equals(HttpString.tryFromString(Constants.OPTIONS_METHODS_VALUE))) {
-                                List<String> localAccessControlAllowHeaders = new ArrayList<>(accessControlAllowHeaders);
-                                if(oauth2CookieName != null && !oauth2CookieName.isEmpty()) {
-                                    localAccessControlAllowHeaders.add(oauth2CookieName);
-                                }
-                                httpServerExchange.getResponseHeaders().put(HttpString.tryFromString("Access-Control-Max-Age"), Constants.ACCESS_CONTROL_MAX_AGE_VALUE);
-                                HeaderValues originHeader = httpServerExchange.getRequestHeaders().get("Origin");
-                                processOrigin(httpServerExchange, originHeader.get(0));
-                                managedHeaders.forEach((k, v) -> {
-                                    if(k.equals(Constants.ACCESS_CONTROL_ALLOW_HEADERS)) {
-                                        v = StringUtils.join(localAccessControlAllowHeaders, ",");
-                                    }
-                                    httpServerExchange.getResponseHeaders().put(HttpString.tryFromString(k), v);
-                                });
-                                httpServerExchange.setStatusCode(HttpServletResponse.SC_ACCEPTED);
-                                httpServerExchange.endExchange();
-                            } else {
-                                if (httpServerExchange.getProtocol().equals(Constants.PROTOCOL_HTTP)) {
-                                    if (websocketAuthorization != null) {
-                                        if (websocketAuthorization.isAuthorized(websocketClient, httpServerExchange)) {
-                                            log.debug(ErrorMessage.IS_AUTHORIZED, httpServerExchange.getRequestPath());
-                                            httpServerExchange.setRequestURI(websocketUtils.normalizePathForForwarding(websocketClient, requestPath));
-                                            httpServerExchange.setRelativePath(websocketUtils.normalizePathForForwarding(websocketClient, requestPath));
-                                            websocketClient.getHttpHandler().handleRequest(httpServerExchange);
-                                        } else {
-                                            log.debug(ErrorMessage.IS_NOT_AUTHORIZED, httpServerExchange.getRequestPath());
-                                            httpServerExchange.setStatusCode(Constants.FORBIDDEN_CODE);
-                                            httpServerExchange.endExchange();
-                                        }
-                                    } else {
-                                        if (!websocketClient.requiresSubscription()) {
-                                            log.debug(ErrorMessage.IS_AUTHORIZED, httpServerExchange.getRequestPath());
-                                            httpServerExchange.setRequestURI(websocketUtils.normalizePathForForwarding(websocketClient, requestPath));
-                                            httpServerExchange.setRelativePath(websocketUtils.normalizePathForForwarding(websocketClient, requestPath));
-                                            websocketClient.getHttpHandler().handleRequest(httpServerExchange);
-                                        } else {
-                                            log.debug(ErrorMessage.IS_NOT_AUTHORIZED, httpServerExchange.getRequestPath());
-                                            httpServerExchange.setStatusCode(Constants.FORBIDDEN_CODE);
-                                            httpServerExchange.endExchange();
-                                        }
-                                    }
-                                }
-                            }
-                        } else {
-                            log.debug(ErrorMessage.IS_NOT_PRESENT, httpServerExchange.getRequestPath());
-                            httpServerExchange.setStatusCode(Constants.NOT_FOUND_CODE);
-                            httpServerExchange.endExchange();
+                        if(httpServerExchange.getRequestHeaders().contains(Constants.BLUECOAT_HEADER)) {
+                            httpServerExchange.getRequestHeaders().remove(Constants.BLUECOAT_HEADER);
                         }
+
+                        if(requestPath.equals(Constants.UNDERSTOW_HEALTH_PATH)) {
+                            httpServerExchange.setStatusCode(HttpServletResponse.SC_OK);
+                            httpServerExchange.endExchange();
+                        } else {
+                            capiUndertowTracer.ifPresent(undertowTracer -> undertowTracer.serverRequest(httpServerExchange, webClientId));
+                            WebsocketClient websocketClient = webSocketClients.get(webClientId);
+                            if(webSocketClients.containsKey(webClientId)) {
+                                if(httpServerExchange.getRequestMethod().equals(HttpString.tryFromString(Constants.OPTIONS_METHODS_VALUE))) {
+                                    List<String> localAccessControlAllowHeaders = new ArrayList<>(accessControlAllowHeaders);
+                                    if(oauth2CookieName != null && !oauth2CookieName.isEmpty()) {
+                                        localAccessControlAllowHeaders.add(oauth2CookieName);
+                                    }
+                                    httpServerExchange.getResponseHeaders().put(HttpString.tryFromString("Access-Control-Max-Age"), Constants.ACCESS_CONTROL_MAX_AGE_VALUE);
+                                    HeaderValues originHeader = httpServerExchange.getRequestHeaders().get("Origin");
+                                    processOrigin(httpServerExchange, originHeader.get(0));
+                                    managedHeaders.forEach((k, v) -> {
+                                        if(k.equals(Constants.ACCESS_CONTROL_ALLOW_HEADERS)) {
+                                            v = StringUtils.join(localAccessControlAllowHeaders, ",");
+                                        }
+                                        httpServerExchange.getResponseHeaders().put(HttpString.tryFromString(k), v);
+                                    });
+                                    httpServerExchange.setStatusCode(HttpServletResponse.SC_ACCEPTED);
+                                    httpServerExchange.endExchange();
+                                } else {
+                                    if (httpServerExchange.getProtocol().equals(Constants.PROTOCOL_HTTP)) {
+                                        if (websocketAuthorization != null) {
+                                            if (websocketAuthorization.isAuthorized(websocketClient, httpServerExchange)) {
+                                                log.debug(ErrorMessage.IS_AUTHORIZED, httpServerExchange.getRequestPath());
+                                                httpServerExchange.setRequestURI(websocketUtils.normalizePathForForwarding(websocketClient, requestPath));
+                                                httpServerExchange.setRelativePath(websocketUtils.normalizePathForForwarding(websocketClient, requestPath));
+                                                websocketClient.getHttpHandler().handleRequest(httpServerExchange);
+                                            } else {
+                                                log.debug(ErrorMessage.IS_NOT_AUTHORIZED, httpServerExchange.getRequestPath());
+                                                httpServerExchange.setStatusCode(Constants.FORBIDDEN_CODE);
+                                                httpServerExchange.endExchange();
+                                            }
+                                        } else {
+                                            if (!websocketClient.requiresSubscription()) {
+                                                log.debug(ErrorMessage.IS_AUTHORIZED, httpServerExchange.getRequestPath());
+                                                httpServerExchange.setRequestURI(websocketUtils.normalizePathForForwarding(websocketClient, requestPath));
+                                                httpServerExchange.setRelativePath(websocketUtils.normalizePathForForwarding(websocketClient, requestPath));
+                                                websocketClient.getHttpHandler().handleRequest(httpServerExchange);
+                                            } else {
+                                                log.debug(ErrorMessage.IS_NOT_AUTHORIZED, httpServerExchange.getRequestPath());
+                                                httpServerExchange.setStatusCode(Constants.FORBIDDEN_CODE);
+                                                httpServerExchange.endExchange();
+                                            }
+                                        }
+                                    }
+                                }
+                            } else {
+                                log.debug(ErrorMessage.IS_NOT_PRESENT, httpServerExchange.getRequestPath());
+                                httpServerExchange.setStatusCode(Constants.NOT_FOUND_CODE);
+                                httpServerExchange.endExchange();
+                            }
+                        }
+                    } finally {
+                        long durationMs = (System.nanoTime() - startNanos) / 1_000_000;
+                        String originalIp = httpServerExchange.getSourceAddress().getAddress().getHostAddress();
+                        if(httpServerExchange.getRequestHeaders().contains("X-Forwarded-For")) {
+                            originalIp = httpServerExchange.getRequestHeaders().get("X-Forwarded-For").getFirst();
+                        }
+                        ACCESS_LOG.info(
+                                "access",
+                                net.logstash.logback.argument.StructuredArguments.keyValue(
+                                        "method", httpServerExchange.getRequestMethod().toString()
+                                ),
+                                net.logstash.logback.argument.StructuredArguments.keyValue(
+                                        "path", httpServerExchange.getRequestPath()
+                                ),
+                                net.logstash.logback.argument.StructuredArguments.keyValue(
+                                        "status", httpServerExchange.getStatusCode()
+                                ),
+                                net.logstash.logback.argument.StructuredArguments.keyValue(
+                                        "duration_ms", durationMs
+                                ),
+                                net.logstash.logback.argument.StructuredArguments.keyValue(
+                                        "remote_ip",
+                                        originalIp
+                                )
+                        );
                     }
+
                 });
         builder.build().start();
     }

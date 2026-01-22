@@ -86,7 +86,6 @@ public class WebsocketUtils {
         return CAPIProxyHandler
                 .builder()
                 .setProxyClient(loadBalancingProxyClient)
-                //.setMaxRequestTime(30000)
                 .setNext(ResponseCodeHandler.HANDLE_404)
                 .build();
     }

@@ -12,8 +12,8 @@
   <name>CAPI Gateway</name>
 
   <properties>
-    <org.apache.camel.springboot-version>4.15.0</org.apache.camel.springboot-version>
-    <spring.boot-version>3.5.0</spring.boot-version>
+    <org.apache.camel.springboot-version>4.17.0</org.apache.camel.springboot-version>
+    <spring.boot-version>3.5.9</spring.boot-version>
 
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
@@ -44,7 +44,7 @@
   <parent>
     <groupId>org.springframework.boot</groupId>
     <artifactId>spring-boot-starter-parent</artifactId>
-    <version>3.5.0</version>
+    <version>3.5.9</version>
     <relativePath/>
   </parent>
 
@@ -122,11 +122,11 @@
       <artifactId>camel-management</artifactId>
       <version>${org.apache.camel.springboot-version}</version>
     </dependency>
-    <dependency>
+    <!--dependency>
       <groupId>org.apache.camel.springboot</groupId>
       <artifactId>camel-consul-starter</artifactId>
       <version>${org.apache.camel.springboot-version}</version>
-    </dependency>
+    </dependency-->
     <!-- Instrumentation -->
     <dependency>
       <groupId>org.apache.camel.springboot</groupId>
@@ -269,6 +269,11 @@
       <artifactId>janino</artifactId>
       <version>${janino.version}</version>
     </dependency>
+    <!--dependency>
+      <groupId>io.undertow</groupId>
+      <artifactId>undertow-core</artifactId>
+      <version>2.3.20.Final</version>
+    </dependency-->
   </dependencies>
 <build>
   <resources>
