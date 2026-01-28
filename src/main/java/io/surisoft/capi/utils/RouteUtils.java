@@ -78,7 +78,7 @@ public class RouteUtils {
 
     private String buildTimeouts() {
         return "&" +
-                "soTimeout=" + socketTimeout + "&" +
+                "responseTimeout=" + socketTimeout + "&" +
                 "connectionRequestTimeout=" +  connectionRequestTimeout + "&" +
                 "connectTimeout=" + requestTimeout;
     }

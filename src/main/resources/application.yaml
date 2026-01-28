@@ -135,7 +135,7 @@ capi:
       encoded:
   route:
     socket:
-      timeout: 30000
+      timeout: 180000
     connection:
       request:
         #How long does CAPI waits to get a connection from the Connection Pool.
@@ -194,10 +194,10 @@ logging:
       enabled: false
       tenant: capi-access-logs
       service: capi-local
-      destination:
+      destination: local
     logs:
       enabled: false
-      destination:
+      destination: local
       tenant: capi
       appName: capi
       appEnvironment: dev

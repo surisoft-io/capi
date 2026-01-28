@@ -106,16 +106,24 @@
     </springProfile>
     <springProfile name="dev">
         <include resource="org/springframework/boot/logging/logback/console-appender.xml"/>
+        <if condition='Boolean.parseBoolean(property("logsEnabled"))'>
+            <root level="info">
+                <appender-ref ref="LOGSTASH"/>
+            </root>
+        </if>
         <root level="info">
             <appender-ref ref="FILE-ROLLING" />
             <appender-ref ref="CONSOLE"/>
-            <appender-ref ref="LOGSTASH"/>
         </root>
         <logger name="io.surisoft.capi" additivity="false" level="TRACE">
             <appender-ref ref="FILE-ROLLING" />
             <appender-ref ref="CONSOLE"/>
-            <appender-ref ref="LOGSTASH"/>
         </logger>
+        <if condition='Boolean.parseBoolean(property("logsEnabled"))'>
+            <logger name="io.surisoft.capi" additivity="false" level="TRACE">
+                <appender-ref ref="LOGSTASH"/>
+            </logger>
+        </if>
         <if condition='Boolean.parseBoolean(property("accessLogsEnabled"))'>
             <then>
                 <logger name="capi.access" level="INFO" additivity="false">
@@ -126,13 +134,19 @@
     </springProfile>
     <springProfile name="prod">
         <include resource="org/springframework/boot/logging/logback/console-appender.xml"/>
-        <root level="info">
-            <appender-ref ref="FILE-ROLLING"/>
-            <appender-ref ref="LOGSTASH"/>
-        </root>
+        <if condition='Boolean.parseBoolean(property("logsEnabled"))'>
+            <root level="info">
+                <appender-ref ref="FILE-ROLLING"/>
+                <appender-ref ref="LOGSTASH"/>
+            </root>
+        </if>
+        <if condition='Boolean.parseBoolean(property("logsEnabled"))'>
+            <logger name="io.surisoft.capi" additivity="false" level="INFO">
+                <appender-ref ref="LOGSTASH"/>
+            </logger>
+        </if>
         <logger name="io.surisoft.capi" additivity="false" level="INFO">
             <appender-ref ref="FILE-ROLLING"/>
-            <appender-ref ref="LOGSTASH"/>
         </logger>
         <if condition='Boolean.parseBoolean(property("accessLogsEnabled"))'>
             <then>
