@@ -1,10 +1,12 @@
 package io.surisoft.capi.tracer;
 
-import brave.Span;
-import brave.Tracing;
-import brave.context.slf4j.MDCScopeDecorator;
-import brave.propagation.*;
-import brave.sampler.Sampler;
+import io.opentelemetry.api.OpenTelemetry;
+import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.api.trace.SpanKind;
+import io.opentelemetry.api.trace.Tracer;
+import io.opentelemetry.context.Context;
+import io.opentelemetry.context.propagation.TextMapGetter;
+import io.opentelemetry.context.propagation.TextMapSetter;
 import io.surisoft.capi.schema.Service;
 import io.surisoft.capi.utils.Constants;
 import io.surisoft.capi.utils.HttpUtils;
@@ -16,20 +18,13 @@ import org.apache.camel.spi.RoutePolicy;
 import org.apache.camel.spi.RoutePolicyFactory;
 import org.apache.camel.support.EventNotifierSupport;
 import org.apache.camel.support.RoutePolicySupport;
-import org.apache.camel.support.service.ServiceHelper;
 import org.apache.camel.support.service.ServiceSupport;
-import org.apache.camel.util.IOHelper;
 import org.apache.camel.util.ObjectHelper;
-import org.apache.camel.zipkin.CamelRequest;
-import org.apache.camel.zipkin.ZipkinState;
 import org.cache2k.Cache;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
-import zipkin2.reporter.Reporter;
-import zipkin2.reporter.brave.ZipkinSpanHandler;
 
-import java.io.Closeable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -42,15 +37,26 @@ public class CapiTracer extends ServiceSupport implements RoutePolicyFactory, St
     private final HttpUtils httpUtils;
     private static final String REST_ROUTE = "rest://";
     private static final Logger LOG = LoggerFactory.getLogger(CapiTracer.class);
-    private static final Propagation.Getter<CamelRequest, String> GETTER = CamelRequest::getHeader;
-    private static final Propagation.Setter<CamelRequest, String> SETTER = CamelRequest::setHeader;
-    static final TraceContext.Extractor<CamelRequest> EXTRACTOR = B3Propagation.B3_STRING.extractor(GETTER);
-    private static final TraceContext.Injector<CamelRequest> INJECTOR = B3Propagation.B3_STRING.injector(SETTER);
-    private final Map<String, Tracing> braves = new HashMap<>();
+
+    private static final TextMapGetter<Message> GETTER = new TextMapGetter<>() {
+        @Override
+        public Iterable<String> keys(Message carrier) {
+            return carrier.getHeaders().keySet();
+        }
+
+        @Override
+        public String get(Message carrier, String key) {
+            return carrier.getHeader(key, String.class);
+        }
+    };
+
+    private static final TextMapSetter<Message> SETTER = Message::setHeader;
+
+    private final Tracer tracer;
+    private final OpenTelemetry openTelemetry;
     private CamelContext camelContext;
     private String endpoint;
     private int port;
-    private Reporter<zipkin2.Span> spanReporter;
     private final Map<String, String> serverServiceMappings = new HashMap<>();
     private boolean includeMessageBody;
     private boolean includeMessageBodyStreams;
@@ -60,7 +66,7 @@ public class CapiTracer extends ServiceSupport implements RoutePolicyFactory, St
     private final CapiEventNotifier eventNotifier = new CapiEventNotifier();
     private final String capiNamespace;
 
-    public CapiTracer(HttpUtils httpUtils, String capiNamespace, Cache<String, Service> serviceCache) {
+    public CapiTracer(HttpUtils httpUtils, String capiNamespace, Cache<String, Service> serviceCache, Tracer tracer, OpenTelemetry openTelemetry) {
         exclusions.add("bean://consulNodeDiscovery");
         exclusions.add("timer://consul-inspect");
         exclusions.add("bean://consistencyChecker");
@@ -70,6 +76,8 @@ public class CapiTracer extends ServiceSupport implements RoutePolicyFactory, St
         this.httpUtils = httpUtils;
         this.capiNamespace = capiNamespace;
         this.serviceCache = serviceCache;
+        this.tracer = tracer;
+        this.openTelemetry = openTelemetry;
     }
 
     @Override
@@ -98,7 +106,7 @@ public class CapiTracer extends ServiceSupport implements RoutePolicyFactory, St
         this.camelContext = camelContext;
     }
 
-    @ManagedAttribute(description = "The POST URL for the traces v2 api.")
+    @ManagedAttribute(description = "The POST URL for the traces endpoint.")
     public String getEndpoint() {
         return endpoint;
     }
@@ -107,17 +115,13 @@ public class CapiTracer extends ServiceSupport implements RoutePolicyFactory, St
         this.endpoint = endpoint;
     }
 
-    @ManagedAttribute(description = "The port number for the remote trace scribe collector.")
+    @ManagedAttribute(description = "The port number for the remote trace collector.")
     public int getPort() {
         return port;
     }
 
     public void setPort(int port) {
         this.port = port;
-    }
-
-    public void setSpanReporter(Reporter<zipkin2.Span> spanReporter) {
-        this.spanReporter = spanReporter;
     }
 
     public void addServerServiceMapping(String pattern, String serviceName) {
@@ -153,7 +157,7 @@ public class CapiTracer extends ServiceSupport implements RoutePolicyFactory, St
         camelContext.getManagementStrategy().addEventNotifier(eventNotifier);
 
         ObjectHelper.notNull(camelContext, "CamelContext", this);
-        ObjectHelper.notNull(spanReporter, "Reporter<zipkin2.Span>", this);
+        ObjectHelper.notNull(tracer, "Tracer", this);
         if (!camelContext.getRoutePolicyFactories().contains(this)) {
             camelContext.addRoutePolicyFactory(this);
         }
@@ -161,11 +165,6 @@ public class CapiTracer extends ServiceSupport implements RoutePolicyFactory, St
 
     @Override
     protected void doShutdown() {
-        ServiceHelper.stopAndShutdownService(spanReporter);
-        if (spanReporter instanceof Closeable) {
-            IOHelper.close((Closeable) spanReporter);
-        }
-        braves.clear();
         camelContext.getRoutePolicyFactories().remove(this);
     }
 
@@ -178,7 +177,7 @@ public class CapiTracer extends ServiceSupport implements RoutePolicyFactory, St
         }
         String sanitizedServiceName = sanitizeUri(serviceName);
         if (sanitizedServiceName != null) {
-            if(sanitizedServiceName.startsWith(REST_ROUTE)) {
+            if (sanitizedServiceName.startsWith(REST_ROUTE)) {
                 sanitizedServiceName = normalizeServiceName(sanitizedServiceName);
                 LOG.trace("Using serviceName: {}", sanitizedServiceName);
             }
@@ -186,87 +185,53 @@ public class CapiTracer extends ServiceSupport implements RoutePolicyFactory, St
         return sanitizedServiceName;
     }
 
-    private Tracing newTracing(String serviceName) {
-        Tracing brave;
-        float rate = 1.0f;
-        if (camelContext.isUseMDCLogging()) {
-            brave = Tracing.newBuilder()
-                    .currentTraceContext(
-                            ThreadLocalCurrentTraceContext.newBuilder().addScopeDecorator(MDCScopeDecorator.get()).build())
-                    .localServiceName(serviceName).sampler(Sampler.create(rate)).addSpanHandler(ZipkinSpanHandler.create(spanReporter)).build();
-        } else {
-            brave = Tracing.newBuilder().localServiceName(serviceName).sampler(Sampler.create(rate)).addSpanHandler(ZipkinSpanHandler.create(spanReporter))
-                    .build();
-        }
-        return brave;
-    }
-
-    private Tracing getTracing(String serviceName) {
-        Tracing brave = null;
-        if (serviceName != null) {
-            brave = braves.get(serviceName);
-            if (brave == null) {
-                LOG.debug("Creating Tracing assigned to serviceName: {}", serviceName);
-                brave = newTracing(serviceName);
-                braves.put(serviceName, brave);
-            }
-        }
-        return brave;
-    }
-
-    private void serverRequest(Tracing brave, Exchange exchange) {
+    private void serverRequest(String serviceName, Exchange exchange) {
         ExchangeExtension extendedExchange = exchange.getExchangeExtension();
-        ZipkinState state = extendedExchange.getSafeCopyProperty(ZipkinState.KEY, ZipkinState.class);
+        CapiTracingState state = extendedExchange.getSafeCopyProperty(CapiTracingState.KEY, CapiTracingState.class);
         if (state == null) {
-            state = new ZipkinState();
-            extendedExchange.setSafeCopyProperty(ZipkinState.KEY, state);
+            state = new CapiTracingState();
+            extendedExchange.setSafeCopyProperty(CapiTracingState.KEY, state);
         }
-        Span span;
-        CamelRequest camelRequest = new CamelRequest(exchange.getIn(), Span.Kind.SERVER);
-        TraceContextOrSamplingFlags sampleFlag = EXTRACTOR.extract(camelRequest);
-        if (ObjectHelper.isEmpty(sampleFlag)) {
-            span = brave.tracer().nextSpan();
-        } else {
-            span = brave.tracer().nextSpan(sampleFlag);
-        }
-        span.kind(Span.Kind.SERVER).start();
+
+        Context extractedContext = openTelemetry.getPropagators().getTextMapPropagator()
+                .extract(Context.current(), exchange.getIn(), GETTER);
+
+        Span span = tracer.spanBuilder(serviceName != null ? serviceName : "unknown")
+                .setParent(extractedContext)
+                .setSpanKind(SpanKind.SERVER)
+                .startSpan();
+
         CapiTracerServerRequestAdapter parser = new CapiTracerServerRequestAdapter(exchange, this, serviceCache);
-        parser.onRequest(exchange, span.customizer());
-        INJECTOR.inject(span.context(), camelRequest);
+        parser.onRequest(exchange, span);
+
+        openTelemetry.getPropagators().getTextMapPropagator()
+                .inject(Context.current().with(span), exchange.getIn(), SETTER);
 
         state.pushServerSpan(span);
-        TraceContext context = span.context();
-        String traceId = context.traceIdString();
-        String spanId = String.valueOf(context.spanId());
-        String parentId = context.parentId() != null ? String.valueOf(context.parentId()) : null;
+
         if (camelContext.isUseMDCLogging()) {
-            MDC.put("traceId", traceId);
-            MDC.put("spanId", spanId);
-            MDC.put("parentId", parentId);
+            MDC.put("traceId", span.getSpanContext().getTraceId());
+            MDC.put("spanId", span.getSpanContext().getSpanId());
         }
     }
 
     private void serverResponse(String serviceName, Exchange exchange) {
-        if(!exchange.getFromRouteId().startsWith("timer://")) {
+        if (!exchange.getFromRouteId().startsWith("timer://")) {
             Span span = null;
             ExchangeExtension extendedExchange = exchange.getExchangeExtension();
-            ZipkinState state = extendedExchange.getSafeCopyProperty(ZipkinState.KEY, ZipkinState.class);
+            CapiTracingState state = extendedExchange.getSafeCopyProperty(CapiTracingState.KEY, CapiTracingState.class);
             if (state != null) {
                 span = state.popServerSpan();
             }
 
             if (span != null) {
                 CapiTracerServerResponseAdapter parser = new CapiTracerServerResponseAdapter(serviceName);
-                parser.onResponse(exchange, span.customizer());
-                span.finish();
-                TraceContext context = span.context();
-                String traceId = context.traceIdString();
-                String spanId = Long.toString(context.spanId());
-                String parentId = context.parentId() != null ? Long.toString(context.parentId()) : null;
+                parser.onResponse(exchange, span);
+                span.end();
+
                 if (camelContext.isUseMDCLogging()) {
-                    MDC.put("traceId", traceId);
-                    MDC.put("spanId", spanId);
-                    MDC.put("parentId", parentId);
+                    MDC.put("traceId", span.getSpanContext().getTraceId());
+                    MDC.put("spanId", span.getSpanContext().getSpanId());
                 }
             }
         }
@@ -277,18 +242,16 @@ public class CapiTracer extends ServiceSupport implements RoutePolicyFactory, St
         @Override
         public void onExchangeBegin(Route route, Exchange exchange) {
             String serviceName = getServiceName(exchange, route.getEndpoint());
-            Tracing brave = getTracing(serviceName);
-            if (brave != null && isIncluded(serviceName)) {
+            if (serviceName != null && isIncluded(serviceName)) {
                 LOG.trace("Exchange BEGIN: " + serviceName);
-                serverRequest(brave, exchange);
+                serverRequest(serviceName, exchange);
             }
         }
 
         @Override
         public void onExchangeDone(Route route, Exchange exchange) {
             String serviceName = getServiceName(exchange, route.getEndpoint());
-            Tracing brave = getTracing(serviceName);
-            if (brave != null && isIncluded(serviceName)) {
+            if (serviceName != null && isIncluded(serviceName)) {
                 LOG.trace("Exchange DONE: " + serviceName);
                 serverResponse(serviceName, exchange);
             }
@@ -300,8 +263,8 @@ public class CapiTracer extends ServiceSupport implements RoutePolicyFactory, St
     }
 
     private boolean isIncluded(String resource) {
-        for(String exclusion : exclusions) {
-            if(resource.startsWith(exclusion)) {
+        for (String exclusion : exclusions) {
+            if (resource.startsWith(exclusion)) {
                 return false;
             }
         }
@@ -311,7 +274,7 @@ public class CapiTracer extends ServiceSupport implements RoutePolicyFactory, St
     private String normalizeServiceName(String key) {
         key = key.replaceAll("rest://", "");
         String[] keyParts = key.split(":");
-        if(keyParts.length > 1) {
+        if (keyParts.length > 1) {
             key = keyParts[1];
         }
         key = key.replaceAll("/", ":");

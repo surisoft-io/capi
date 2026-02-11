@@ -1,8 +1,8 @@
 package io.surisoft.capi.tracer;
 
-import brave.SpanCustomizer;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
+import io.opentelemetry.api.trace.Span;
 import io.surisoft.capi.exception.AuthorizationException;
 import io.surisoft.capi.schema.Service;
 import io.surisoft.capi.utils.Constants;
@@ -33,7 +33,7 @@ public class CapiTracerServerRequestAdapter {
         this.serviceCache = serviceCache;
     }
 
-    public void onRequest(Exchange exchange, SpanCustomizer span) {
+    public void onRequest(Exchange exchange, Span span) {
         try {
             String accessToken;
             try {
@@ -43,21 +43,21 @@ public class CapiTracerServerRequestAdapter {
                     JWTClaimsSet jwtClaimsSet = signedJWT.getJWTClaimsSet();
                     Date expirationTime = jwtClaimsSet.getExpirationTime();
                     if(expirationTime.before(Calendar.getInstance().getTime())) {
-                        span.tag(Constants.CAPI_TOKEN_EXPIRED, Boolean.toString(true));
+                        span.setAttribute(Constants.CAPI_TOKEN_EXPIRED, Boolean.toString(true));
                     } else {
-                        span.tag(Constants.CAPI_TOKEN_EXPIRED, Boolean.toString(false));
+                        span.setAttribute(Constants.CAPI_TOKEN_EXPIRED, Boolean.toString(false));
                     }
                     String authorizedParty = jwtClaimsSet.getStringClaim(Constants.AUTHORIZED_PARTY);
                     if(authorizedParty != null) {
-                        span.tag(Constants.CAPI_EXCHANGE_REQUESTER_ID, authorizedParty);
+                        span.setAttribute(Constants.CAPI_EXCHANGE_REQUESTER_ID, authorizedParty);
                     }
                     String clientHost = jwtClaimsSet.getStringClaim("clientHost");
                     if(clientHost != null) {
-                        span.tag("capi.requester.host", clientHost);
+                        span.setAttribute("capi.requester.host", clientHost);
                     }
                     String iss = jwtClaimsSet.getStringClaim("iss");
                     if(iss != null) {
-                        span.tag(Constants.CAPI_REQUESTER_TOKEN_ISSUER, iss);
+                        span.setAttribute(Constants.CAPI_REQUESTER_TOKEN_ISSUER, iss);
                     }
                 }
             } catch (AuthorizationException e) {
@@ -68,27 +68,27 @@ public class CapiTracerServerRequestAdapter {
         }
 
         if(exchange.getIn().getHeader("Content-Type") != null) {
-            span.tag("capi.incoming.request.content.type", exchange.getIn().getHeader("Content-Type", String.class));
+            span.setAttribute("capi.incoming.request.content.type", exchange.getIn().getHeader("Content-Type", String.class));
         }
 
         if(exchange.getIn().getHeader("X-Forwarded-For") != null) {
-            span.tag("capi.incoming.request.original.ip", exchange.getIn().getHeader("X-Forwarded-For", String.class));
+            span.setAttribute("capi.incoming.request.original.ip", exchange.getIn().getHeader("X-Forwarded-For", String.class));
         }
 
         try {
             String serviceId = url.trim().split("/")[2] + ":" + url.split("/")[3];
             Service service = serviceCache.peek(serviceId);
             if(service != null) {
-                service.getServiceMeta().getExtraServiceMeta().forEach(span::tag);
+                service.getServiceMeta().getExtraServiceMeta().forEach(span::setAttribute);
             }
         } catch (Exception e) {
             LOG.trace("Problem parsing cached service metadata");
         }
 
 
-        span.tag("capi-instance", capiTracer.getCapiNamespace());
-        span.name(spanName);
-        span.tag(Constants.CAMEL_SERVER_ENDPOINT_URL, url);
-        span.tag(Constants.CAMEL_SERVER_EXCHANGE_ID, exchange.getExchangeId());
+        span.setAttribute("capi-instance", capiTracer.getCapiNamespace());
+        span.updateName(spanName);
+        span.setAttribute(Constants.CAMEL_SERVER_ENDPOINT_URL, url);
+        span.setAttribute(Constants.CAMEL_SERVER_EXCHANGE_ID, exchange.getExchangeId());
     }
 }

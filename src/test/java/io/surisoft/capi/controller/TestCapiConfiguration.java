@@ -18,14 +18,14 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 class TestCapiConfiguration {
 
     @Autowired
-    CapiTracer zipkinTracer;
+    CapiTracer capiTracer;
 
     @Autowired
     HttpComponent httpComponent;
 
     @Test
-    void testZipkin() {
-        Assertions.assertNotNull(zipkinTracer);
+    void testTracer() {
+        Assertions.assertNotNull(capiTracer);
     }
 
     @Test

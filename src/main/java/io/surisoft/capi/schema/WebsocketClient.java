@@ -1,7 +1,7 @@
 package io.surisoft.capi.schema;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import io.undertow.server.HttpHandler;
+import org.eclipse.jetty.server.Handler;
 
 import java.util.Set;
 
@@ -11,7 +11,7 @@ public class WebsocketClient {
     private String path;
     private Set<Mapping> mappingList;
     @JsonIgnore
-    private HttpHandler httpHandler;
+    private Handler handler;
     private boolean requiresSubscription;
     private String subscriptionRole;
     private String rootContext;
@@ -24,12 +24,12 @@ public class WebsocketClient {
         this.path = path;
     }
 
-    public HttpHandler getHttpHandler() {
-        return httpHandler;
+    public Handler getHandler() {
+        return handler;
     }
 
-    public void setHttpHandler(HttpHandler httpHandler) {
-        this.httpHandler = httpHandler;
+    public void setHandler(Handler handler) {
+        this.handler = handler;
     }
 
     public boolean requiresSubscription() {

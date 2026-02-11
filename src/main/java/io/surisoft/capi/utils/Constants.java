@@ -1,7 +1,5 @@
 package io.surisoft.capi.utils;
 
-import io.undertow.util.HttpString;
-
 import java.util.List;
 import java.util.Map;
 
@@ -25,7 +23,7 @@ public class Constants {
     public static final String ERROR_API_SHOW_TRACE_ID = "show-trace-id";
     public static final String ERROR_API_SHOW_INTERNAL_ERROR_MESSAGE = "show-internal-error-message";
     public static final String ERROR_API_SHOW_INTERNAL_ERROR_CLASS = "show-internal-error-class";
-    public static final String TRACE_ID_HEADER = "X-B3-TraceId";
+    public static final String TRACE_ID_HEADER = "traceparent";
     public static final String CAPI_INTERNAL_REST_ERROR_PATH = "/capi-error";
     public static final String CAPI_URL_IN_ERROR = "HTTP_URL";
     public static final String CAPI_URI_IN_ERROR = "HTTP_URI";
@@ -39,10 +37,10 @@ public class Constants {
     public static final String ERROR_CODE = "errorCode";
     public static final String NO_CUSTOM_TRUST_STORE_PROVIDED = "No custom trust store was provided, to enable this feature, add a custom trust store.";
     public static final String TENANT_HEADER = "tenant";
-    public static final HttpString PROTOCOL_HTTP = new HttpString("HTTP/1.1");
+    public static final String PROTOCOL_HTTP = "HTTP/1.1";
     public static final String MAP_HTTP_MESSAGE_FORM_URL_ENCODED_BODY = "&mapHttpMessageFormUrlEncodedBody=false";
     public static final String BLUECOAT_HEADER = "X-BlueCoat-Via";
-    public static final String UNDERSTOW_HEALTH_PATH = "/health";
+    public static final String GATEWAY_HEALTH_PATH = "/health";
     public static final String[] CAPI_WHITELISTED_PATHS = {
             //Swagger UI v2
             "/v2/api-docs",
@@ -82,7 +80,7 @@ public class Constants {
     public static final String CAPI_WS_CLIENT_SCHEME = "capi.ws.client.scheme";
     public static final String CONTENT_TYPE = "Content-Type";
     public static final String ACCEPT_TYPE = "Accept";
-    public static final HttpString HTTP_STRING_CONTENT_TYPE = new HttpString("Content-Type");
+    public static final String CONTENT_TYPE_HEADER = "Content-Type";
     public static final int HTTPS_PORT = 443;
     public static final int HTTP_PORT = 80;
     public static final String CAPI_CONTEXT = "/capi";
@@ -103,7 +101,7 @@ public class Constants {
             "Access-Control-Allow-Methods", ACCESS_CONTROL_ALLOW_METHODS_VALUE,
             "Access-Control-Max-Age", ACCESS_CONTROL_MAX_AGE_VALUE
     );
-    public static final String UNDERTOW_LISTENING_ADDRESS = "0.0.0.0";
+    public static final String GATEWAY_LISTENING_ADDRESS = "0.0.0.0";
     public static final String ERROR_LISTENING_ADDRESS = "0.0.0.0";
     public static final int UNAUTHORIZED_CODE = 401;
     public static final int FORBIDDEN_CODE = 403;
@@ -122,4 +120,6 @@ public class Constants {
     public static final String CAPI_META_THROTTLE_DURATION = "Capi-Meta-Throttle-Duration";
     public static final String CAPI_META_THROTTLE_TOTAL_CALLS_ALLOWED = "Capi-Meta-Throttle-Total-Calls-Allowed";
     public static final String CAPI_META_THROTTLE_CURRENT_CALL_NUMBER = "Capi-Meta-Throttle-Current-Call-Number";
+    public static final String FORWARDED_PATH_ATTR = "capi.forwarded.path";
+    public static final String SANITIZED_QUERY_ATTR = "capi.sanitized.query";
 }

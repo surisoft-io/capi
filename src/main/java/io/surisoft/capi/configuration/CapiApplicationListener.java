@@ -1,9 +1,9 @@
 package io.surisoft.capi.configuration;
 
 import io.surisoft.capi.schema.Service;
-import io.surisoft.capi.undertow.GrpcGateway;
-import io.surisoft.capi.undertow.SSEGateway;
-import io.surisoft.capi.undertow.WebsocketGateway;
+import io.surisoft.capi.gateway.GrpcGateway;
+import io.surisoft.capi.gateway.SSEGateway;
+import io.surisoft.capi.gateway.WebsocketGateway;
 import org.cache2k.Cache;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
@@ -51,6 +51,18 @@ public class CapiApplicationListener implements ApplicationListener<ApplicationE
         if(applicationEvent instanceof ContextClosedEvent) {
             log.info("Capi is shutting down, time to clear all cache info.");
             serviceCache.clear();
+            websocketGateway.ifPresent(gw -> {
+                log.info("Stopping Websocket Gateway.");
+                gw.stop();
+            });
+            sseGateway.ifPresent(gw -> {
+                log.info("Stopping SSE Gateway.");
+                gw.stop();
+            });
+            grpcGateway.ifPresent(gw -> {
+                log.info("Stopping gRPC Gateway.");
+                gw.stop();
+            });
         }
     }
 }

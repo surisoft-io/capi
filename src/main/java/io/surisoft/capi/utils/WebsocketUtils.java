@@ -2,25 +2,23 @@ package io.surisoft.capi.utils;
 
 import com.nimbusds.jose.proc.SecurityContext;
 import com.nimbusds.jwt.proc.DefaultJWTProcessor;
-import io.surisoft.capi.exception.CapiUndertowException;
+import io.surisoft.capi.exception.CapiGatewayException;
+import io.surisoft.capi.gateway.CAPIProxyHandler;
 import io.surisoft.capi.oidc.WebsocketAuthorization;
 import io.surisoft.capi.schema.HttpProtocol;
 import io.surisoft.capi.schema.Service;
 import io.surisoft.capi.schema.WebsocketClient;
-import io.surisoft.capi.tracer.CapiUndertowTracer;
-import io.surisoft.capi.undertow.CAPILoadBalancerProxyClient;
-import io.surisoft.capi.undertow.CAPIProxyHandler;
-import io.undertow.protocols.ssl.UndertowXnioSsl;
-import io.undertow.server.HttpHandler;
-import io.undertow.server.handlers.ResponseCodeHandler;
+import io.surisoft.capi.tracer.CapiGatewayTracer;
+import org.eclipse.jetty.client.HttpClient;
+import org.eclipse.jetty.client.transport.HttpClientTransportDynamic;
+import org.eclipse.jetty.io.ClientConnector;
+import org.eclipse.jetty.server.Handler;
+import org.eclipse.jetty.util.ssl.SslContextFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
-import org.xnio.OptionMap;
-import org.xnio.Xnio;
-import org.xnio.ssl.XnioSsl;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManagerFactory;
@@ -34,10 +32,7 @@ import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateException;
-import java.util.Base64;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 @Component
 @ConditionalOnProperty(prefix = "capi.websocket", name = "enabled", havingValue = "true")
@@ -46,55 +41,58 @@ public class WebsocketUtils {
     private static final Logger log = LoggerFactory.getLogger(WebsocketUtils.class);
     private final String capiContextPath;
     private final Optional<List<DefaultJWTProcessor<SecurityContext>>> defaultJWTProcessor;
-    private final Optional<CapiUndertowTracer> capiUndertowTracer;
+    private final Optional<CapiGatewayTracer> capiGatewayTracer;
     private final boolean capiTrustStoreEnabled;
     private final String capiTrustStorePath;
     private final String capiTrustStorePassword;
     private final String capiTrustStoreEncoded;
-    private XnioSsl xnioSsl;
+    private final HttpClient jettyHttpClient;
 
     public WebsocketUtils(@Value("${camel.servlet.mapping.context-path}") String capiContextPath,
                           Optional<List<DefaultJWTProcessor<SecurityContext>>> defaultJWTProcessor,
-                          Optional<CapiUndertowTracer> capiUndertowTracer,
+                          Optional<CapiGatewayTracer> capiGatewayTracer,
                           @Value("${capi.trust.store.enabled}") boolean capiTrustStoreEnabled,
                           @Value("${capi.trust.store.path}") String capiTrustStorePath,
                           @Value("${capi.trust.store.password}") String capiTrustStorePassword,
                           @Value("${capi.trust.store.encoded}") String capiTrustStoreEncoded) {
         this.capiContextPath = capiContextPath;
         this.defaultJWTProcessor = defaultJWTProcessor;
-        this.capiUndertowTracer = capiUndertowTracer;
+        this.capiGatewayTracer = capiGatewayTracer;
         this.capiTrustStoreEnabled = capiTrustStoreEnabled;
         this.capiTrustStorePath = capiTrustStorePath;
         this.capiTrustStorePassword = capiTrustStorePassword;
         this.capiTrustStoreEncoded = capiTrustStoreEncoded;
 
-        if(capiTrustStoreEnabled) {
-            this.xnioSsl = createXnioSsl();
+        this.jettyHttpClient = createHttpClient();
+        try {
+            this.jettyHttpClient.start();
+        } catch (Exception e) {
+            log.error("Failed to start Jetty HttpClient", e);
+            throw new RuntimeException(e);
         }
     }
 
-    public HttpHandler createClientHttpHandler(WebsocketClient webSocketClient, Service service) {
-        CAPILoadBalancerProxyClient loadBalancingProxyClient = new CAPILoadBalancerProxyClient(capiUndertowTracer.orElse(null));
+    public Handler createClientHttpHandler(WebsocketClient webSocketClient, Service service) {
+        List<URI> backends = new ArrayList<>();
         webSocketClient.getMappingList().forEach((m) -> {
             String scheme = service.getServiceMeta().getScheme() == null ? HttpProtocol.HTTP.getProtocol() : service.getServiceMeta().getScheme();
-            if(capiTrustStoreEnabled) {
-                loadBalancingProxyClient.addHost(URI.create(scheme + "://" + m.getHostname() + ":" + m.getPort()), xnioSsl);
-            } else {
-                loadBalancingProxyClient.addHost(URI.create(scheme + "://" + m.getHostname() + ":" + m.getPort()));
-            }
+            backends.add(URI.create(scheme + "://" + m.getHostname() + ":" + m.getPort()));
         });
-        return CAPIProxyHandler
-                .builder()
-                .setProxyClient(loadBalancingProxyClient)
-                .setNext(ResponseCodeHandler.HANDLE_404)
-                .build();
+        try {
+            CAPIProxyHandler handler = new CAPIProxyHandler(jettyHttpClient, backends, capiGatewayTracer.orElse(null));
+            handler.start();
+            return handler;
+        } catch (Exception e) {
+            log.error("Failed to start CAPIProxyHandler", e);
+            throw new RuntimeException(e);
+        }
     }
 
-    public WebsocketAuthorization createWebsocketAuthorization() throws CapiUndertowException {
+    public WebsocketAuthorization createWebsocketAuthorization() throws CapiGatewayException {
         if(defaultJWTProcessor.isPresent()) {
             return new WebsocketAuthorization(defaultJWTProcessor.get());
         }
-        throw new CapiUndertowException("No OIDC provider enabled, consider enabling OIDC");
+        throw new CapiGatewayException("No OIDC provider enabled, consider enabling OIDC");
     }
 
     public String normalizePathForForwarding(WebsocketClient websocketClient, String path) {
@@ -124,7 +122,6 @@ public class WebsocketUtils {
     public WebsocketClient createWebsocketClient(Service service) {
         WebsocketClient websocketClient = new WebsocketClient();
 
-        //The path should be the same for all the nodes, so we take the first just to set the path.
         String rootContext = service.getMappingList().stream().toList().get(0).getRootContext();
         if(rootContext != null && !rootContext.isEmpty() && !rootContext.equals("/") && !rootContext.equals("*")) {
             websocketClient.setRootContext(rootContext);
@@ -135,7 +132,7 @@ public class WebsocketUtils {
         websocketClient.setMappingList(service.getMappingList());
         websocketClient.setPath(websocketContext);
         websocketClient.setRequiresSubscription(service.getServiceMeta().isSecured());
-        websocketClient.setHttpHandler(createClientHttpHandler(websocketClient, service));
+        websocketClient.setHandler(createClientHttpHandler(websocketClient, service));
         return websocketClient;
     }
 
@@ -148,12 +145,22 @@ public class WebsocketUtils {
         return "/" + normalized;
     }
 
-    public XnioSsl createXnioSsl() {
+    private HttpClient createHttpClient() {
+        if (capiTrustStoreEnabled) {
+            SslContextFactory.Client sslContextFactory = createSslContextFactory();
+            ClientConnector clientConnector = new ClientConnector();
+            clientConnector.setSslContextFactory(sslContextFactory);
+            return new HttpClient(new HttpClientTransportDynamic(clientConnector));
+        }
+        return new HttpClient();
+    }
+
+    private SslContextFactory.Client createSslContextFactory() {
         try {
             KeyStore trustStore = KeyStore.getInstance("JKS");
-            if(capiTrustStoreEncoded != null && !capiTrustStoreEncoded.isEmpty()) {
-                InputStream trusStoreInputStream = new ByteArrayInputStream(Base64.getDecoder().decode(capiTrustStoreEncoded.getBytes()));
-                trustStore.load(trusStoreInputStream, this.capiTrustStorePassword.toCharArray());
+            if (capiTrustStoreEncoded != null && !capiTrustStoreEncoded.isEmpty()) {
+                InputStream trustStoreInputStream = new ByteArrayInputStream(Base64.getDecoder().decode(capiTrustStoreEncoded.getBytes()));
+                trustStore.load(trustStoreInputStream, this.capiTrustStorePassword.toCharArray());
             } else {
                 FileInputStream trustStoreFile = new FileInputStream(capiTrustStorePath);
                 trustStore.load(trustStoreFile, capiTrustStorePassword.toCharArray());
@@ -165,9 +172,9 @@ public class WebsocketUtils {
             SSLContext sslContext = SSLContext.getInstance("TLS");
             sslContext.init(null, trustManagerFactory.getTrustManagers(), null);
 
-            Xnio xnio = Xnio.getInstance();
-            OptionMap optionMap = OptionMap.EMPTY;
-            return new UndertowXnioSsl(xnio, optionMap, sslContext);
+            SslContextFactory.Client factory = new SslContextFactory.Client();
+            factory.setSslContext(sslContext);
+            return factory;
         } catch (NoSuchAlgorithmException | KeyStoreException | IOException | CertificateException |
                  KeyManagementException e) {
             log.error(e.getMessage(), e);
@@ -175,7 +182,7 @@ public class WebsocketUtils {
         }
     }
 
-    public XnioSsl getXnioSsl() {
-        return this.xnioSsl;
+    public HttpClient getJettyHttpClient() {
+        return this.jettyHttpClient;
     }
 }

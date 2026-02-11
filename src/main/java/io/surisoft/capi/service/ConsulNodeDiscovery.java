@@ -92,10 +92,12 @@ public class ConsulNodeDiscovery {
             processServices(serviceListObjects);
         }
         catch (IOException e) {
+            log.error(e.getMessage());
             log.error(ErrorMessage.ERROR_CONNECTING_TO_CONSUL);
         } catch (InterruptedException e) {
+            log.error(e.getMessage());
             log.error(ErrorMessage.ERROR_CONNECTING_TO_CONSUL);
-            Thread.currentThread().interrupt();
+            //Thread.currentThread().interrupt();
 
         }
     }

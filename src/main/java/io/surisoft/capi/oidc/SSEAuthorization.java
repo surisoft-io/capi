@@ -6,9 +6,8 @@ import com.nimbusds.jose.proc.SecurityContext;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.proc.DefaultJWTProcessor;
 import io.surisoft.capi.schema.SSEClient;
-import io.surisoft.capi.schema.WebsocketClient;
-import io.undertow.server.HttpServerExchange;
-import io.undertow.util.HttpString;
+import org.eclipse.jetty.server.Request;
+import org.eclipse.jetty.util.Fields;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -26,13 +25,14 @@ public class SSEAuthorization {
         this.jwtProcessorList = jwtProcessorList;
     }
 
-    public boolean isAuthorized(SSEClient sseClient, HttpServerExchange httpServerExchange) {
-        if(!sseClient.requiresSubscription()) {
+    public boolean isAuthorized(SSEClient sseClient, Request request) {
+        if (!sseClient.requiresSubscription()) {
             return true;
         }
-        if(httpServerExchange.getRequestHeaders().contains(Oauth2Constants.AUTHORIZATION_HEADER)
-                || httpServerExchange.getQueryParameters().containsKey(Oauth2Constants.AUTHORIZATION_QUERY)) {
-            return isApiSubscribed(httpServerExchange, sseClient.getSubscriptionRole());
+        Fields queryParams = Request.extractQueryParameters(request);
+        if (request.getHeaders().contains(Oauth2Constants.AUTHORIZATION_HEADER)
+                || queryParams.get(Oauth2Constants.AUTHORIZATION_QUERY) != null) {
+            return isApiSubscribed(request, sseClient.getSubscriptionRole());
         }
         return false;
     }
@@ -41,27 +41,27 @@ public class SSEAuthorization {
         return authorizationHeader.substring(7);
     }
 
-    private boolean isApiSubscribed(HttpServerExchange httpServerExchange, String role) {
+    private boolean isApiSubscribed(Request request, String role) {
         String bearerToken;
-        if(httpServerExchange.getRequestHeaders().contains(Oauth2Constants.AUTHORIZATION_HEADER)) {
-            bearerToken = getBearerTokenFromHeader(httpServerExchange.getRequestHeaders().get(Oauth2Constants.AUTHORIZATION_HEADER, 0));
-            //httpServerExchange.getRequestHeaders().remove(new HttpString(Oauth2Constants.AUTHORIZATION_HEADER));
+        if (request.getHeaders().contains(Oauth2Constants.AUTHORIZATION_HEADER)) {
+            bearerToken = getBearerTokenFromHeader(request.getHeaders().get(Oauth2Constants.AUTHORIZATION_HEADER));
         } else {
-            bearerToken = httpServerExchange.getQueryParameters().get(Oauth2Constants.AUTHORIZATION_QUERY).getFirst();
-            removeAuthorizationFromQuery(httpServerExchange);
+            Fields queryParams = Request.extractQueryParameters(request);
+            bearerToken = queryParams.get(Oauth2Constants.AUTHORIZATION_QUERY).getValue();
+            removeAuthorizationFromQuery(request);
         }
         try {
             JWTClaimsSet jwtClaimsSet = tryToValidateToken(bearerToken);
             Map<String, Object> claimSetMap = Objects.requireNonNull(jwtClaimsSet).getJSONObjectClaim(Oauth2Constants.REALMS_CLAIM);
-            if(claimSetMap != null && claimSetMap.containsKey(Oauth2Constants.ROLES_CLAIM)) {
+            if (claimSetMap != null && claimSetMap.containsKey(Oauth2Constants.ROLES_CLAIM)) {
                 List<String> roleList = (List<String>) claimSetMap.get(Oauth2Constants.ROLES_CLAIM);
-                for(String claimRole : roleList) {
-                    if(claimRole.equals(role)) {
+                for (String claimRole : roleList) {
+                    if (claimRole.equals(role)) {
                         return true;
                     }
                 }
             }
-            if(isTokenInGroup(jwtClaimsSet, role)) {
+            if (isTokenInGroup(jwtClaimsSet, role)) {
                 return true;
             }
         } catch (ParseException | NullPointerException e) {
@@ -70,30 +70,22 @@ public class SSEAuthorization {
         return false;
     }
 
-    private void removeAuthorizationFromQuery(HttpServerExchange httpServerExchange) {
+    private void removeAuthorizationFromQuery(Request request) {
+        Fields queryParams = Request.extractQueryParameters(request);
         StringBuilder queryString = new StringBuilder();
-        httpServerExchange.getQueryParameters().forEach((key, value) -> {
-            if(!key.equals(Oauth2Constants.AUTHORIZATION_QUERY)) {
-                if(queryString.isEmpty()) {
-                    queryString
-                            .append(key)
-                            .append("=")
-                            .append(value.getFirst());
-                } else {
-                    queryString
-                            .append("&")
-                            .append(key)
-                            .append("=")
-                            .append(value.getFirst());
+        for (Fields.Field field : queryParams) {
+            if (!field.getName().equals(Oauth2Constants.AUTHORIZATION_QUERY)) {
+                if (!queryString.isEmpty()) {
+                    queryString.append("&");
                 }
+                queryString.append(field.getName()).append("=").append(field.getValue());
             }
-        });
-        httpServerExchange.getQueryParameters().clear();
-        httpServerExchange.setQueryString(queryString.toString());
+        }
+        request.setAttribute(io.surisoft.capi.utils.Constants.SANITIZED_QUERY_ATTR, queryString.toString());
     }
 
     private JWTClaimsSet tryToValidateToken(String bearerToken) {
-        for(DefaultJWTProcessor<SecurityContext> jwtProcessor : jwtProcessorList) {
+        for (DefaultJWTProcessor<SecurityContext> jwtProcessor : jwtProcessorList) {
             try {
                 return jwtProcessor.process(bearerToken, null);
             } catch (ParseException | BadJOSEException | JOSEException ignored) {}
@@ -102,14 +94,13 @@ public class SSEAuthorization {
     }
 
     private boolean isTokenInGroup(JWTClaimsSet jwtClaimsSet, String groups) {
-        if(groups != null) {
+        if (groups != null) {
             try {
                 List<String> groupList = Collections.singletonList(groups);
-                List<String> subscriptionGroupList = null;
-                subscriptionGroupList = jwtClaimsSet.getStringListClaim(Oauth2Constants.SUBSCRIPTIONS_CLAIM);
-                for(String subscriptionGroup : subscriptionGroupList) {
-                    for(String apiGroup : groupList) {
-                        if(normalizeGroup(apiGroup).equals(normalizeGroup(subscriptionGroup))) {
+                List<String> subscriptionGroupList = jwtClaimsSet.getStringListClaim(Oauth2Constants.SUBSCRIPTIONS_CLAIM);
+                for (String subscriptionGroup : subscriptionGroupList) {
+                    for (String apiGroup : groupList) {
+                        if (normalizeGroup(apiGroup).equals(normalizeGroup(subscriptionGroup))) {
                             return true;
                         }
                     }

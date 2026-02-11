@@ -2,20 +2,22 @@ package io.surisoft.capi.utils;
 
 import com.nimbusds.jose.proc.SecurityContext;
 import com.nimbusds.jwt.proc.DefaultJWTProcessor;
-import io.surisoft.capi.exception.CapiUndertowException;
+import io.surisoft.capi.exception.CapiGatewayException;
+import io.surisoft.capi.gateway.CAPIProxyHandler;
 import io.surisoft.capi.oidc.SSEAuthorization;
 import io.surisoft.capi.schema.HttpProtocol;
 import io.surisoft.capi.schema.SSEClient;
 import io.surisoft.capi.schema.Service;
-import io.undertow.server.HttpHandler;
-import io.undertow.server.handlers.ResponseCodeHandler;
-import io.undertow.server.handlers.proxy.LoadBalancingProxyClient;
-import io.undertow.server.handlers.proxy.ProxyHandler;
+import org.eclipse.jetty.client.HttpClient;
+import org.eclipse.jetty.server.Handler;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -23,38 +25,51 @@ import java.util.Optional;
 @ConditionalOnProperty(prefix = "capi.sse", name = "enabled", havingValue = "true")
 public class SSEUtils {
 
+    private static final Logger log = LoggerFactory.getLogger(SSEUtils.class);
     private final String capiContextPath;
     private final Optional<List<DefaultJWTProcessor<SecurityContext>>> defaultJWTProcessor;
+    private final HttpClient jettyHttpClient;
 
     public SSEUtils(@Value("${camel.servlet.mapping.context-path}") String capiContextPath,
                     Optional<List<DefaultJWTProcessor<SecurityContext>>> defaultJWTProcessor) {
         this.capiContextPath = capiContextPath;
         this.defaultJWTProcessor = defaultJWTProcessor;
+
+        this.jettyHttpClient = new HttpClient();
+        this.jettyHttpClient.setIdleTimeout(360000);
+        try {
+            this.jettyHttpClient.start();
+        } catch (Exception e) {
+            log.error("Failed to start Jetty HttpClient", e);
+            throw new RuntimeException(e);
+        }
     }
 
-    public HttpHandler createClientHttpHandler(SSEClient sseClient, Service service) {
-        LoadBalancingProxyClient loadBalancingProxyClient = new LoadBalancingProxyClient();
+    public Handler createClientHttpHandler(SSEClient sseClient, Service service) {
+        List<URI> backends = new ArrayList<>();
         sseClient.getMappingList().forEach((m) -> {
             if(m.getHostname().contains("http://") || m.getHostname().contains("https://")) {
-                loadBalancingProxyClient.addHost(URI.create(m.getHostname() + ":" + m.getPort()));
+                backends.add(URI.create(m.getHostname() + ":" + m.getPort()));
             } else {
                 String schema = service.getServiceMeta().getScheme() == null ? HttpProtocol.HTTP.getProtocol() : service.getServiceMeta().getScheme();
-                loadBalancingProxyClient.addHost(URI.create(schema + "://" + m.getHostname() + ":" + m.getPort()));
+                backends.add(URI.create(schema + "://" + m.getHostname() + ":" + m.getPort()));
             }
         });
-        return ProxyHandler
-                .builder()
-                .setProxyClient(loadBalancingProxyClient)
-                .setMaxRequestTime(360000)
-                .setNext(ResponseCodeHandler.HANDLE_404)
-                .build();
+        try {
+            CAPIProxyHandler handler = new CAPIProxyHandler(jettyHttpClient, backends, null);
+            handler.start();
+            return handler;
+        } catch (Exception e) {
+            log.error("Failed to start CAPIProxyHandler for SSE", e);
+            throw new RuntimeException(e);
+        }
     }
 
-    public SSEAuthorization createSSEAuthorization() throws CapiUndertowException {
+    public SSEAuthorization createSSEAuthorization() throws CapiGatewayException {
         if(defaultJWTProcessor.isPresent()) {
             return new SSEAuthorization(defaultJWTProcessor.get());
         }
-        throw new CapiUndertowException("No OIDC provider enabled, consider enabling OIDC");
+        throw new CapiGatewayException("No OIDC provider enabled, consider enabling OIDC");
     }
 
     public String normalizePathForForwarding(SSEClient sseClient, String path) {
@@ -78,8 +93,6 @@ public class SSEUtils {
     }
 
     public SSEClient createSSEClient(Service service) {
-
-        //The path should be the same for all the nodes, so we take the first just to set the path.
         String sseContext = normalizeCapiContextPath() + service.getContext() + service.getMappingList().stream().toList().get(0).getRootContext();
 
         SSEClient sseClient = new SSEClient();
@@ -87,7 +100,7 @@ public class SSEUtils {
         sseClient.setMappingList(service.getMappingList());
         sseClient.setPath(sseContext);
         sseClient.setRequiresSubscription(service.getServiceMeta().isSecured());
-        sseClient.setHttpHandler(createClientHttpHandler(sseClient, service));
+        sseClient.setHandler(createClientHttpHandler(sseClient, service));
         if(service.getServiceMeta().getSubscriptionGroup() != null) {
             sseClient.setSubscriptionRole(service.getServiceMeta().getSubscriptionGroup());
         }

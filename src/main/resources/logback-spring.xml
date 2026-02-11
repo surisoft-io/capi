@@ -30,21 +30,13 @@
                     source="logging.logback.access.destination"/>
 
     <springProperty name="logstashDestination" source="logstash-destination"/>
-    <appender name="FILE-ROLLING" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>${log-dir}/capi.log</file>
-        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-            <fileNamePattern>${log-dir}/capi.%d{yyyy-MM-dd}.%i.gz</fileNamePattern>
-            <timeBasedFileNamingAndTriggeringPolicy
-                class="ch.qos.logback.core.rolling.SizeAndTimeBasedFileNamingAndTriggeringPolicy">
-                <maxFileSize>10MB</maxFileSize>
-            </timeBasedFileNamingAndTriggeringPolicy>
-            <maxHistory>30</maxHistory>
-        </rollingPolicy>
-        <encoder>
-            <pattern>%-4relative [%thread] %-5level %logger{35} -%kvp- %msg%n</pattern>
-        </encoder>
-    </appender>
-    <if condition='Boolean.parseBoolean(property("logsEnabled"))'>
+
+    <!-- LOGSTASH appender (only created when logs are enabled) -->
+    <condition class="ch.qos.logback.core.boolex.PropertyEqualityCondition">
+        <key>logsEnabled</key>
+        <value>true</value>
+    </condition>
+    <if>
         <then>
             <appender name="LOGSTASH" class="net.logstash.logback.appender.LogstashTcpSocketAppender">
                 <destination>${logsDestination}</destination>
@@ -68,26 +60,35 @@
             </appender>
         </then>
     </if>
-    <if condition='Boolean.parseBoolean(property("accessLogsEnabled"))'>
-        <appender name="ACCESS-LOGSTASH"
-                  class="net.logstash.logback.appender.LogstashTcpSocketAppender">
-            <destination>${accessLogsDestination}</destination>
-            <encoder class="net.logstash.logback.encoder.LogstashEncoder">
-                <customFields>
-                    {
-                    "log_type":"access",
-                    "service":"${accessLogsService}",
-                    "tenant": "${accessLogsTenant}"
-                    }
-                </customFields>
-            </encoder>
-        </appender>
-        <appender name="ASYNC-ACCESS" class="ch.qos.logback.classic.AsyncAppender">
-            <queueSize>16384</queueSize>
-            <neverBlock>true</neverBlock>
-            <appender-ref ref="ACCESS-LOGSTASH"/>
-        </appender>
+
+    <!-- ACCESS-LOGSTASH appender (only created when access logs are enabled) -->
+    <condition class="ch.qos.logback.core.boolex.PropertyEqualityCondition">
+        <key>accessLogsEnabled</key>
+        <value>true</value>
+    </condition>
+    <if>
+        <then>
+            <appender name="ACCESS-LOGSTASH"
+                      class="net.logstash.logback.appender.LogstashTcpSocketAppender">
+                <destination>${accessLogsDestination}</destination>
+                <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+                    <customFields>
+                        {
+                        "log_type":"access",
+                        "service":"${accessLogsService}",
+                        "tenant": "${accessLogsTenant}"
+                        }
+                    </customFields>
+                </encoder>
+            </appender>
+            <appender name="ASYNC-ACCESS" class="ch.qos.logback.classic.AsyncAppender">
+                <queueSize>16384</queueSize>
+                <neverBlock>true</neverBlock>
+                <appender-ref ref="ACCESS-LOGSTASH"/>
+            </appender>
+        </then>
     </if>
+
     <springProfile name="default">
         <include resource="org/springframework/boot/logging/logback/console-appender.xml"/>
         <root level="info">
@@ -96,7 +97,11 @@
         <logger name="io.surisoft.capi" additivity="false" level="TRACE">
             <appender-ref ref="CONSOLE"/>
         </logger>
-        <if condition='Boolean.parseBoolean(property("accessLogsEnabled"))'>
+        <condition class="ch.qos.logback.core.boolex.PropertyEqualityCondition">
+            <key>accessLogsEnabled</key>
+            <value>true</value>
+        </condition>
+        <if>
             <then>
                 <logger name="capi.access" level="INFO" additivity="false">
                     <appender-ref ref="ASYNC-ACCESS"/>
@@ -104,12 +109,33 @@
             </then>
         </if>
     </springProfile>
+
     <springProfile name="dev">
         <include resource="org/springframework/boot/logging/logback/console-appender.xml"/>
-        <if condition='Boolean.parseBoolean(property("logsEnabled"))'>
-            <root level="info">
-                <appender-ref ref="LOGSTASH"/>
-            </root>
+        <appender name="FILE-ROLLING" class="ch.qos.logback.core.rolling.RollingFileAppender">
+            <file>${log-dir}/capi.log</file>
+            <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+                <fileNamePattern>${log-dir}/capi.%d{yyyy-MM-dd}.%i.gz</fileNamePattern>
+                <timeBasedFileNamingAndTriggeringPolicy
+                    class="ch.qos.logback.core.rolling.SizeAndTimeBasedFileNamingAndTriggeringPolicy">
+                    <maxFileSize>10MB</maxFileSize>
+                </timeBasedFileNamingAndTriggeringPolicy>
+                <maxHistory>30</maxHistory>
+            </rollingPolicy>
+            <encoder>
+                <pattern>%-4relative [%thread] %-5level %logger{35} -%kvp- %msg%n</pattern>
+            </encoder>
+        </appender>
+        <condition class="ch.qos.logback.core.boolex.PropertyEqualityCondition">
+            <key>logsEnabled</key>
+            <value>true</value>
+        </condition>
+        <if>
+            <then>
+                <root level="info">
+                    <appender-ref ref="LOGSTASH"/>
+                </root>
+            </then>
         </if>
         <root level="info">
             <appender-ref ref="FILE-ROLLING" />
@@ -119,12 +145,22 @@
             <appender-ref ref="FILE-ROLLING" />
             <appender-ref ref="CONSOLE"/>
         </logger>
-        <if condition='Boolean.parseBoolean(property("logsEnabled"))'>
-            <logger name="io.surisoft.capi" additivity="false" level="TRACE">
-                <appender-ref ref="LOGSTASH"/>
-            </logger>
+        <condition class="ch.qos.logback.core.boolex.PropertyEqualityCondition">
+            <key>logsEnabled</key>
+            <value>true</value>
+        </condition>
+        <if>
+            <then>
+                <logger name="io.surisoft.capi" additivity="false" level="TRACE">
+                    <appender-ref ref="LOGSTASH"/>
+                </logger>
+            </then>
         </if>
-        <if condition='Boolean.parseBoolean(property("accessLogsEnabled"))'>
+        <condition class="ch.qos.logback.core.boolex.PropertyEqualityCondition">
+            <key>accessLogsEnabled</key>
+            <value>true</value>
+        </condition>
+        <if>
             <then>
                 <logger name="capi.access" level="INFO" additivity="false">
                     <appender-ref ref="ASYNC-ACCESS"/>
@@ -132,23 +168,54 @@
             </then>
         </if>
     </springProfile>
+
     <springProfile name="prod">
         <include resource="org/springframework/boot/logging/logback/console-appender.xml"/>
-        <if condition='Boolean.parseBoolean(property("logsEnabled"))'>
-            <root level="info">
-                <appender-ref ref="FILE-ROLLING"/>
-                <appender-ref ref="LOGSTASH"/>
-            </root>
+        <appender name="FILE-ROLLING" class="ch.qos.logback.core.rolling.RollingFileAppender">
+            <file>${log-dir}/capi.log</file>
+            <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+                <fileNamePattern>${log-dir}/capi.%d{yyyy-MM-dd}.%i.gz</fileNamePattern>
+                <timeBasedFileNamingAndTriggeringPolicy
+                    class="ch.qos.logback.core.rolling.SizeAndTimeBasedFileNamingAndTriggeringPolicy">
+                    <maxFileSize>10MB</maxFileSize>
+                </timeBasedFileNamingAndTriggeringPolicy>
+                <maxHistory>30</maxHistory>
+            </rollingPolicy>
+            <encoder>
+                <pattern>%-4relative [%thread] %-5level %logger{35} -%kvp- %msg%n</pattern>
+            </encoder>
+        </appender>
+        <condition class="ch.qos.logback.core.boolex.PropertyEqualityCondition">
+            <key>logsEnabled</key>
+            <value>true</value>
+        </condition>
+        <if>
+            <then>
+                <root level="info">
+                    <appender-ref ref="FILE-ROLLING"/>
+                    <appender-ref ref="LOGSTASH"/>
+                </root>
+            </then>
         </if>
-        <if condition='Boolean.parseBoolean(property("logsEnabled"))'>
-            <logger name="io.surisoft.capi" additivity="false" level="INFO">
-                <appender-ref ref="LOGSTASH"/>
-            </logger>
+        <condition class="ch.qos.logback.core.boolex.PropertyEqualityCondition">
+            <key>logsEnabled</key>
+            <value>true</value>
+        </condition>
+        <if>
+            <then>
+                <logger name="io.surisoft.capi" additivity="false" level="INFO">
+                    <appender-ref ref="LOGSTASH"/>
+                </logger>
+            </then>
         </if>
         <logger name="io.surisoft.capi" additivity="false" level="INFO">
             <appender-ref ref="FILE-ROLLING"/>
         </logger>
-        <if condition='Boolean.parseBoolean(property("accessLogsEnabled"))'>
+        <condition class="ch.qos.logback.core.boolex.PropertyEqualityCondition">
+            <key>accessLogsEnabled</key>
+            <value>true</value>
+        </condition>
+        <if>
             <then>
                 <logger name="capi.access" level="INFO" additivity="false">
                     <appender-ref ref="ASYNC-ACCESS"/>

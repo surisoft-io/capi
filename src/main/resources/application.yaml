@@ -92,7 +92,7 @@ capi:
     redirect: true
   # Websocket Gateway (Editable Property)
   websocket:
-    enabled: false
+    enabled: true
     server:
       port: 8382
   sse:
@@ -105,11 +105,11 @@ capi:
       port: 8384
   # Enable Traces (Editable Property)
   traces:
-    enabled: false
-    endpoint: http://localhost:9411
+    enabled: true
+    endpoint: http://localhost:4318
     extra:
       metadata:
-        prefix:
+        prefix: ec-
   # Consul Integration (Editable Property)
   consul:
     kv:
@@ -167,17 +167,15 @@ capi:
           x-syncmode,
           X-Total-Count,
           Last-Event-ID,
-          X-B3-Sampled,
-          X-B3-SpanId,
-          X-B3-TraceId,
-          X-B3-ParentSpanId,
+          traceparent,
+          tracestate,
           Vary
   # oauth2 support to protect the routes. (Editable properties)
   oauth2:
     cookieName:
     provider:
-      enabled: false
-      keys: http://local/realms/capi/protocol/openid-connect/certs
+      enabled: true
+      keys: http://localhost:8080/realms/capi/protocol/openid-connect/certs
   opa:
     enabled: false
     endpoint: http://localhost:8181

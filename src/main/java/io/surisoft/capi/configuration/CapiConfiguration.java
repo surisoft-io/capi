@@ -290,7 +290,7 @@ public class CapiConfiguration {
 
     @Bean
     @ConditionalOnProperty(prefix = "server.ssl", name = "enabled", havingValue = "true")
-    public SSLContext createSSLContextForUndertow() throws UnrecoverableKeyException, CertificateException, NoSuchAlgorithmException, KeyStoreException, IOException, KeyManagementException {
+    public SSLContext createSSLContext() throws UnrecoverableKeyException, CertificateException, NoSuchAlgorithmException, KeyStoreException, IOException, KeyManagementException {
         File filePath = getFile(sslPath);
         if(filePath != null) {
             return new SSLContextBuilder().loadKeyMaterial(filePath, sslPassword.toCharArray(), sslPassword.toCharArray()).build();

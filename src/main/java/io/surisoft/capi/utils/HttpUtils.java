@@ -14,9 +14,10 @@ import io.surisoft.capi.schema.CapiRestError;
 import io.surisoft.capi.schema.OpaResult;
 import io.surisoft.capi.schema.Service;
 import io.surisoft.capi.service.OpaService;
-import io.undertow.server.HttpServerExchange;
 import jakarta.servlet.http.HttpServletRequest;
 import org.apache.camel.Exchange;
+import org.eclipse.jetty.server.Request;
+import org.eclipse.jetty.util.Fields;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -116,12 +117,15 @@ public class HttpUtils {
         return null;
     }
 
-    public String processAuthorizationAccessToken(HttpServerExchange httpServerExchange) throws AuthorizationException {
+    public String processAuthorizationAccessToken(Request request) throws AuthorizationException {
         String accessToken = null;
-        if(httpServerExchange.getRequestHeaders().contains(Constants.AUTHORIZATION_HEADER)) {
-            accessToken = getBearerTokenFromHeader(httpServerExchange.getRequestHeaders().get(Constants.AUTHORIZATION_HEADER).get(0));
-        } else if(httpServerExchange.getQueryParameters().containsKey("access_token")) {
-            accessToken = httpServerExchange.getQueryParameters().get("access_token").getFirst();
+        if (request.getHeaders().contains(Constants.AUTHORIZATION_HEADER)) {
+            accessToken = getBearerTokenFromHeader(request.getHeaders().get(Constants.AUTHORIZATION_HEADER));
+        } else {
+            Fields queryParams = Request.extractQueryParameters(request);
+            if (queryParams.get("access_token") != null) {
+                accessToken = queryParams.get("access_token").getValue();
+            }
         }
         return accessToken;
     }

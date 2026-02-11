@@ -1,6 +1,6 @@
 package io.surisoft.capi.schema;
 
-import io.undertow.server.HttpHandler;
+import org.eclipse.jetty.server.Handler;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -17,7 +17,7 @@ class WebsocketClientTest {
     @Mock
     private Set<Mapping> mockMappingList;
     @Mock
-    private HttpHandler mockHttpHandler;
+    private Handler mockHandler;
 
     private WebsocketClient websocketClientUnderTest;
 
@@ -25,7 +25,7 @@ class WebsocketClientTest {
     void setUp() throws Exception {
         websocketClientUnderTest = new WebsocketClient();
         websocketClientUnderTest.setMappingList(mockMappingList);
-        websocketClientUnderTest.setHttpHandler(mockHttpHandler);
+        websocketClientUnderTest.setHandler(mockHandler);
     }
 
     @Test
@@ -36,8 +36,8 @@ class WebsocketClientTest {
     }
 
     @Test
-    void testGetHttpHandler() {
-        assertThat(websocketClientUnderTest.getHttpHandler()).isEqualTo(mockHttpHandler);
+    void testGetHandler() {
+        assertThat(websocketClientUnderTest.getHandler()).isEqualTo(mockHandler);
     }
 
     @Test
