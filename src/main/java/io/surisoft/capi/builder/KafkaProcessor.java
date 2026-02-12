@@ -41,7 +41,7 @@ public class KafkaProcessor extends RouteBuilder {
         from("kafka:" + buildEndpoint()).to("bean:capiKafkaEventProcessor?method=process(${body})");
     }
 
-    private String buildEndpoint() {
+    String buildEndpoint() {
         if(capiKafkaSslEnabled) {
            return capiKafkaTopic +
                     "?brokers=" + capiKafkaHost +
