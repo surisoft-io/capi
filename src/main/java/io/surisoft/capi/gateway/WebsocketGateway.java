@@ -248,7 +248,7 @@ public class WebsocketGateway {
         }
     }
 
-    private URI selectBackend(WebsocketClient websocketClient, AtomicInteger counter) {
+    URI selectBackend(WebsocketClient websocketClient, AtomicInteger counter) {
         List<URI> backends = new ArrayList<>();
         websocketClient.getMappingList().forEach(m -> {
             String scheme = HttpProtocol.HTTP.getProtocol();
@@ -271,7 +271,7 @@ public class WebsocketGateway {
         }
     }
 
-    private boolean isValidOrigin(String origin) {
+    boolean isValidOrigin(String origin) {
         try {
             new URL(origin).toURI();
             return true;

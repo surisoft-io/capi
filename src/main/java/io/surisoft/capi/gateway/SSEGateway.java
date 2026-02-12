@@ -163,7 +163,7 @@ public class SSEGateway {
         }
     }
 
-    private boolean isValidOrigin(String origin) {
+    boolean isValidOrigin(String origin) {
         try {
             new URL(origin).toURI();
             return true;

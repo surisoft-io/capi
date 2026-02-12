@@ -66,7 +66,7 @@ public class JettyErrorListener {
         }
     }
 
-    private CapiRestError buildCapiErrorObject(HttpFields headers) {
+    CapiRestError buildCapiErrorObject(HttpFields headers) {
         CapiRestError capiRestError = new CapiRestError();
         if (headers.contains(Constants.REASON_CODE_HEADER)) {
             capiRestError.setErrorCode(Integer.parseInt(headers.get(Constants.REASON_CODE_HEADER)));

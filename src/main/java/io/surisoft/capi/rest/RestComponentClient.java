@@ -1,0 +1,78 @@
+package io.surisoft.capi.rest;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import io.surisoft.capi.schema.Mapping;
+import org.eclipse.jetty.server.Handler;
+
+import java.util.Set;
+
+public class RestComponentClient {
+
+    private String serviceId;
+    private String path;
+    private Set<Mapping> mappingList;
+    @JsonIgnore
+    private Handler handler;
+    private boolean requiresSubscription;
+    private String subscriptionRole;
+    private String rootContext;
+
+    public String getPath() {
+        return path;
+    }
+
+    public void setPath(String path) {
+        this.path = path;
+    }
+
+    public Handler getHandler() {
+        return handler;
+    }
+
+    public void setHandler(Handler handler) {
+        this.handler = handler;
+    }
+
+    public boolean requiresSubscription() {
+        return requiresSubscription;
+    }
+
+    public boolean isRequiresSubscription() {
+        return requiresSubscription;
+    }
+
+    public void setRequiresSubscription(boolean requiresSubscription) {
+        this.requiresSubscription = requiresSubscription;
+    }
+
+    public String getSubscriptionRole() {
+        return subscriptionRole;
+    }
+
+    public void setSubscriptionRole(String subscriptionRole) {
+        this.subscriptionRole = subscriptionRole;
+    }
+
+    public String getServiceId() {
+        return serviceId;
+    }
+
+    public void setServiceId(String serviceId) {
+        this.serviceId = serviceId;
+    }
+
+    public Set<Mapping> getMappingList() {
+        return mappingList;
+    }
+
+    public void setMappingList(Set<Mapping> mappingList) {
+        this.mappingList = mappingList;
+    }
+
+    public String getRootContext() {
+        return rootContext;
+    }
+    public void setRootContext(String rootContext) {
+        this.rootContext = rootContext;
+    }
+}
