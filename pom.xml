@@ -28,7 +28,7 @@
     <camel-zipkin-starter.version>3.22.4</camel-zipkin-starter.version>
 
     <wiremock.version>3.0.1</wiremock.version>
-    <org.bouncycastle.version>1.81</org.bouncycastle.version>
+    <org.bouncycastle.version>1.84</org.bouncycastle.version>
     <org.junit.jupiter.version>5.13.4</org.junit.jupiter.version>
     <org.junit.platform.version>1.13.4</org.junit.platform.version>
     <jacoco.version>0.8.13</jacoco.version>
